@@ -228,7 +228,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               className="form-input"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="예: 골프존 아일랜드CC, 비빔밥 내기"
+              placeholder="예: 골프존 아일랜드CC, 밥/간식 내기"
             />
           </div>
         </div>
