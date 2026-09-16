@@ -370,7 +370,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
                   <div className="preview-scores">
                     <div className="preview-raw">{item.rawScore}타</div>
-                    <div className="preview-adj">핸디 적용 {item.adjustedScore}타 (-{item.player.base_handicap})</div>
+                    <div className="preview-adj">핸디 {item.adjustedScore}타</div>
                   </div>
 
                   <div className="preview-lp-pills-row">

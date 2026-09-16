@@ -639,9 +639,9 @@ body {
 
 .preview-scores {
   text-align: right;
-  width: 70px;
-  min-width: 70px;
-  margin-right: 8px;
+  width: 60px;
+  min-width: 60px;
+  margin-right: 6px;
 }
 
 .preview-raw {
@@ -659,8 +659,8 @@ body {
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
-  width: 145px;
-  min-width: 145px;
+  width: 175px;
+  min-width: 175px;
 }
 
 .preview-lp-change {
