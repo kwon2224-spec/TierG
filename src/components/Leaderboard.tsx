@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, HelpCircle } from 'lucide-react';
-import { type Player, TIER_THEMES, TIER_WEIGHTS } from '../types';
+import { type Player, type Tier, TIERS_ORDER, TIER_THEMES, TIER_WEIGHTS } from '../types';
 import { tiergService } from '../services/tiergService';
 import { TierBadge } from './TierBadge';
 
@@ -20,6 +20,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   // New Player Form State
   const [newName, setNewName] = useState('');
   const [newHandicap, setNewNameHandicap] = useState('20');
+  const [startTier, setStartTier] = useState<Tier>('Iron');
+  const [startPoints, setStartPoints] = useState('50');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -55,11 +57,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
       return;
     }
 
+    const pointsNum = parseInt(startPoints, 10);
+    if (isNaN(pointsNum) || pointsNum < 0 || pointsNum > 100) {
+      alert('시작 LP 점수는 0에서 100 사이의 숫자로 입력해주세요.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await tiergService.addPlayer(newName.trim(), handicapNum);
+      await tiergService.addPlayer(newName.trim(), handicapNum, startTier, pointsNum);
       setNewName('');
       setNewNameHandicap('20');
+      setStartTier('Iron');
+      setStartPoints('50');
       setShowAddPlayerModal(false);
       loadPlayers();
     } catch (error) {
@@ -86,6 +96,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
         {players.map((player, index) => {
           const rank = index + 1;
           const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
+          const isDormant = player.status === 'Dormant';
           
           // Determine LP bar fill (Challenger doesn't have 100 ceiling, so cap display percentage at 100)
           const lpPercentage = player.tier === 'Challenger' ? 100 : Math.min(100, Math.max(0, player.points));
@@ -93,15 +104,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           return (
             <div
               key={player.id}
-              className="player-rank-card"
+              className={`player-rank-card ${isDormant ? 'dormant' : ''}`}
               onClick={() => onSelectPlayer(player.id)}
               style={{
-                '--tier-color': theme.color,
-                '--tier-shadow': theme.shadow,
+                '--tier-color': isDormant ? '#64748b' : theme.color,
+                '--tier-shadow': isDormant ? 'transparent' : theme.shadow,
               } as React.CSSProperties}
             >
               {/* Rank Badge */}
-              <div className={`rank-number ${rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other'}`}>
+              <div className={`rank-number ${isDormant ? 'rank-other' : rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other'}`}>
                 {rank}
               </div>
 
@@ -111,16 +122,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               {/* Player Info Details */}
               <div className="player-info">
                 <div className="player-name-row">
-                  <span className="player-name">{player.name}</span>
+                  <span className="player-name">
+                    {player.name}
+                    {isDormant && <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>(휴면)</span>}
+                  </span>
                   <span className="player-handicap-badge">핸디: {player.base_handicap}개</span>
                 </div>
 
                 <div className="player-tier-row">
-                  <span className="player-tier-name" style={{ color: theme.color }}>
-                    {theme.name}
+                  <span className="player-tier-name" style={{ color: isDormant ? 'var(--text-muted)' : theme.color }}>
+                    {isDormant ? '휴면 상태' : theme.name}
                   </span>
                   <span className="player-lp">
-                    {player.tier === 'Challenger' ? `${player.points} LP` : `${player.points} / 100 LP`}
+                    {isDormant ? '전적 비활동' : player.tier === 'Challenger' ? `${player.points} LP` : `${player.points} / 100 LP`}
                   </span>
                 </div>
 
@@ -129,8 +143,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                   <div
                     className="lp-bar-fill"
                     style={{
-                      width: `${lpPercentage}%`,
-                      background: theme.gradient,
+                      width: isDormant ? '0%' : `${lpPercentage}%`,
+                      background: isDormant ? '#475569' : theme.gradient,
                     }}
                   />
                 </div>
@@ -202,8 +216,44 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                   이 핸디캡은 경기 기록 입력 시 원본 타수에서 자동 차감되어 등수를 가르는 기준이 됩니다.
                 </span>
               </div>
+              
+              {/* New Starting Tier Dropdown */}
+              <div className="form-group">
+                <label className="form-label">시작 티어 지정</label>
+                <select
+                  className="form-input"
+                  value={startTier}
+                  onChange={(e) => setStartTier(e.target.value as Tier)}
+                  style={{ backgroundColor: 'var(--bg-hover)' }}
+                >
+                  {TIERS_ORDER.map((t) => (
+                    <option key={t} value={t}>
+                      {TIER_THEMES[t].name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* New Starting LP input */}
+              <div className="form-group">
+                <label className="form-label">시작 LP 점수 (0 ~ 100)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={startPoints}
+                  onChange={(e) => setStartPoints(e.target.value)}
+                  placeholder="예: 50"
+                  min="0"
+                  max="100"
+                  required
+                />
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  선택하신 티어의 100점 중 몇 점에서 시작할지 포인트를 입력해 주세요. (기본 50LP가 허리 구간으로 가장 안전합니다.)
+                </span>
+              </div>
+
               <button type="submit" className="submit-btn" disabled={submitting}>
-                {submitting ? '등록 중...' : '선수 등록 완료 (아이언 0 LP 시작)'}
+                {submitting ? '선수 등록 중...' : '🏆 신규 선수 가입 승인'}
               </button>
             </form>
           </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { X, Calendar, Sparkles, Check } from 'lucide-react';
-import { type Player, TIER_THEMES, type GameResult } from '../types';
+import { X, Calendar, Sparkles, Check, UserCheck, UserMinus } from 'lucide-react';
+import { type Player, type PlayerStatus, TIER_THEMES, type GameResult } from '../types';
 import { tiergService } from '../services/tiergService';
 import { TierBadge } from './TierBadge';
 
@@ -30,7 +30,9 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
   const [loading, setLoading] = useState(true);
   const [handicapInput, setHandicapInput] = useState<string>('');
+  const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('Active');
   const [updatingHandicap, setUpdatingHandicap] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       const details = await tiergService.getPlayerHistory(playerId);
       setData(details);
       setHandicapInput(details.player.base_handicap.toString());
+      setPlayerStatus(details.player.status || 'Active');
     } catch (error) {
       console.error('Failed to load player history:', error);
     } finally {
@@ -72,6 +75,38 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       alert('핸디캡 업데이트에 실패했습니다.');
     } finally {
       setUpdatingHandicap(false);
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus: PlayerStatus) => {
+    if (!data) return;
+    setUpdatingStatus(true);
+    try {
+      await tiergService.updatePlayerStatus(data.player.id, newStatus);
+      setPlayerStatus(newStatus);
+      onHandicapUpdated();
+      alert(`선수 상태가 '${newStatus === 'Active' ? '활동 중' : '휴면'}' 상태로 성공적으로 변경되었습니다.`);
+      loadPlayerDetails();
+    } catch (error) {
+      console.error('Failed to update player status:', error);
+      alert('선수 상태 업데이트에 실패했습니다.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleDeletePlayer = async () => {
+    if (!data) return;
+    if (window.confirm(`⚠️ 정말로 '${data.player.name}' 선수를 영구 탈퇴 처리(삭제)하시겠습니까?\n\n이 선수의 모든 전적 및 프로필 데이터가 시스템에서 영구히 완전히 삭제되며 절대 복구할 수 없습니다.`)) {
+      try {
+        await tiergService.deletePlayer(data.player.id);
+        alert(`'${data.player.name}' 선수가 성공적으로 탈퇴 처리되었습니다.`);
+        onHandicapUpdated();
+        onClose();
+      } catch (error: any) {
+        console.error('Failed to delete player:', error);
+        alert(error.message || '선수 삭제에 실패했습니다.');
+      }
     }
   };
 
@@ -155,7 +190,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Sparkles size={16} color="var(--accent)" /> 핸디캡 조정 (관리자용)
             </h4>
-            <form onSubmit={handleUpdateHandicap} style={{ display: 'flex', gap: '10px' }}>
+            <form onSubmit={handleUpdateHandicap} style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
               <input
                 type="number"
                 className="form-input"
@@ -175,6 +210,23 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                 {updateSuccess ? <Check size={16} /> : '적용'}
               </button>
             </form>
+
+            {/* Admin Player Status Dropdown */}
+            <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <UserCheck size={16} color="var(--accent)" /> 활동 상태 변경 (관리자용)
+            </h4>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <select
+                className="form-input"
+                value={playerStatus}
+                onChange={(e) => handleUpdateStatus(e.target.value as PlayerStatus)}
+                style={{ flex: 1, padding: '8px 12px', backgroundColor: 'var(--bg-hover)' }}
+                disabled={updatingStatus}
+              >
+                <option value="Active">활동 중 (정상 랭크 및 출전 대기)</option>
+                <option value="Dormant">휴면 (랭킹 음영 처리 및 경기 출전 제외)</option>
+              </select>
+            </div>
           </div>
 
           {/* Recent Games */}
@@ -223,6 +275,24 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
               })
             )}
           </div>
+
+          {/* Admin Player Retirement (Delete) Button */}
+          <button
+            onClick={handleDeletePlayer}
+            className="submit-btn"
+            style={{
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              marginTop: '25px',
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}
+          >
+            <UserMinus size={18} />
+            <span>⚠️ 이 플레이어 회원 탈퇴 (영구 삭제)</span>
+          </button>
         </div>
       </div>
     </div>

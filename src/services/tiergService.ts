@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { type Player, type Game, type GameResult, type GameWithResults, type Tier, TIERS_ORDER } from '../types';
+import { type Player, type PlayerStatus, type Game, type GameResult, type GameWithResults, type Tier, TIERS_ORDER } from '../types';
 
 // 1. Initialize Supabase Client if env variables are available
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -19,17 +19,17 @@ if (supabaseUrl && supabaseAnonKey) {
 
 // 2. Initial Mock Players for Local Demo Mode (Synchronized with Real 11 Friends)
 const INITIAL_MOCK_PLAYERS: Player[] = [
-  { id: 'p1', name: '부성훈', tier: 'Challenger', points: 0, base_handicap: 0 },
-  { id: 'p2', name: '이평화', tier: 'Challenger', points: 0, base_handicap: 0 },
-  { id: 'p3', name: '최문규', tier: 'Master', points: 0, base_handicap: 5 },
-  { id: 'p4', name: '김창범', tier: 'Emerald', points: 0, base_handicap: 10 },
-  { id: 'p5', name: '권기원', tier: 'Emerald', points: 0, base_handicap: 10 },
-  { id: 'p6', name: '안재민', tier: 'Platinum', points: 0, base_handicap: 12 },
-  { id: 'p7', name: '이승무', tier: 'Platinum', points: 0, base_handicap: 12 },
-  { id: 'p8', name: '황지운', tier: 'Gold', points: 0, base_handicap: 15 },
-  { id: 'p9', name: '나용성', tier: 'Gold', points: 0, base_handicap: 15 },
-  { id: 'p10', name: '이창훈', tier: 'Silver', points: 0, base_handicap: 20 },
-  { id: 'p11', name: '박진범', tier: 'Silver', points: 0, base_handicap: 20 },
+  { id: 'p1', name: '부성훈', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active' },
+  { id: 'p2', name: '이평화', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active' },
+  { id: 'p3', name: '최문규', tier: 'Master', points: 50, base_handicap: 5, status: 'Active' },
+  { id: 'p4', name: '김창범', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active' },
+  { id: 'p5', name: '권기원', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active' },
+  { id: 'p6', name: '안재민', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active' },
+  { id: 'p7', name: '이승무', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active' },
+  { id: 'p8', name: '황지운', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active' },
+  { id: 'p9', name: '나용성', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active' },
+  { id: 'p10', name: '이창훈', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active' },
+  { id: 'p11', name: '박진범', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active' },
 ];
 
 // Helper to load/save from Local Storage
@@ -123,11 +123,16 @@ class TierGService {
     return getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
   }
 
-  async addPlayer(name: string, baseHandicap: number): Promise<Player> {
+  async addPlayer(
+    name: string,
+    baseHandicap: number,
+    tier: Tier = 'Iron',
+    points: number = 50
+  ): Promise<Player> {
     if (supabase) {
       const { data, error } = await supabase
         .from('players')
-        .insert([{ name, base_handicap: baseHandicap, tier: 'Iron', points: 0 }])
+        .insert([{ name, base_handicap: baseHandicap, tier, points, status: 'Active' }])
         .select();
       if (error) {
         throw new Error(`Supabase addPlayer failed: ${error.message}`);
@@ -140,9 +145,10 @@ class TierGService {
     const newPlayer: Player = {
       id: `p_${Date.now()}`,
       name,
-      tier: 'Iron',
-      points: 0,
+      tier,
+      points,
       base_handicap: baseHandicap,
+      status: 'Active',
     };
     players.push(newPlayer);
     setLocalData('tierg_players', players);
@@ -169,6 +175,45 @@ class TierGService {
     players[playerIndex].base_handicap = newHandicap;
     setLocalData('tierg_players', players);
     return players[playerIndex];
+  }
+
+  async updatePlayerStatus(id: string, status: PlayerStatus): Promise<Player> {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('players')
+        .update({ status })
+        .eq('id', id)
+        .select();
+      if (error) {
+        throw new Error(`Supabase updatePlayerStatus failed: ${error.message}`);
+      }
+      return data[0] as Player;
+    }
+
+    // Local Storage fallback
+    const players = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+    const playerIndex = players.findIndex((p) => p.id === id);
+    if (playerIndex === -1) throw new Error('Player not found');
+    players[playerIndex].status = status;
+    setLocalData('tierg_players', players);
+    return players[playerIndex];
+  }
+
+  async deletePlayer(id: string): Promise<void> {
+    if (supabase) {
+      const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        throw new Error(`Supabase deletePlayer failed: ${error.message}`);
+      }
+    } else {
+      // Local Storage fallback
+      const players = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+      const updated = players.filter((p) => p.id !== id);
+      setLocalData('tierg_players', updated);
+    }
   }
 
   // --- Games API ---

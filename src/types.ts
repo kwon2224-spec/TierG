@@ -111,12 +111,15 @@ export const TIER_THEMES: Record<Tier, TierTheme> = {
   },
 };
 
+export type PlayerStatus = 'Active' | 'Dormant' | 'Left';
+
 export interface Player {
   id: string;
   name: string;
   tier: Tier;
   points: number; // 0 to 100 (except Challenger which can grow or cap)
   base_handicap: number; // Strokes added/subtracted
+  status?: PlayerStatus; // 'Active' | 'Dormant' | 'Left'
   created_at?: string;
 }
 

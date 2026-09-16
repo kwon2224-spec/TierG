@@ -43,6 +43,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   };
 
   const handleTogglePlayer = (id: string) => {
+    const activePlayersCount = players.filter((p) => p.status !== 'Dormant').length;
     if (selectedPlayerIds.includes(id)) {
       setSelectedPlayerIds(selectedPlayerIds.filter((pId) => pId !== id));
       // Clean up score and cost input
@@ -53,8 +54,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setRawScores(newScores);
       setCostsPaid(newCosts);
     } else {
-      if (selectedPlayerIds.length >= players.length) {
-        alert(`최대 ${players.length}명까지만 경기에 참여할 수 있습니다.`);
+      if (selectedPlayerIds.length >= activePlayersCount) {
+        alert(`최대 ${activePlayersCount}명까지만 경기에 참여할 수 있습니다.`);
         return;
       }
       setSelectedPlayerIds([...selectedPlayerIds, id]);
@@ -235,35 +236,42 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
         {/* Player Select Card */}
         <div className="player-select-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontWeight: '700', fontSize: '15px' }}>⛳ 참가 선수 선택 (2~{players.length}명)</span>
-            <span style={{ fontSize: '12px', color: selectedPlayerIds.length === 4 ? '#10b981' : 'var(--text-muted)' }}>
-              {selectedPlayerIds.length}명 선택함 {selectedPlayerIds.length === 4 ? '(4인 표준 경기)' : ''}
-            </span>
-          </div>
-
-          <div className="selection-grid">
-            {players.map((player) => {
-              const isSelected = selectedPlayerIds.includes(player.id);
-              const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
-
-              return (
-                <div
-                  key={player.id}
-                  className={`select-player-bubble ${isSelected ? 'selected' : ''}`}
-                  onClick={() => handleTogglePlayer(player.id)}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontWeight: '700', fontSize: '14px' }}>{player.name}</span>
-                    <span style={{ fontSize: '11px', color: theme.color, fontWeight: '600' }}>
-                      {theme.name} (H:{player.base_handicap})
-                    </span>
-                  </div>
-                  <div className="select-player-badge" />
+          {(() => {
+            const activePlayers = players.filter((p) => p.status !== 'Dormant');
+            return (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: '700', fontSize: '15px' }}>⛳ 참가 선수 선택 (2~{activePlayers.length}명)</span>
+                  <span style={{ fontSize: '12px', color: selectedPlayerIds.length === 4 ? '#10b981' : 'var(--text-muted)' }}>
+                    {selectedPlayerIds.length}명 선택함 {selectedPlayerIds.length === 4 ? '(4인 표준 경기)' : ''}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+
+                <div className="selection-grid">
+                  {activePlayers.map((player) => {
+                    const isSelected = selectedPlayerIds.includes(player.id);
+                    const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
+
+                    return (
+                      <div
+                        key={player.id}
+                        className={`select-player-bubble ${isSelected ? 'selected' : ''}`}
+                        onClick={() => handleTogglePlayer(player.id)}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontWeight: '700', fontSize: '14px' }}>{player.name}</span>
+                          <span style={{ fontSize: '11px', color: theme.color, fontWeight: '600' }}>
+                            {theme.name} (H:{player.base_handicap})
+                          </span>
+                        </div>
+                        <div className="select-player-badge" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Input Scores List */}
