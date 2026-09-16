@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Calendar, FileText, AlertTriangle } from 'lucide-react';
-import { type Player, TIER_THEMES } from '../types';
+import { type Player, TIER_THEMES, TIER_WEIGHTS } from '../types';
 import { tiergService, calculateNewTierAndPoints } from '../services/tiergService';
 
 interface AddGameProps {
@@ -237,7 +237,14 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         {/* Player Select Card */}
         <div className="player-select-card">
           {(() => {
-            const activePlayers = players.filter((p) => p.status !== 'Dormant');
+            const activePlayers = players
+              .filter((p) => p.status !== 'Dormant')
+              .sort((a, b) => {
+                const weightA = TIER_WEIGHTS[a.tier] + a.points;
+                const weightB = TIER_WEIGHTS[b.tier] + b.points;
+                if (weightB !== weightA) return weightB - weightA;
+                return a.name.localeCompare(b.name, 'ko-KR');
+              });
             return (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
