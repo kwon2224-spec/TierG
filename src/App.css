@@ -618,7 +618,9 @@ body {
 
 .preview-scores {
   text-align: right;
-  margin-right: 15px;
+  width: 80px;
+  min-width: 80px;
+  margin-right: 8px;
 }
 
 .preview-raw {
@@ -629,6 +631,15 @@ body {
 .preview-adj {
   font-size: 11px;
   color: var(--text-secondary);
+}
+
+.preview-lp-pills-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  width: 135px;
+  min-width: 135px;
 }
 
 .preview-lp-change {

@@ -201,7 +201,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                         {res.rank}등
                       </span>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: '600' }}>{res.raw_score}타 (넷 {res.adjusted_score}타)</span>
+                        <span style={{ fontWeight: '600' }}>{res.raw_score}타 (핸디 적용 {res.adjusted_score}타)</span>
                         <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '2px' }}>
                           <Calendar size={10} /> {new Date(res.played_at).toLocaleDateString('ko-KR')}
                         </span>
