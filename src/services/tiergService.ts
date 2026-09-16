@@ -19,17 +19,17 @@ if (supabaseUrl && supabaseAnonKey) {
 
 // 2. Initial Mock Players for Local Demo Mode (Synchronized with Real 11 Friends)
 const INITIAL_MOCK_PLAYERS: Player[] = [
-  { id: 'p1', name: '부성훈', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active' },
-  { id: 'p2', name: '이평화', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active' },
-  { id: 'p3', name: '최문규', tier: 'Master', points: 50, base_handicap: 5, status: 'Active' },
-  { id: 'p4', name: '김창범', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active' },
-  { id: 'p5', name: '권기원', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active' },
-  { id: 'p6', name: '안재민', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active' },
-  { id: 'p7', name: '이승무', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active' },
-  { id: 'p8', name: '황지운', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active' },
-  { id: 'p9', name: '나용성', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active' },
-  { id: 'p10', name: '이창훈', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active' },
-  { id: 'p11', name: '박진범', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active' },
+  { id: 'p1', name: '부성훈', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active', is_admin: false },
+  { id: 'p2', name: '이평화', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active', is_admin: false },
+  { id: 'p3', name: '최문규', tier: 'Master', points: 50, base_handicap: 5, status: 'Active', is_admin: false },
+  { id: 'p4', name: '김창범', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active', is_admin: false },
+  { id: 'p5', name: '권기원', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active', is_admin: true }, // 마스터 총무 관리자!
+  { id: 'p6', name: '안재민', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active', is_admin: false },
+  { id: 'p7', name: '이승무', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active', is_admin: false },
+  { id: 'p8', name: '황지운', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active', is_admin: false },
+  { id: 'p9', name: '나용성', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active', is_admin: false },
+  { id: 'p10', name: '이창훈', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active', is_admin: false },
+  { id: 'p11', name: '박진범', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active', is_admin: false },
 ];
 
 // Helper to load/save from Local Storage
@@ -195,6 +195,28 @@ class TierGService {
     const playerIndex = players.findIndex((p) => p.id === id);
     if (playerIndex === -1) throw new Error('Player not found');
     players[playerIndex].status = status;
+    setLocalData('tierg_players', players);
+    return players[playerIndex];
+  }
+
+  async updatePlayerAdminStatus(id: string, isAdmin: boolean): Promise<Player> {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('players')
+        .update({ is_admin: isAdmin })
+        .eq('id', id)
+        .select();
+      if (error) {
+        throw new Error(`Supabase updatePlayerAdminStatus failed: ${error.message}`);
+      }
+      return data[0] as Player;
+    }
+
+    // Local Storage fallback
+    const players = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+    const playerIndex = players.findIndex((p) => p.id === id);
+    if (playerIndex === -1) throw new Error('Player not found');
+    players[playerIndex].is_admin = isAdmin;
     setLocalData('tierg_players', players);
     return players[playerIndex];
   }

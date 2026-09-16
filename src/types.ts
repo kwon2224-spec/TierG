@@ -120,6 +120,7 @@ export interface Player {
   points: number; // 0 to 100 (except Challenger which can grow or cap)
   base_handicap: number; // Strokes added/subtracted
   status?: PlayerStatus; // 'Active' | 'Dormant' | 'Left'
+  is_admin?: boolean; // 'true' if the player has Admin permissions!
   created_at?: string;
 }
 
