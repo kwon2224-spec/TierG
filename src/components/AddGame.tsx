@@ -22,9 +22,19 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
   // Scores and Costs inputs mapping playerId -> string
   const [rawScores, setRawScores] = useState<Record<string, string>>({});
+  const [scoreSelections, setScoreSelections] = useState<Record<string, string>>({});
   const [costsPaid, setCostsPaid] = useState<Record<string, string>>({});
 
   const [saving, setSaving] = useState(false);
+
+  // Helper to dynamically calculate actual strokes from combo-box or direct inputs
+  const getRawScoreForPlayer = (id: string): number => {
+    const selection = scoreSelections[id] || '18'; // Default to +18 Over Par (90 strokes)
+    if (selection === 'direct') {
+      return parseInt(rawScores[id], 10) || 72;
+    }
+    return 72 + parseInt(selection, 10);
+  };
 
   useEffect(() => {
     loadPlayers();
@@ -48,10 +58,13 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setSelectedPlayerIds(selectedPlayerIds.filter((pId) => pId !== id));
       // Clean up score and cost input
       const newScores = { ...rawScores };
+      const newSelections = { ...scoreSelections };
       const newCosts = { ...costsPaid };
       delete newScores[id];
+      delete newSelections[id];
       delete newCosts[id];
       setRawScores(newScores);
+      setScoreSelections(newSelections);
       setCostsPaid(newCosts);
     } else {
       if (selectedPlayerIds.length >= activePlayersCount) {
@@ -59,9 +72,10 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         return;
       }
       setSelectedPlayerIds([...selectedPlayerIds, id]);
-      // Initialize inputs with reasonable defaults
-      setRawScores({ ...rawScores, [id]: '85' });
-      setCostsPaid({ ...costsPaid, [id]: '35000' });
+      // Initialize inputs with reasonable defaults (Defaulting to +18 over par i.e. 90 strokes and 0 won cost!)
+      setRawScores({ ...rawScores, [id]: '90' });
+      setScoreSelections({ ...scoreSelections, [id]: '18' });
+      setCostsPaid({ ...costsPaid, [id]: '0' });
     }
   };
 
@@ -72,7 +86,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     // Map selections to calculations
     const items = selectedPlayerIds.map((id) => {
       const player = players.find((p) => p.id === id)!;
-      const rawScore = parseInt(rawScores[id], 10) || 120;
+      const rawScore = getRawScoreForPlayer(id);
       const costPaid = parseInt(costsPaid[id], 10) || 0;
       const adjustedScore = rawScore - player.base_handicap;
 
@@ -154,13 +168,18 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     // Validate scores are positive
     const resultsPayload = [];
     for (const id of selectedPlayerIds) {
-      const raw = parseInt(rawScores[id], 10);
+      const raw = getRawScoreForPlayer(id);
       const cost = parseInt(costsPaid[id], 10);
 
-      if (isNaN(raw) || raw < 18 || raw > 180) {
-        alert(`${players.find((p) => p.id === id)?.name} 선수의 타수(18~180타)가 올바르지 않습니다.`);
-        return;
+      // Explicit validation for direct typing mode
+      if (scoreSelections[id] === 'direct') {
+        const directRaw = parseInt(rawScores[id], 10);
+        if (isNaN(directRaw) || directRaw < 18 || directRaw > 180) {
+          alert(`${players.find((p) => p.id === id)?.name} 선수의 타수 직접 입력값(18~180타)이 올바르지 않습니다.`);
+          return;
+        }
       }
+
       if (isNaN(cost) || cost < 0) {
         alert(`${players.find((p) => p.id === id)?.name} 선수의 비용 입력값이 올바르지 않습니다.`);
         return;
@@ -303,17 +322,28 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
                   <div className="inputs-row">
                     <div className="form-group" style={{ marginBottom: '0' }}>
-                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>원본 타수 스코어</label>
-                      <input
-                        type="number"
+                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>원본 스코어 (언더/오버파)</label>
+                      <select
                         className="form-input"
-                        value={rawScores[pId] || ''}
-                        onChange={(e) => setRawScores({ ...rawScores, [pId]: e.target.value })}
-                        placeholder="예: 85"
-                        min="18"
-                        max="180"
-                        required
-                      />
+                        value={scoreSelections[pId] || '18'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setScoreSelections({ ...scoreSelections, [pId]: val });
+                          if (val !== 'direct') {
+                            setRawScores({ ...rawScores, [pId]: (72 + parseInt(val, 10)).toString() });
+                          }
+                        }}
+                        style={{ backgroundColor: 'var(--bg-hover)' }}
+                      >
+                        {Array.from({ length: 51 }, (_, i) => -10 + i).map((v) => {
+                          let label = '';
+                          if (v < 0) label = `${v} 언더파 (${72 + v}타)`;
+                          else if (v === 0) label = `이븐파 (72타)`;
+                          else label = `+${v} 오버파 (${72 + v}타)`;
+                          return <option key={v} value={v.toString()}>{label}</option>;
+                        })}
+                        <option value="direct">직접 입력 (타수 직접 타이핑)</option>
+                      </select>
                     </div>
 
                     <div className="form-group" style={{ marginBottom: '0' }}>
@@ -321,14 +351,31 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                       <input
                         type="number"
                         className="form-input"
-                        value={costsPaid[pId] || ''}
+                        value={costsPaid[pId] || '0'}
                         onChange={(e) => setCostsPaid({ ...costsPaid, [pId]: e.target.value })}
-                        placeholder="예: 35000"
+                        placeholder="예: 10000"
                         min="0"
                         required
                       />
                     </div>
                   </div>
+
+                  {/* Direct Input Field - visible only when 'direct' is selected in dropdown */}
+                  {scoreSelections[pId] === 'direct' && (
+                    <div className="form-group" style={{ marginTop: '12px', marginBottom: '0' }}>
+                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px', color: 'var(--accent)' }}>타수 직접 입력 (타)</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        value={rawScores[pId] || ''}
+                        onChange={(e) => setRawScores({ ...rawScores, [pId]: e.target.value })}
+                        placeholder="실제 친 타수 입력 (예: 85)"
+                        min="18"
+                        max="180"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
