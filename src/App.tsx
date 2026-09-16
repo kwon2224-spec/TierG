@@ -59,7 +59,7 @@ function App() {
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || '1234';
+    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || '1110';
     
     if (adminPassword === correctPassword) {
       const adminObj = players.find((p) => p.id === selectedAdminId);
@@ -246,7 +246,7 @@ function App() {
                   className="form-input"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="관리자 암호 기입 (기본: 1234)"
+                  placeholder="관리자 보안 비밀번호 입력"
                   required
                 />
               </div>
