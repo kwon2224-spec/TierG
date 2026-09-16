@@ -598,7 +598,15 @@ class TierGService {
         if (playerUpdateError) throw playerUpdateError;
       }
 
-      // Delete the game from games table (will cascade delete game_results due to ON DELETE CASCADE)
+      // Delete the game results first explicitly (to bypass any DB foreign key constraints or lack of ON DELETE CASCADE)
+      const { error: resultsDeleteError } = await supabase
+        .from('game_results')
+        .delete()
+        .eq('game_id', gameId);
+
+      if (resultsDeleteError) throw resultsDeleteError;
+
+      // Delete the game from games table
       const { error: gameDeleteError } = await supabase
         .from('games')
         .delete()

@@ -867,10 +867,18 @@ body {
 }
 
 /* Deep mobile input width override (Forcing iOS Safari / Mobile Chrome) */
+input[type="text"].form-input,
 input[type="datetime-local"].form-input {
   display: block !important;
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
   min-width: 0 !important;
+  margin: 0 !important;
+  height: 48px !important;
+  padding: 11px 14px !important;
+  font-size: 15px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border-radius: var(--radius-sm) !important;
 }
