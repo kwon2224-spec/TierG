@@ -563,6 +563,78 @@ class TierGService {
     };
   }
 
+  // --- Delete Game & Rollback LP/Tier API ---
+  async deleteLatestGame(gameId: string): Promise<void> {
+    // 1. Fetch all games to verify this is the latest one
+    const games = await this.getGames();
+    if (games.length === 0) throw new Error('삭제할 게임이 없습니다.');
+    
+    const latestGame = games[0];
+    if (latestGame.game.id !== gameId) {
+      throw new Error('가장 최근의 경기만 삭제 및 전적 복구가 가능합니다.');
+    }
+
+    // 2. Fetch the results for this game to revert players
+    const resultsToRevert = latestGame.results;
+
+    if (supabase) {
+      // Revert each player's tier and points in Supabase
+      for (const res of resultsToRevert) {
+        // Run mathematical inverse (-points_changed)
+        const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+          res.tier_after,
+          res.points_after,
+          -res.points_changed
+        );
+
+        const { error: playerUpdateError } = await supabase
+          .from('players')
+          .update({
+            tier: tierBefore,
+            points: pointsBefore,
+          })
+          .eq('id', res.player_id);
+
+        if (playerUpdateError) throw playerUpdateError;
+      }
+
+      // Delete the game from games table (will cascade delete game_results due to ON DELETE CASCADE)
+      const { error: gameDeleteError } = await supabase
+        .from('games')
+        .delete()
+        .eq('id', gameId);
+
+      if (gameDeleteError) throw gameDeleteError;
+    } else {
+      // Local Storage fallback
+      const localGames = getLocalData<Game[]>('tierg_games', []);
+      const localResults = getLocalData<GameResult[]>('tierg_results', []);
+      const localPlayers = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+
+      // Revert each player
+      resultsToRevert.forEach((res) => {
+        const playerIndex = localPlayers.findIndex((p) => p.id === res.player_id);
+        if (playerIndex !== -1) {
+          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+            res.tier_after,
+            res.points_after,
+            -res.points_changed
+          );
+          localPlayers[playerIndex].tier = tierBefore;
+          localPlayers[playerIndex].points = pointsBefore;
+        }
+      });
+
+      // Filter out the deleted game and its results
+      const updatedGames = localGames.filter((g) => g.id !== gameId);
+      const updatedResults = localResults.filter((r) => r.game_id !== gameId);
+
+      setLocalData('tierg_games', updatedGames);
+      setLocalData('tierg_results', updatedResults);
+      setLocalData('tierg_players', localPlayers);
+    }
+  }
+
   // --- Reset/Demodata Helper (Only in demo mode) ---
   resetDatabase(): void {
     if (this.isSupabaseMode()) {

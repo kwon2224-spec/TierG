@@ -109,7 +109,10 @@ function App() {
         )}
 
         {activeTab === 'history' && (
-          <GameHistory refreshTrigger={refreshTrigger} />
+          <GameHistory
+            refreshTrigger={refreshTrigger}
+            onGameDeleted={handleRefresh}
+          />
         )}
       </main>
 

@@ -1,15 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { History, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { History, Calendar, ArrowUpRight, ArrowDownRight, Trash2 } from 'lucide-react';
 import { type GameWithResults } from '../types';
 import { tiergService } from '../services/tiergService';
 
 interface GameHistoryProps {
   refreshTrigger: number;
+  onGameDeleted: () => void;
 }
 
-export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger }) => {
+export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGameDeleted }) => {
   const [games, setGames] = useState<GameWithResults[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteGame = async (gameId: string) => {
+    if (window.confirm('가장 최근에 치러진 이 경기를 정말로 삭제하시겠습니까?\n\n삭제 시 모든 참여 선수들의 티어와 LP가 경기 바로 직전 상태로 완벽히 원복(롤백)됩니다.')) {
+      setDeleting(true);
+      try {
+        await tiergService.deleteLatestGame(gameId);
+        alert('경기가 전적 복구와 함께 성공적으로 삭제되었습니다.');
+        onGameDeleted();
+      } catch (error: any) {
+        alert(error.message || '경기 삭제에 실패했습니다.');
+      } finally {
+        setDeleting(false);
+      }
+    }
+  };
 
   useEffect(() => {
     loadGames();
@@ -48,7 +65,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger }) => {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {games.map(({ game, results }) => {
+        {games.map(({ game, results }, index) => {
           // Calculate total expense of this specific game
           const totalGameCost = results.reduce((sum, r) => sum + r.cost_paid, 0);
 
@@ -56,8 +73,8 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger }) => {
             <div key={game.id} className="game-history-card">
               
               {/* Game Card Header */}
-              <div className="game-history-header">
-                <div>
+              <div className="game-history-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
                   <div className="game-date" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Calendar size={13} color="var(--accent)" />
                     {new Date(game.played_at).toLocaleString('ko-KR', {
@@ -70,8 +87,34 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger }) => {
                   </div>
                   {game.notes && <div className="game-notes" style={{ marginTop: '2px' }}>📍 {game.notes}</div>}
                 </div>
-                <div style={{ textAlign: 'right', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  총 경비: <strong style={{ color: '#34d399', fontSize: '12px' }}>{totalGameCost.toLocaleString()}원</strong>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    총 경비: <strong style={{ color: '#34d399', fontSize: '12px' }}>{totalGameCost.toLocaleString()}원</strong>
+                  </div>
+                  
+                  {index === 0 && (
+                    <button
+                      onClick={() => handleDeleteGame(game.id)}
+                      disabled={deleting}
+                      style={{
+                        background: 'none',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#f87171',
+                        fontSize: '11px',
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        marginTop: '2px',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <Trash2 size={11} />
+                      <span>{deleting ? '취소 중...' : '경기 취소(롤백)'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
