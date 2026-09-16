@@ -418,6 +418,8 @@ body {
 
 .form-input {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background-color: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);

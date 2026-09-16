@@ -17,18 +17,19 @@ if (supabaseUrl && supabaseAnonKey) {
   console.log('Supabase credentials missing. Running in Local Storage (Demo) mode.');
 }
 
-// 2. Initial Mock Players for Local Demo Mode
+// 2. Initial Mock Players for Local Demo Mode (Synchronized with Real 11 Friends)
 const INITIAL_MOCK_PLAYERS: Player[] = [
-  { id: 'p1', name: '김진우', tier: 'Challenger', points: 95, base_handicap: 5 },
-  { id: 'p2', name: '이민준', tier: 'Diamond', points: 60, base_handicap: 12 },
-  { id: 'p3', name: '박서연', tier: 'Platinum', points: 85, base_handicap: 15 },
-  { id: 'p4', name: '최현우', tier: 'Gold', points: 45, base_handicap: 18 },
-  { id: 'p5', name: '정다은', tier: 'Gold', points: 10, base_handicap: 20 },
-  { id: 'p6', name: '강준서', tier: 'Silver', points: 75, base_handicap: 22 },
-  { id: 'p7', name: '윤지아', tier: 'Silver', points: 20, base_handicap: 24 },
-  { id: 'p8', name: '임도현', tier: 'Bronze', points: 80, base_handicap: 28 },
-  { id: 'p9', name: '한소희', tier: 'Bronze', points: 35, base_handicap: 30 },
-  { id: 'p10', name: '오지훈', tier: 'Iron', points: 50, base_handicap: 36 },
+  { id: 'p1', name: '부성훈', tier: 'Challenger', points: 0, base_handicap: 0 },
+  { id: 'p2', name: '이평화', tier: 'Challenger', points: 0, base_handicap: 0 },
+  { id: 'p3', name: '최문규', tier: 'Master', points: 0, base_handicap: 5 },
+  { id: 'p4', name: '김창범', tier: 'Emerald', points: 0, base_handicap: 10 },
+  { id: 'p5', name: '권기원', tier: 'Emerald', points: 0, base_handicap: 10 },
+  { id: 'p6', name: '안재민', tier: 'Platinum', points: 0, base_handicap: 12 },
+  { id: 'p7', name: '이승무', tier: 'Platinum', points: 0, base_handicap: 12 },
+  { id: 'p8', name: '황지운', tier: 'Gold', points: 0, base_handicap: 15 },
+  { id: 'p9', name: '나용성', tier: 'Gold', points: 0, base_handicap: 15 },
+  { id: 'p10', name: '이창훈', tier: 'Silver', points: 0, base_handicap: 20 },
+  { id: 'p11', name: '박진범', tier: 'Silver', points: 0, base_handicap: 20 },
 ];
 
 // Helper to load/save from Local Storage
