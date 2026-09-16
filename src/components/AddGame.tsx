@@ -340,14 +340,14 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                   </div>
                   
                   <div className="preview-name">
-                    {item.player.name}
+                    <span>{item.player.name}</span>
                     {item.isPromo && (
-                      <span className="promo-alert" style={{ marginLeft: '8px', fontSize: '11px' }}>
+                      <span className="promo-alert" style={{ fontSize: '10px' }}>
                         🌟 승급 확정!
                       </span>
                     )}
                     {item.isDemo && (
-                      <span className="demo-alert" style={{ marginLeft: '8px', fontSize: '11px' }}>
+                      <span className="demo-alert" style={{ fontSize: '10px' }}>
                         ⚠️ 강등 경고
                       </span>
                     )}

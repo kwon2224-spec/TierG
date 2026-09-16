@@ -601,13 +601,19 @@ body {
 
 .preview-rank {
   font-weight: 800;
-  font-size: 16px;
-  width: 25px;
+  font-size: 15px;
+  width: 42px;
+  min-width: 42px;
+  margin-right: 6px;
 }
 
 .preview-name {
   font-weight: 700;
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .preview-scores {
