@@ -578,41 +578,52 @@ class TierGService {
     const resultsToRevert = latestGame.results;
 
     if (supabase) {
-      // Revert each player's tier and points in Supabase
-      for (const res of resultsToRevert) {
-        // Run mathematical inverse (-points_changed)
-        const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-          res.tier_after,
-          res.points_after,
-          -res.points_changed
-        );
+      try {
+        // Revert each player's tier and points in Supabase
+        for (const res of resultsToRevert) {
+          // Run mathematical inverse (-points_changed)
+          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+            res.tier_after,
+            res.points_after,
+            -res.points_changed
+          );
 
-        const { error: playerUpdateError } = await supabase
-          .from('players')
-          .update({
-            tier: tierBefore,
-            points: pointsBefore,
-          })
-          .eq('id', res.player_id);
+          const { error: playerUpdateError } = await supabase
+            .from('players')
+            .update({
+              tier: tierBefore,
+              points: pointsBefore,
+            })
+            .eq('id', res.player_id);
 
-        if (playerUpdateError) throw playerUpdateError;
+          if (playerUpdateError) {
+            throw new Error(`플레이어(${res.player_name}) 전적 롤백 실패: ${playerUpdateError.message}`);
+          }
+        }
+
+        // Delete the game results first explicitly (to bypass any DB foreign key constraints or lack of ON DELETE CASCADE)
+        const { error: resultsDeleteError } = await supabase
+          .from('game_results')
+          .delete()
+          .eq('game_id', gameId);
+
+        if (resultsDeleteError) {
+          throw new Error(`상세 전적 데이터 삭제 실패: ${resultsDeleteError.message}`);
+        }
+
+        // Delete the game from games table
+        const { error: gameDeleteError } = await supabase
+          .from('games')
+          .delete()
+          .eq('id', gameId);
+
+        if (gameDeleteError) {
+          throw new Error(`경기 메인 데이터 삭제 실패: ${gameDeleteError.message}`);
+        }
+      } catch (err: any) {
+        console.error('Verbose deleteLatestGame error:', err);
+        throw err;
       }
-
-      // Delete the game results first explicitly (to bypass any DB foreign key constraints or lack of ON DELETE CASCADE)
-      const { error: resultsDeleteError } = await supabase
-        .from('game_results')
-        .delete()
-        .eq('game_id', gameId);
-
-      if (resultsDeleteError) throw resultsDeleteError;
-
-      // Delete the game from games table
-      const { error: gameDeleteError } = await supabase
-        .from('games')
-        .delete()
-        .eq('id', gameId);
-
-      if (gameDeleteError) throw gameDeleteError;
     } else {
       // Local Storage fallback
       const localGames = getLocalData<Game[]>('tierg_games', []);
