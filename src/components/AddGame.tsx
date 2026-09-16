@@ -53,8 +53,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setRawScores(newScores);
       setCostsPaid(newCosts);
     } else {
-      if (selectedPlayerIds.length >= 6) {
-        alert('최대 6명까지만 경기에 참여할 수 있습니다.');
+      if (selectedPlayerIds.length >= 15) {
+        alert('최대 15명까지만 경기에 참여할 수 있습니다.');
         return;
       }
       setSelectedPlayerIds([...selectedPlayerIds, id]);
@@ -236,7 +236,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         {/* Player Select Card */}
         <div className="player-select-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontWeight: '700', fontSize: '15px' }}>⛳ 참가 선수 선택 (2~6명)</span>
+            <span style={{ fontWeight: '700', fontSize: '15px' }}>⛳ 참가 선수 선택 (2~15명)</span>
             <span style={{ fontSize: '12px', color: selectedPlayerIds.length === 4 ? '#10b981' : 'var(--text-muted)' }}>
               {selectedPlayerIds.length}명 선택함 {selectedPlayerIds.length === 4 ? '(4인 표준 경기)' : ''}
             </span>
