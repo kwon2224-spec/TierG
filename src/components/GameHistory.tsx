@@ -155,7 +155,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
 
                       {/* Cost and LP difference on right side */}
                       <div className="history-lp-pills">
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', width: '75px', textAlign: 'right' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', width: '55px', textAlign: 'right' }}>
                           {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원` : '0원'}
                         </div>
                         <div
@@ -164,8 +164,8 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                             display: 'flex',
                             alignItems: 'center',
                             gap: '2px',
-                            width: '65px',
-                            minWidth: '65px',
+                            width: '85px',
+                            minWidth: '85px',
                             justifyContent: 'flex-end',
                           }}
                         >
