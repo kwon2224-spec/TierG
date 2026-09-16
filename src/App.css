@@ -489,6 +489,10 @@ body {
   gap: 20px;
 }
 
+.add-game-container .page-title {
+  margin-bottom: 0;
+}
+
 .game-setup-card, .player-select-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -635,8 +639,8 @@ body {
 
 .preview-scores {
   text-align: right;
-  width: 80px;
-  min-width: 80px;
+  width: 70px;
+  min-width: 70px;
   margin-right: 8px;
 }
 
@@ -655,8 +659,8 @@ body {
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
-  width: 135px;
-  min-width: 135px;
+  width: 145px;
+  min-width: 145px;
 }
 
 .preview-lp-change {
@@ -760,7 +764,8 @@ body {
 .history-lp-pills {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 15px;
 }
 
 .history-lp-diff {
