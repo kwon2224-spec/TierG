@@ -87,9 +87,9 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       onHandicapUpdated();
       alert(`선수 상태가 '${newStatus === 'Active' ? '활동 중' : '휴면'}' 상태로 성공적으로 변경되었습니다.`);
       loadPlayerDetails();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update player status:', error);
-      alert('선수 상태 업데이트에 실패했습니다.');
+      alert(`선수 상태 업데이트에 실패했습니다. 이유: ${error.message || error}`);
     } finally {
       setUpdatingStatus(false);
     }
