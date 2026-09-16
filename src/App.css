@@ -719,7 +719,9 @@ body {
 
 .history-rank {
   font-weight: 800;
-  width: 20px;
+  width: 42px;
+  min-width: 42px;
+  margin-right: 6px;
 }
 
 .history-name {
@@ -862,4 +864,13 @@ body {
   border-color: var(--danger);
   color: var(--danger);
   background-color: rgba(239, 68, 68, 0.05);
+}
+
+/* Deep mobile input width override (Forcing iOS Safari / Mobile Chrome) */
+input[type="datetime-local"].form-input {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
 }
