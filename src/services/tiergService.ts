@@ -664,8 +664,16 @@ class TierGService {
       totalGames > 0 ? history.reduce((sum, r) => sum + r.raw_score, 0) / totalGames : 0;
     const bestRawScore =
       totalGames > 0 ? Math.min(...history.map((r) => r.raw_score)) : 0;
-    const totalCost = history.reduce((sum, r) => sum + r.cost_paid, 0);
-    const averageCost = totalGames > 0 ? totalCost / totalGames : 0;
+
+    // Decouple: General Cumulative Spent only sums up normal, non-Guillotine matches (bet_amount === 0)
+    // This perfectly prevents double-counting if a Guillotine bet was made based on previous game costs!
+    const totalCost = history.reduce((sum, r) => {
+      const bet = r.bet_amount || 0;
+      return sum + (bet === 0 ? r.cost_paid : 0);
+    }, 0);
+
+    const normalGamesCount = history.filter((r) => (r.bet_amount || 0) === 0).length;
+    const averageCost = normalGamesCount > 0 ? totalCost / normalGamesCount : 0;
     const wins = history.filter((r) => r.rank === 1).length;
 
     // Calculate dynamic Guillotine stats based on bet_amount column
