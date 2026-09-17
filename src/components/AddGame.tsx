@@ -547,7 +547,6 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         onChange={(e) => setCostsPaid({ ...costsPaid, [pId]: e.target.value })}
                         placeholder="0"
                         min="0"
-                        required
                       />
                     </div>
 
@@ -565,7 +564,6 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                           placeholder="0"
                           min="0"
                           max="72"
-                          required
                         />
                       </div>
                     )}

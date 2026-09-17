@@ -552,6 +552,7 @@ class TierGService {
         tier_after: res.newTier,
         points_after: res.newPoints,
         cost_paid: computedCost,
+        bet_amount: matchMode === 'guillotine' ? res.cost_paid : 0, // Save original bet for Local fallback stats!
       };
 
       localResults.push(newResult);
@@ -660,9 +661,13 @@ class TierGService {
     const wins = history.filter((r) => r.rank === 1).length;
 
     // Calculate dynamic Guillotine stats based on bet_amount column
+    // Net Guillotine Loss: Only the extra money paid for other players (Total Paid - Own Bet)
     const guillotineLost = history.reduce((sum, r) => {
       const bet = r.bet_amount || 0;
-      return sum + (bet > 0 ? r.cost_paid : 0);
+      if (bet > 0 && r.cost_paid > bet) {
+        return sum + (r.cost_paid - bet); // Only add the extra net loss paid on behalf of others!
+      }
+      return sum;
     }, 0);
 
     const guillotineSaved = history.reduce((sum, r) => {
