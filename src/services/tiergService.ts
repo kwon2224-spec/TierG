@@ -384,11 +384,11 @@ class TierGService {
     const finalResults = rankedResults.map((item) => {
       let pointsChanged = 0;
       
-      if (matchMode === 'scratch') {
-        // Scratch mode does NOT change points or tiers!
+      if (matchMode === 'scratch' || matchMode === 'guillotine') {
+        // Scratch and Guillotine modes do NOT change points or tiers (LP is frozen!)
         pointsChanged = 0;
       } else {
-        // Handicap and Guillotine modes calculate normal LP changes
+        // Handicap modes calculate normal LP changes
         if (rankedResults.length === 4) {
           pointsChanged = lpChangeByRank[item.rank] || 0;
         } else {
