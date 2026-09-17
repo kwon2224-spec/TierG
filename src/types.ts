@@ -112,6 +112,7 @@ export const TIER_THEMES: Record<Tier, TierTheme> = {
 };
 
 export type PlayerStatus = 'Active' | 'Dormant' | 'Left';
+export type MatchMode = 'handicap' | 'scratch' | 'guillotine';
 
 export interface Player {
   id: string;
@@ -121,6 +122,7 @@ export interface Player {
   base_handicap: number; // Strokes added/subtracted
   status?: PlayerStatus; // 'Active' | 'Dormant' | 'Left'
   is_admin?: boolean; // 'true' if the player has Admin permissions!
+  nickname?: string; // Custom player nickname (e.g. #장타왕)
   created_at?: string;
 }
 

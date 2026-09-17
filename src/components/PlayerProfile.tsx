@@ -34,6 +34,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
   const [loading, setLoading] = useState(true);
   const [handicapInput, setHandicapInput] = useState<string>('');
+  const [nicknameInput, setNicknameInput] = useState<string>('');
   const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('Active');
   const [playerIsAdmin, setPlayerIsAdmin] = useState(false);
   const [updatingHandicap, setUpdatingHandicap] = useState(false);
@@ -51,6 +52,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       const details = await tiergService.getPlayerHistory(playerId);
       setData(details);
       setHandicapInput(details.player.base_handicap.toString());
+      setNicknameInput(details.player.nickname || '');
       setPlayerStatus(details.player.status || 'Active');
       setPlayerIsAdmin(details.player.is_admin || false);
     } catch (error) {
@@ -70,16 +72,22 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       return;
     }
 
+    // Defensive formatting: prepend '#' to nickname if missing and not empty
+    let formattedNickname = nicknameInput.trim();
+    if (formattedNickname && !formattedNickname.startsWith('#')) {
+      formattedNickname = `#${formattedNickname}`;
+    }
+
     setUpdatingHandicap(true);
     try {
-      await tiergService.updatePlayerHandicap(data.player.id, newHandicap);
+      await tiergService.updatePlayerHandicap(data.player.id, newHandicap, formattedNickname);
       setUpdateSuccess(true);
       onHandicapUpdated();
       setTimeout(() => setUpdateSuccess(false), 2000);
       loadPlayerDetails();
     } catch (error) {
-      console.error('Failed to update handicap:', error);
-      alert('핸디캡 업데이트에 실패했습니다.');
+      console.error('Failed to update profile:', error);
+      alert('프로필 정보 업데이트에 실패했습니다.');
     } finally {
       setUpdatingHandicap(false);
     }
@@ -239,30 +247,47 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             </div>
           </div>
 
-          {/* Admin Handicap Edit Form (Only visible to logged-in admins!) */}
+          {/* Admin Handicap & Nickname Edit Form (Only visible to logged-in admins!) */}
           {isAdmin && (
             <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '15px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={16} color="var(--accent)" /> 핸디캡 조정 (관리자용)
+                <Sparkles size={16} color="var(--accent)" /> 프로필 편집 (관리자용)
               </h4>
-              <form onSubmit={handleUpdateHandicap} style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
-                <input
-                  type="number"
-                  className="form-input"
-                  style={{ flex: 1, padding: '8px 12px' }}
-                  value={handicapInput}
-                  onChange={(e) => setHandicapInput(e.target.value)}
-                  placeholder="새 핸디캡 개수"
-                  min="0"
-                  max="72"
-                />
+              <form onSubmit={handleUpdateHandicap} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>별명 (#태그)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ padding: '8px 12px' }}
+                      value={nicknameInput}
+                      onChange={(e) => setNicknameInput(e.target.value)}
+                      placeholder="예: #장타왕"
+                      maxLength={10}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>기본 핸디캡 (개)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ padding: '8px 12px' }}
+                      value={handicapInput}
+                      onChange={(e) => setHandicapInput(e.target.value)}
+                      placeholder="예: 18"
+                      min="0"
+                      max="72"
+                    />
+                  </div>
+                </div>
                 <button
                   type="submit"
                   className="submit-btn"
-                  style={{ width: 'auto', padding: '0 18px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px', background: updateSuccess ? '#10b981' : undefined }}
+                  style={{ width: '100%', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: updateSuccess ? '#10b981' : undefined }}
                   disabled={updatingHandicap}
                 >
-                  {updateSuccess ? <Check size={16} /> : '적용'}
+                  {updateSuccess ? <Check size={16} /> : '프로필 정보 수정 저장'}
                 </button>
               </form>
 

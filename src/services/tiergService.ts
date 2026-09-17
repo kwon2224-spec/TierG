@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { type Player, type PlayerStatus, type Game, type GameResult, type GameWithResults, type Tier, TIERS_ORDER } from '../types';
+import { type Player, type PlayerStatus, type MatchMode, type Game, type GameResult, type GameWithResults, type Tier, TIERS_ORDER } from '../types';
 
 // 1. Initialize Supabase Client if env variables are available
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -19,17 +19,17 @@ if (supabaseUrl && supabaseAnonKey) {
 
 // 2. Initial Mock Players for Local Demo Mode (Synchronized with Real 11 Friends)
 const INITIAL_MOCK_PLAYERS: Player[] = [
-  { id: 'p1', name: '부성훈', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active', is_admin: false },
-  { id: 'p2', name: '이평화', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active', is_admin: false },
-  { id: 'p3', name: '최문규', tier: 'Master', points: 50, base_handicap: 5, status: 'Active', is_admin: false },
-  { id: 'p4', name: '김창범', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active', is_admin: false },
-  { id: 'p5', name: '권기원', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active', is_admin: true }, // 마스터 총무 관리자!
-  { id: 'p6', name: '안재민', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active', is_admin: false },
-  { id: 'p7', name: '이승무', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active', is_admin: false },
-  { id: 'p8', name: '황지운', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active', is_admin: false },
-  { id: 'p9', name: '나용성', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active', is_admin: false },
-  { id: 'p10', name: '이창훈', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active', is_admin: false },
-  { id: 'p11', name: '박진범', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active', is_admin: false },
+  { id: 'p1', name: '부성훈', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active', is_admin: false, nickname: '#챌린저수호자' },
+  { id: 'p2', name: '이평화', tier: 'Challenger', points: 50, base_handicap: 0, status: 'Active', is_admin: false, nickname: '#스크린파괴자' },
+  { id: 'p3', name: '최문규', tier: 'Master', points: 50, base_handicap: 5, status: 'Active', is_admin: false, nickname: '#드라이버싱글' },
+  { id: 'p4', name: '김창범', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active', is_admin: false, nickname: '#정교한아이언' },
+  { id: 'p5', name: '권기원', tier: 'Emerald', points: 50, base_handicap: 10, status: 'Active', is_admin: true, nickname: '#개발실싱글' }, // 마스터 총무 관리자!
+  { id: 'p6', name: '안재민', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active', is_admin: false, nickname: '#에이밍의마술사' },
+  { id: 'p7', name: '이승무', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active', is_admin: false, nickname: '#인생라베타수' },
+  { id: 'p8', name: '황지운', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active', is_admin: false, nickname: '#퍼터의신' },
+  { id: 'p9', name: '나용성', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active', is_admin: false, nickname: '#필드버디왕' },
+  { id: 'p10', name: '이창훈', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active', is_admin: false, nickname: '#슬라이스정복' },
+  { id: 'p11', name: '박진범', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active', is_admin: false, nickname: '#골프천재새내기' },
 ];
 
 // Helper to load/save from Local Storage
@@ -127,12 +127,13 @@ class TierGService {
     name: string,
     baseHandicap: number,
     tier: Tier = 'Iron',
-    points: number = 50
+    points: number = 50,
+    nickname: string = ''
   ): Promise<Player> {
     if (supabase) {
       const { data, error } = await supabase
         .from('players')
-        .insert([{ name, base_handicap: baseHandicap, tier, points, status: 'Active' }])
+        .insert([{ name, base_handicap: baseHandicap, tier, points, status: 'Active', nickname }])
         .select();
       if (error) {
         throw new Error(`Supabase addPlayer failed: ${error.message}`);
@@ -149,17 +150,18 @@ class TierGService {
       points,
       base_handicap: baseHandicap,
       status: 'Active',
+      nickname,
     };
     players.push(newPlayer);
     setLocalData('tierg_players', players);
     return newPlayer;
   }
 
-  async updatePlayerHandicap(id: string, newHandicap: number): Promise<Player> {
+  async updatePlayerHandicap(id: string, newHandicap: number, nickname: string = ''): Promise<Player> {
     if (supabase) {
       const { data, error } = await supabase
         .from('players')
-        .update({ base_handicap: newHandicap })
+        .update({ base_handicap: newHandicap, nickname })
         .eq('id', id)
         .select();
       if (error) {
@@ -173,6 +175,7 @@ class TierGService {
     const playerIndex = players.findIndex((p) => p.id === id);
     if (playerIndex === -1) throw new Error('Player not found');
     players[playerIndex].base_handicap = newHandicap;
+    players[playerIndex].nickname = nickname;
     setLocalData('tierg_players', players);
     return players[playerIndex];
   }
@@ -331,17 +334,19 @@ class TierGService {
   async addGame(
     notes: string,
     playedAt: string,
-    resultsInput: { player_id: string; raw_score: number; cost_paid: number }[]
+    resultsInput: { player_id: string; raw_score: number; cost_paid: number }[],
+    matchMode: MatchMode = 'handicap'
   ): Promise<GameWithResults> {
     // 1. Fetch current players state to perform accurate mathematical operations
     const players = await this.getPlayers();
 
-    // 2. Map and calculate adjusted scores (raw_score - base_handicap)
+    // 2. Map and calculate adjusted scores depending on MatchMode
     const processedResults = resultsInput.map((input) => {
       const player = players.find((p) => p.id === input.player_id);
       if (!player) throw new Error(`Player ${input.player_id} not found`);
 
-      const adjustedScore = input.raw_score - player.base_handicap;
+      // If 'scratch' mode, no handicap is applied (adjusted_score = raw_score)
+      const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - player.base_handicap;
       return {
         ...input,
         player,
@@ -364,7 +369,7 @@ class TierGService {
       };
     });
 
-    // 4. Assign LP changes based on rank
+    // 4. Assign LP changes based on rank and MatchMode
     // Assuming 4-player game defaults. If more or fewer, we scale appropriately.
     // 1st: +20 LP, 2nd: +10, 3rd: -10, 4th: -20
     const lpChangeByRank: Record<number, number> = {
@@ -375,20 +380,25 @@ class TierGService {
     };
 
     const finalResults = rankedResults.map((item) => {
-      // Fallback for games with size other than 4
       let pointsChanged = 0;
-      if (rankedResults.length === 4) {
-        pointsChanged = lpChangeByRank[item.rank] || 0;
+      
+      if (matchMode === 'scratch') {
+        // Scratch mode does NOT change points or tiers!
+        pointsChanged = 0;
       } else {
-        // Dynamic formula for size != 4
-        // E.g., top half gets +, bottom half gets -
-        const median = (rankedResults.length + 1) / 2;
-        if (item.rank < median) {
-          pointsChanged = item.rank === 1 ? 20 : 10;
-        } else if (item.rank > median) {
-          pointsChanged = item.rank === rankedResults.length ? -20 : -10;
+        // Handicap and Guillotine modes calculate normal LP changes
+        if (rankedResults.length === 4) {
+          pointsChanged = lpChangeByRank[item.rank] || 0;
         } else {
-          pointsChanged = 0; // Middle gets 0
+          // Dynamic formula for size != 4
+          const median = (rankedResults.length + 1) / 2;
+          if (item.rank < median) {
+            pointsChanged = item.rank === 1 ? 20 : 10;
+          } else if (item.rank > median) {
+            pointsChanged = item.rank === rankedResults.length ? -20 : -10;
+          } else {
+            pointsChanged = 0; // Middle gets 0
+          }
         }
       }
 
@@ -406,6 +416,28 @@ class TierGService {
         newPoints,
       };
     });
+
+    // Recalculate cost distribution if MatchMode is 'guillotine'
+    let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
+    if (matchMode === 'guillotine' && finalResults.length > 0) {
+      // Calculate total group expense
+      const totalCostSum = finalResults.reduce((sum, item) => sum + item.cost_paid, 0);
+      
+      // Find the absolute last place (maximum rank number, e.g. 4th place)
+      const maxRank = Math.max(...finalResults.map(r => r.rank));
+      
+      // Find how many players are in this last place (to divide the bill in case of ties!)
+      const losers = finalResults.filter(r => r.rank === maxRank);
+      const loserCostShare = Math.round(totalCostSum / losers.length);
+
+      // Set losers to pay the total/divided share, and winners pay 0!
+      finalCosts = finalResults.map(r => {
+        if (r.rank === maxRank) {
+          return { player_id: r.player.id, cost: loserCostShare };
+        }
+        return { player_id: r.player.id, cost: 0 };
+      });
+    }
 
     // 5. Persist to Database or LocalStorage
     if (supabase) {
@@ -433,6 +465,9 @@ class TierGService {
 
           if (playerUpdateError) throw playerUpdateError;
 
+          // Find the calculated cost share for this player (winners get 0, losers get total/divided)
+          const computedCost = finalCosts.find(c => c.player_id === res.player.id)?.cost ?? res.cost_paid;
+
           resultsToInsert.push({
             game_id: newGame.id,
             player_id: res.player.id,
@@ -442,7 +477,7 @@ class TierGService {
             points_changed: res.pointsChanged,
             tier_after: res.newTier,
             points_after: res.newPoints,
-            cost_paid: res.cost_paid,
+            cost_paid: computedCost,
           });
         }
 
@@ -501,6 +536,8 @@ class TierGService {
         localPlayers[playerIndex].points = res.newPoints;
       }
 
+      const computedCost = finalCosts.find(c => c.player_id === res.player.id)?.cost ?? res.cost_paid;
+
       const newResult: GameResult = {
         id: `r_${Date.now()}_${res.player.id}`,
         game_id: newGame.id,
@@ -511,7 +548,7 @@ class TierGService {
         points_changed: res.pointsChanged,
         tier_after: res.newTier,
         points_after: res.newPoints,
-        cost_paid: res.cost_paid,
+        cost_paid: computedCost,
       };
 
       localResults.push(newResult);

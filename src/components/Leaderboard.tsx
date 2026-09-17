@@ -124,6 +124,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                 <div className="player-name-row">
                   <span className="player-name">
                     {player.name}
+                    {player.nickname && <span style={{ fontSize: '11px', color: '#fbbf24', marginLeft: '6px', fontWeight: '600' }}>{player.nickname}</span>}
                     {isDormant && <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>(휴면)</span>}
                   </span>
                   <span className="player-handicap-badge">핸디: {player.base_handicap}개</span>

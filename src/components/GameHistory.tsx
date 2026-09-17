@@ -62,7 +62,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
   return (
     <div>
       <div className="page-title">
-        <History color="var(--accent)" /> 경기 히스토리 아카이브
+        <History color="var(--accent)" /> 경기 히스토리
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, FileText, AlertTriangle } from 'lucide-react';
-import { type Player, TIER_THEMES, TIER_WEIGHTS } from '../types';
+import { Sparkles, Calendar, FileText, AlertTriangle, Trophy, Shuffle } from 'lucide-react';
+import { type Player, type MatchMode, TIER_THEMES, TIER_WEIGHTS } from '../types';
 import { tiergService, calculateNewTierAndPoints } from '../services/tiergService';
 
 interface AddGameProps {
@@ -16,6 +16,11 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     new Date().toISOString().substring(0, 16) // Default to local current time formatted for datetime-local
   );
   const [notes, setNotes] = useState<string>('');
+  const [matchMode, setMatchMode] = useState<MatchMode>('handicap');
+
+  // Random Room Allocation State
+  const [roomCount, setRoomCount] = useState<number>(2);
+  const [roomResults, setRoomResults] = useState<string[][]>([]);
 
   // Selected player IDs
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
@@ -26,6 +31,31 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   const [costsPaid, setCostsPaid] = useState<Record<string, string>>({});
 
   const [saving, setSaving] = useState(false);
+
+  // Helper to shuffle and randomly assign rooms
+  const handleRandomAssign = () => {
+    if (selectedPlayerIds.length < 2) {
+      alert('방을 배정할 선수를 최소 2명 이상 터치하여 선택해 주세요!');
+      return;
+    }
+    if (roomCount < 2 || roomCount > 4) {
+      alert('방 개수는 2개에서 4개 사이로 선택해 주세요.');
+      return;
+    }
+
+    // Shuffle currently selected player IDs
+    const shuffled = [...selectedPlayerIds].sort(() => Math.random() - 0.5);
+
+    // Initialize rooms arrays
+    const allocated: string[][] = Array.from({ length: roomCount }, () => []);
+
+    // Distribute players into rooms as evenly as possible
+    shuffled.forEach((id, idx) => {
+      allocated[idx % roomCount].push(id);
+    });
+
+    setRoomResults(allocated);
+  };
 
   // Helper to dynamically calculate actual strokes from combo-box or direct inputs
   const getRawScoreForPlayer = (id: string): number => {
@@ -195,11 +225,22 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     setSaving(true);
     try {
       const dateStr = new Date(playedAt).toISOString();
-      await tiergService.addGame(notes.trim(), dateStr, resultsPayload);
+      
+      // Prefix notes dynamically depending on Selected MatchMode!
+      let finalNotes = notes.trim();
+      if (matchMode === 'scratch') {
+        finalNotes = `[스크래치] ${finalNotes}`;
+      } else if (matchMode === 'guillotine') {
+        finalNotes = `[단두대] ${finalNotes}`;
+      }
+
+      await tiergService.addGame(finalNotes, dateStr, resultsPayload, matchMode);
       
       // Success resets
       setSelectedPlayerIds([]);
       setNotes('');
+      setMatchMode('handicap'); // reset back to default
+      setRoomResults([]); // clear room assignment roulette
       onGameAdded();
       alert('경기 전적 등록이 완료되었습니다! 실시간 랭킹에 즉시 반영되었습니다.');
     } catch (error) {
@@ -237,6 +278,31 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               onChange={(e) => setPlayedAt(e.target.value)}
               required
             />
+          </div>
+
+          {/* New Match Mode Selector Dropdown */}
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Trophy size={15} color="var(--accent)" /> 매치 모드 선택
+            </label>
+            <select
+              className="form-input"
+              value={matchMode}
+              onChange={(e) => {
+                setMatchMode(e.target.value as MatchMode);
+                setRoomResults([]); // Clear previous room results when mode/players adjust
+              }}
+              style={{ backgroundColor: 'var(--bg-hover)' }}
+            >
+              <option value="handicap">핸디 적용 (기본 공식 리그 모드)</option>
+              <option value="scratch">스크래치 (핸디 미적용, 전적/LP 동결 모드)</option>
+              <option value="guillotine">단두대 (핸디 적용, 패자 100% 경기비 독박 모드)</option>
+            </select>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block', lineHeight: '1.4' }}>
+              {matchMode === 'handicap' && '💡 현재 적용 중인 정석 리그 규칙입니다. 핸디캡 보정 후 순위에 따라 LP가 증감하여 티어 승강등이 반영됩니다.'}
+              {matchMode === 'scratch' && '💡 핸디캡 보정 없이 원본 스코어로만 순위를 정하며, 경기 역사관 기록만 기록될 뿐 LP 및 티어 전적은 완전히 동결(0 LP)됩니다.'}
+              {matchMode === 'guillotine' && '💥 초강력 내기 모드입니다! 핸디캡을 적용해 LP 점수를 부여하며, 게임에 기입된 전체 부담금 총합(총 게임/식사 비용)을 오직 꼴찌(들)에게만 100% 몰빵(뿜빠이) 정산시키고 승자들은 지출 경비를 0원으로 클라우드에 세팅합니다!'}
+            </span>
           </div>
 
           <div className="form-group" style={{ marginBottom: '0' }}>
@@ -299,6 +365,83 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
             );
           })()}
         </div>
+
+        {/* Random Room Assigner Card (🎲 방 랜덤 배정 추첨기) */}
+        {selectedPlayerIds.length >= 2 && (
+          <div className="game-setup-card" style={{ borderColor: 'rgba(245, 158, 11, 0.25)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Shuffle size={16} color="#fbbf24" /> 🎲 방 랜덤 배정 추첨기
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                선택된 {selectedPlayerIds.length}명 기준
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ flex: 1 }}>
+                <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>나눌 방 개수 선택</label>
+                <select
+                  className="form-input"
+                  value={roomCount}
+                  onChange={(e) => {
+                    setRoomCount(parseInt(e.target.value, 10));
+                    setRoomResults([]); // Clear when count adjusts
+                  }}
+                  style={{ padding: '8px 12px', backgroundColor: 'var(--bg-hover)' }}
+                >
+                  <option value={2}>2개 방 배정</option>
+                  <option value={3}>3개 방 배정</option>
+                  <option value={4}>4개 방 배정</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={handleRandomAssign}
+                className="submit-btn"
+                style={{
+                  width: 'auto',
+                  marginTop: '15px',
+                  padding: '10px 18px',
+                  fontSize: '13px',
+                  background: 'linear-gradient(135deg, #f59e0b, #b45309)',
+                  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
+                }}
+              >
+                추첨 배정하기 🎲
+              </button>
+            </div>
+
+            {/* Render assignments results */}
+            {roomResults.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.03)' }}>
+                <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '4px' }}>✨ 랜덤 추첨 결과 조편성</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  {roomResults.map((room, roomIdx) => {
+                    if (room.length === 0) return null;
+                    return (
+                      <div key={roomIdx} style={{ flex: '1 1 120px', backgroundColor: 'var(--bg-hover)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent)', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
+                          🏢 {String.fromCharCode(65 + roomIdx)}번 룸 ({room.length}명)
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {room.map((pId) => {
+                            const pName = players.find(p => p.id === pId)?.name || 'Unknown';
+                            return (
+                              <span key={pId} style={{ fontSize: '13px', fontWeight: '600' }}>
+                                🏌️‍♂️ {pName}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Input Scores List */}
         {selectedPlayerIds.length > 0 && (
