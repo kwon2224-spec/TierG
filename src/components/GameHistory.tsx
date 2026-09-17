@@ -15,11 +15,11 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
   const [deleting, setDeleting] = useState(false);
 
   const handleDeleteGame = async (gameId: string) => {
-    if (window.confirm('가장 최근에 치러진 이 경기를 정말로 삭제하시겠습니까?\n\n삭제 시 모든 참여 선수들의 티어와 LP가 경기 바로 직전 상태로 완벽히 원복(롤백)됩니다.')) {
+    if (window.confirm('선택하신 이 경기를 정말로 취소(삭제)하시겠습니까?\n\n삭제 시 이 경기로 획득했거나 차감되었던 모든 참여 골퍼들의 LP 전적 포인트가 실시간 현재 티어 점수에서 수학적으로 안전하게 역산 롤백 복구됩니다.')) {
       setDeleting(true);
       try {
-        await tiergService.deleteLatestGame(gameId);
-        alert('경기가 전적 복구와 함께 성공적으로 삭제되었습니다.');
+        await tiergService.deleteGame(gameId);
+        alert('경기가 전적 역산 복구와 함께 성공적으로 삭제되었습니다.');
         onGameDeleted();
       } catch (error: any) {
         alert(error.message || '경기 삭제에 실패했습니다.');
@@ -66,7 +66,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {games.map(({ game, results }, index) => {
+        {games.map(({ game, results }) => {
           // Calculate total expense of this specific game
           const totalGameCost = results.reduce((sum, r) => sum + r.cost_paid, 0);
 
@@ -93,7 +93,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                     총 경비: <strong style={{ color: '#34d399', fontSize: '12px' }}>{totalGameCost.toLocaleString()}원</strong>
                   </div>
                   
-                  {index === 0 && isAdmin && (
+                  {isAdmin && (
                     <button
                       onClick={() => handleDeleteGame(game.id)}
                       disabled={deleting}

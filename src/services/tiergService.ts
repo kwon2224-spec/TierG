@@ -700,27 +700,33 @@ class TierGService {
   }
 
   // --- Delete Game & Rollback LP/Tier API ---
-  async deleteLatestGame(gameId: string): Promise<void> {
-    // 1. Fetch all games to verify this is the latest one
+  async deleteGame(gameId: string): Promise<void> {
+    // 1. Fetch all games to locate the target game
     const games = await this.getGames();
     if (games.length === 0) throw new Error('삭제할 게임이 없습니다.');
     
-    const latestGame = games[0];
-    if (latestGame.game.id !== gameId) {
-      throw new Error('가장 최근의 경기만 삭제 및 전적 복구가 가능합니다.');
+    const targetGame = games.find(g => g.game.id === gameId);
+    if (!targetGame) {
+      throw new Error('삭제 및 롤백할 경기를 찾을 수 없습니다.');
     }
 
-    // 2. Fetch the results for this game to revert players
-    const resultsToRevert = latestGame.results;
+    // 2. Fetch results for this specific game to revert players
+    const resultsToRevert = targetGame.results;
+
+    // Load current live players state so we can apply the delta directly to their CURRENT scores!
+    const livePlayers = await this.getPlayers();
 
     if (supabase) {
       try {
-        // Revert each player's tier and points in Supabase
+        // Revert each player's tier and points in Supabase using the live delta formula!
         for (const res of resultsToRevert) {
-          // Run mathematical inverse (-points_changed)
+          const livePlayer = livePlayers.find(p => p.id === res.player_id);
+          if (!livePlayer) continue;
+
+          // Run mathematical delta inverse against CURRENT points, preserving subsequent game results!
           const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-            res.tier_after,
-            res.points_after,
+            livePlayer.tier,
+            livePlayer.points,
             -res.points_changed
           );
 
@@ -737,7 +743,7 @@ class TierGService {
           }
         }
 
-        // Delete the game results first explicitly (to bypass any DB foreign key constraints or lack of ON DELETE CASCADE)
+        // Delete the game results first explicitly (to bypass any DB foreign key constraints)
         const { error: resultsDeleteError } = await supabase
           .from('game_results')
           .delete()
@@ -757,7 +763,7 @@ class TierGService {
           throw new Error(`경기 메인 데이터 삭제 실패: ${gameDeleteError.message}`);
         }
       } catch (err: any) {
-        console.error('Verbose deleteLatestGame error:', err);
+        console.error('Verbose deleteGame error:', err);
         throw err;
       }
     } else {
@@ -766,13 +772,14 @@ class TierGService {
       const localResults = getLocalData<GameResult[]>('tierg_results', []);
       const localPlayers = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
 
-      // Revert each player
+      // Revert each player using delta inverse on live local states
       resultsToRevert.forEach((res) => {
         const playerIndex = localPlayers.findIndex((p) => p.id === res.player_id);
         if (playerIndex !== -1) {
+          const livePlayer = localPlayers[playerIndex];
           const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-            res.tier_after,
-            res.points_after,
+            livePlayer.tier,
+            livePlayer.points,
             -res.points_changed
           );
           localPlayers[playerIndex].tier = tierBefore;
