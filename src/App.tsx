@@ -194,6 +194,7 @@ function App() {
           <GameHistory
             refreshTrigger={refreshTrigger}
             onGameDeleted={handleRefresh}
+            isAdmin={currentAdmin !== null}
           />
         )}
       </main>

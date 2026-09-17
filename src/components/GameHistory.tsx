@@ -6,9 +6,10 @@ import { tiergService } from '../services/tiergService';
 interface GameHistoryProps {
   refreshTrigger: number;
   onGameDeleted: () => void;
+  isAdmin: boolean;
 }
 
-export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGameDeleted }) => {
+export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGameDeleted, isAdmin }) => {
   const [games, setGames] = useState<GameWithResults[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -92,7 +93,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                     총 경비: <strong style={{ color: '#34d399', fontSize: '12px' }}>{totalGameCost.toLocaleString()}원</strong>
                   </div>
                   
-                  {index === 0 && (
+                  {index === 0 && isAdmin && (
                     <button
                       onClick={() => handleDeleteGame(game.id)}
                       disabled={deleting}
