@@ -334,19 +334,21 @@ class TierGService {
   async addGame(
     notes: string,
     playedAt: string,
-    resultsInput: { player_id: string; raw_score: number; cost_paid: number }[],
+    resultsInput: { player_id: string; raw_score: number; cost_paid: number; custom_handicap?: number }[],
     matchMode: MatchMode = 'handicap'
   ): Promise<GameWithResults> {
     // 1. Fetch current players state to perform accurate mathematical operations
     const players = await this.getPlayers();
 
-    // 2. Map and calculate adjusted scores depending on MatchMode
+    // 2. Map and calculate adjusted scores depending on MatchMode and custom_handicap
     const processedResults = resultsInput.map((input) => {
       const player = players.find((p) => p.id === input.player_id);
       if (!player) throw new Error(`Player ${input.player_id} not found`);
 
       // If 'scratch' mode, no handicap is applied (adjusted_score = raw_score)
-      const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - player.base_handicap;
+      // Otherwise, use custom_handicap if provided, fallback to the player's permanent base_handicap
+      const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : player.base_handicap;
+      const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - finalHandicap;
       return {
         ...input,
         player,

@@ -28,6 +28,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   // Scores and Costs inputs mapping playerId -> string
   const [rawScores, setRawScores] = useState<Record<string, string>>({});
   const [scoreSelections, setScoreSelections] = useState<Record<string, string>>({});
+  const [guillotineHandicaps, setGuillotineHandicaps] = useState<Record<string, string>>({});
   const [costsPaid, setCostsPaid] = useState<Record<string, string>>({});
 
   const [saving, setSaving] = useState(false);
@@ -66,6 +67,15 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     return 72 + parseInt(selection, 10);
   };
 
+  // Helper to retrieve handicap dynamically based on MatchMode
+  const getHandicapForPlayer = (id: string, baseHandicap: number): number => {
+    if (matchMode === 'guillotine') {
+      const customHandicap = guillotineHandicaps[id];
+      return customHandicap !== undefined ? (parseInt(customHandicap, 10) || 0) : baseHandicap;
+    }
+    return baseHandicap;
+  };
+
   useEffect(() => {
     loadPlayers();
   }, []);
@@ -84,17 +94,23 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
   const handleTogglePlayer = (id: string) => {
     const activePlayersCount = players.filter((p) => p.status !== 'Dormant').length;
+    const player = players.find(p => p.id === id);
+    if (!player) return;
+
     if (selectedPlayerIds.includes(id)) {
       setSelectedPlayerIds(selectedPlayerIds.filter((pId) => pId !== id));
-      // Clean up score and cost input
+      // Clean up score, handicap, and cost input
       const newScores = { ...rawScores };
       const newSelections = { ...scoreSelections };
+      const newGuillotineHandicaps = { ...guillotineHandicaps };
       const newCosts = { ...costsPaid };
       delete newScores[id];
       delete newSelections[id];
+      delete newGuillotineHandicaps[id];
       delete newCosts[id];
       setRawScores(newScores);
       setScoreSelections(newSelections);
+      setGuillotineHandicaps(newGuillotineHandicaps);
       setCostsPaid(newCosts);
     } else {
       if (selectedPlayerIds.length >= activePlayersCount) {
@@ -102,10 +118,11 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         return;
       }
       setSelectedPlayerIds([...selectedPlayerIds, id]);
-      // Initialize inputs with reasonable defaults (Defaulting to +18 over par i.e. 90 strokes and 0 won cost!)
+      // Initialize inputs with reasonable defaults (Defaulting to +18 over par i.e. 90 strokes, base handicap, and 0 won/10,000 won bet cost!)
       setRawScores({ ...rawScores, [id]: '90' });
       setScoreSelections({ ...scoreSelections, [id]: '18' });
-      setCostsPaid({ ...costsPaid, [id]: '0' });
+      setGuillotineHandicaps({ ...guillotineHandicaps, [id]: player.base_handicap.toString() });
+      setCostsPaid({ ...costsPaid, [id]: matchMode === 'guillotine' ? '10000' : '0' });
     }
   };
 
@@ -118,7 +135,12 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       const player = players.find((p) => p.id === id)!;
       const rawScore = getRawScoreForPlayer(id);
       const costPaid = parseInt(costsPaid[id], 10) || 0;
-      const adjustedScore = rawScore - player.base_handicap;
+      
+      // If 'scratch' mode, no handicap is subtracted in preview ranking!
+      // Otherwise, fetch base or custom temporary handicap dynamically
+      const adjustedScore = matchMode === 'scratch' 
+        ? rawScore 
+        : rawScore - getHandicapForPlayer(id, player.base_handicap);
 
       return {
         player,
@@ -153,25 +175,35 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
     return ranked.map((item) => {
       let lpChange = 0;
-      if (ranked.length === 4) {
-        lpChange = lpChangeByRank[item.rank] || 0;
+      
+      if (matchMode === 'scratch') {
+        // Scratch mode does not award LP!
+        lpChange = 0;
       } else {
-        // Dynamic formulation for match size != 4
-        const median = (ranked.length + 1) / 2;
-        if (item.rank < median) {
-          lpChange = item.rank === 1 ? 20 : 10;
-        } else if (item.rank > median) {
-          lpChange = item.rank === ranked.length ? -20 : -10;
+        // Standard LP calculation
+        if (ranked.length === 4) {
+          lpChange = lpChangeByRank[item.rank] || 0;
         } else {
-          lpChange = 0;
+          // Dynamic formulation for match size != 4
+          const median = (ranked.length + 1) / 2;
+          if (item.rank < median) {
+            lpChange = item.rank === 1 ? 20 : 10;
+          } else if (item.rank > median) {
+            lpChange = item.rank === ranked.length ? -20 : -10;
+          } else {
+            lpChange = 0;
+          }
         }
       }
 
-      const { newTier, newPoints } = calculateNewTierAndPoints(
-        item.player.tier,
-        item.player.points,
-        lpChange
-      );
+      // Reconstruct final Tier and LP preview depending on MatchMode
+      const { newTier, newPoints } = matchMode === 'scratch'
+        ? { newTier: item.player.tier, newPoints: item.player.points }
+        : calculateNewTierAndPoints(
+            item.player.tier,
+            item.player.points,
+            lpChange
+          );
 
       // Check if promoted or demoted
       const isPromo = newTier !== item.player.tier && lpChange > 0;
@@ -215,10 +247,22 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         return;
       }
 
+      // Explicit validation and extract for custom guillotine handicap
+      let customH: number | undefined = undefined;
+      if (matchMode === 'guillotine') {
+        const hVal = parseInt(guillotineHandicaps[id], 10);
+        if (isNaN(hVal) || hVal < 0 || hVal > 72) {
+          alert(`${players.find((p) => p.id === id)?.name} 선수의 단두대 임시 핸디캡(0~72개) 입력값이 올바르지 않습니다.`);
+          return;
+        }
+        customH = hVal;
+      }
+
       resultsPayload.push({
         player_id: id,
         raw_score: raw,
         cost_paid: cost,
+        custom_handicap: customH,
       });
     }
 
@@ -463,7 +507,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>핸디캡: -{player.base_handicap}개</span>
                   </div>
 
-                  <div className="inputs-row">
+                  <div className="inputs-row" style={{ gridTemplateColumns: matchMode === 'guillotine' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)' }}>
                     <div className="form-group" style={{ marginBottom: '0' }}>
                       <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>원본 스코어 (언더/오버파)</label>
                       <select
@@ -489,8 +533,11 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                       </select>
                     </div>
 
+                    {/* Dynamic Bet/Cost input label */}
                     <div className="form-group" style={{ marginBottom: '0' }}>
-                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>본인 부담 비용 (원)</label>
+                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>
+                        {matchMode === 'guillotine' ? '단두대 베팅금 (원)' : '본인 부담 비용 (원)'}
+                      </label>
                       <input
                         type="number"
                         className="form-input"
@@ -501,6 +548,25 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         required
                       />
                     </div>
+
+                    {/* New Custom Handicap field (Only visible in Guillotine mode!) */}
+                    {matchMode === 'guillotine' && (
+                      <div className="form-group" style={{ marginBottom: '0' }}>
+                        <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px', color: '#fbbf24' }}>
+                          단두대 핸디 (개)
+                        </label>
+                        <input
+                          type="number"
+                          className="form-input"
+                          value={guillotineHandicaps[pId] || '0'}
+                          onChange={(e) => setGuillotineHandicaps({ ...guillotineHandicaps, [pId]: e.target.value })}
+                          placeholder="임시 핸디"
+                          min="0"
+                          max="72"
+                          required
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Direct Input Field - visible only when 'direct' is selected in dropdown */}
