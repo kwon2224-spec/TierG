@@ -954,4 +954,5 @@ select.form-input {
   appearance: none !important;
   -webkit-appearance: none !important;
   border-radius: var(--radius-sm) !important;
+  text-align: left !important; /* Forces cursor and text to start from the left edge, preventing inherited center alignment! */
 }
