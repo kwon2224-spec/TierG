@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, Calendar, Sparkles, Check, UserCheck, UserMinus } from 'lucide-react';
-import { type Player, type PlayerStatus, TIER_THEMES, type GameResult } from '../types';
+import { type Player, type PlayerStatus, TIER_THEMES, type GameResult, type Tier, TIERS_ORDER } from '../types';
 import { tiergService } from '../services/tiergService';
 import { TierBadge } from './TierBadge';
 
@@ -37,6 +37,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const [loading, setLoading] = useState(true);
   const [handicapInput, setHandicapInput] = useState<string>('');
   const [nicknameInput, setNicknameInput] = useState<string>('');
+  const [tierInput, setTierInput] = useState<Tier>('Iron'); // Newly added tier edit state!
   const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('Active');
   const [playerIsAdmin, setPlayerIsAdmin] = useState(false);
   const [updatingHandicap, setUpdatingHandicap] = useState(false);
@@ -55,6 +56,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       setData(details);
       setHandicapInput(details.player.base_handicap.toString());
       setNicknameInput((details.player.nickname || '').trim()); // Safely trim trailing db spaces to fix cursor blink!
+      setTierInput(details.player.tier); // set initial tier!
       setPlayerStatus(details.player.status || 'Active');
       setPlayerIsAdmin(details.player.is_admin || false);
     } catch (error) {
@@ -82,7 +84,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
     setUpdatingHandicap(true);
     try {
-      await tiergService.updatePlayerHandicap(data.player.id, newHandicap, formattedNickname);
+      // Pass tierInput directly to update service!
+      await tiergService.updatePlayerHandicap(data.player.id, newHandicap, formattedNickname, tierInput);
       setUpdateSuccess(true);
       onHandicapUpdated();
       setTimeout(() => setUpdateSuccess(false), 2000);
@@ -269,8 +272,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                 <Sparkles size={16} color="var(--accent)" /> 프로필 편집 (관리자용)
               </h4>
               <form onSubmit={handleUpdateHandicap} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <div style={{ flex: 1 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px' }}>
+                  <div>
                     <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>별명 (#태그)</label>
                     <input
                       type="text"
@@ -282,7 +285,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                       maxLength={10}
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div>
                     <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>기본 핸디캡 (개)</label>
                     <input
                       type="number"
@@ -294,6 +297,21 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                       min="0"
                       max="72"
                     />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>티어 지정</label>
+                    <select
+                      className="form-input"
+                      value={tierInput}
+                      onChange={(e) => setTierInput(e.target.value as Tier)}
+                      style={{ padding: '8px 12px', backgroundColor: 'var(--bg-hover)' }}
+                    >
+                      {TIERS_ORDER.map((t) => (
+                        <option key={t} value={t}>
+                          {TIER_THEMES[t].name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <button

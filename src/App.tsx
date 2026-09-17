@@ -104,7 +104,7 @@ function App() {
       {/* App Header */}
       <header className="app-header">
         <div className="logo-container">
-          <div className="logo">
+          <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
             <Sparkles size={24} style={{ fill: '#10b981', stroke: '#10b981' }} />
             <span>Tier Golf</span>
             <span className="logo-sub">TierG</span>

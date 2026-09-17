@@ -157,11 +157,16 @@ class TierGService {
     return newPlayer;
   }
 
-  async updatePlayerHandicap(id: string, newHandicap: number, nickname: string = ''): Promise<Player> {
+  async updatePlayerHandicap(id: string, newHandicap: number, nickname: string = '', newTier?: Tier): Promise<Player> {
     if (supabase) {
+      const updatePayload: any = { base_handicap: newHandicap, nickname };
+      if (newTier) {
+        updatePayload.tier = newTier;
+      }
+
       const { data, error } = await supabase
         .from('players')
-        .update({ base_handicap: newHandicap, nickname })
+        .update(updatePayload)
         .eq('id', id)
         .select();
       if (error) {
@@ -176,6 +181,9 @@ class TierGService {
     if (playerIndex === -1) throw new Error('Player not found');
     players[playerIndex].base_handicap = newHandicap;
     players[playerIndex].nickname = nickname;
+    if (newTier) {
+      players[playerIndex].tier = newTier;
+    }
     setLocalData('tierg_players', players);
     return players[playerIndex];
   }
