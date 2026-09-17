@@ -118,11 +118,11 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         return;
       }
       setSelectedPlayerIds([...selectedPlayerIds, id]);
-      // Initialize inputs with reasonable defaults (Defaulting to +18 over par i.e. 90 strokes, base handicap, and 0 won/10,000 won bet cost!)
+      // Initialize inputs with reasonable defaults (Defaulting to +18 over par i.e. 90 strokes, and empty values that default to 0 natively!)
       setRawScores({ ...rawScores, [id]: '90' });
       setScoreSelections({ ...scoreSelections, [id]: '18' });
-      setGuillotineHandicaps({ ...guillotineHandicaps, [id]: '0' });
-      setCostsPaid({ ...costsPaid, [id]: matchMode === 'guillotine' ? '10000' : '0' });
+      setGuillotineHandicaps({ ...guillotineHandicaps, [id]: '' }); // Let placeholder handle 0!
+      setCostsPaid({ ...costsPaid, [id]: matchMode === 'guillotine' ? '10000' : '' }); // Let placeholder handle 0!
     }
   };
 
@@ -541,19 +541,9 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                       <input
                         type="number"
                         className="form-input"
-                        value={costsPaid[pId] || '0'}
+                        value={costsPaid[pId] ?? ''}
                         onChange={(e) => setCostsPaid({ ...costsPaid, [pId]: e.target.value })}
-                        onFocus={() => {
-                          if (costsPaid[pId] === '0' || costsPaid[pId] === undefined) {
-                            setCostsPaid({ ...costsPaid, [pId]: '' });
-                          }
-                        }}
-                        onBlur={() => {
-                          if (costsPaid[pId] === '' || costsPaid[pId] === undefined) {
-                            setCostsPaid({ ...costsPaid, [pId]: '0' });
-                          }
-                        }}
-                        placeholder="예: 10000"
+                        placeholder="0"
                         min="0"
                         required
                       />
@@ -568,19 +558,9 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         <input
                           type="number"
                           className="form-input"
-                          value={guillotineHandicaps[pId] || '0'}
+                          value={guillotineHandicaps[pId] ?? ''}
                           onChange={(e) => setGuillotineHandicaps({ ...guillotineHandicaps, [pId]: e.target.value })}
-                          onFocus={() => {
-                            if (guillotineHandicaps[pId] === '0' || guillotineHandicaps[pId] === undefined) {
-                              setGuillotineHandicaps({ ...guillotineHandicaps, [pId]: '' });
-                            }
-                          }}
-                          onBlur={() => {
-                            if (guillotineHandicaps[pId] === '' || guillotineHandicaps[pId] === undefined) {
-                              setGuillotineHandicaps({ ...guillotineHandicaps, [pId]: '0' });
-                            }
-                          }}
-                          placeholder="임시 핸디"
+                          placeholder="0"
                           min="0"
                           max="72"
                           required
