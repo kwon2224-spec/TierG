@@ -480,6 +480,7 @@ class TierGService {
             tier_after: res.newTier,
             points_after: res.newPoints,
             cost_paid: computedCost,
+            bet_amount: matchMode === 'guillotine' ? res.cost_paid : 0, // Save original bet for Guillotine Mode stats!
           });
         }
 
