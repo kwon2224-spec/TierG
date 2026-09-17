@@ -52,7 +52,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       const details = await tiergService.getPlayerHistory(playerId);
       setData(details);
       setHandicapInput(details.player.base_handicap.toString());
-      setNicknameInput(details.player.nickname || '');
+      setNicknameInput((details.player.nickname || '').trim()); // Safely trim trailing db spaces to fix cursor blink!
       setPlayerStatus(details.player.status || 'Active');
       setPlayerIsAdmin(details.player.is_admin || false);
     } catch (error) {

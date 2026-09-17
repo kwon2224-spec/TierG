@@ -939,7 +939,9 @@ body {
 
 /* Deep mobile input width override (Forcing iOS Safari / Mobile Chrome) */
 input[type="text"].form-input,
-input[type="datetime-local"].form-input {
+input[type="number"].form-input,
+input[type="datetime-local"].form-input,
+select.form-input {
   display: block !important;
   width: 100% !important;
   max-width: 100% !important;
