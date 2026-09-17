@@ -319,13 +319,49 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Calendar size={15} color="var(--accent)" /> 경기 일시
             </label>
-            <input
-              type="datetime-local"
-              className="form-input"
-              value={playedAt}
-              onChange={(e) => setPlayedAt(e.target.value)}
-              required
-            />
+            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+              <input
+                type="datetime-local"
+                className="form-input"
+                style={{ flex: 1 }}
+                value={playedAt}
+                onChange={(e) => setPlayedAt(e.target.value)}
+                step="600" // Scrolls minutes natively in steps of 10!
+                required
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const nowLocal = new Date();
+                  // Smart rounded minutes to nearest 10! (e.g. 14:14 -> 14:10, 14:16 -> 14:20)
+                  const minutes = nowLocal.getMinutes();
+                  const roundedMinutes = Math.round(minutes / 10) * 10;
+                  nowLocal.setMinutes(roundedMinutes);
+                  nowLocal.setSeconds(0);
+                  nowLocal.setMilliseconds(0);
+                  
+                  // Extract YYYY-MM-DDTHH:mm safely accounting for timezone offset!
+                  const tzOffset = nowLocal.getTimezoneOffset() * 60000;
+                  const localISOTime = new Date(nowLocal.getTime() - tzOffset).toISOString().substring(0, 16);
+                  setPlayedAt(localISOTime);
+                }}
+                className="submit-btn"
+                style={{
+                  width: 'auto',
+                  whiteSpace: 'nowrap',
+                  padding: '11px 16px',
+                  fontSize: '13px',
+                  backgroundColor: 'var(--bg-hover)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                🕒 지금
+              </button>
+            </div>
           </div>
 
           {/* New Match Mode Selector Dropdown */}
