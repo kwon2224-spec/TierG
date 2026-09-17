@@ -176,8 +176,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     return ranked.map((item) => {
       let lpChange = 0;
       
-      if (matchMode === 'scratch') {
-        // Scratch mode does not award LP!
+      if (matchMode === 'scratch' || matchMode === 'guillotine') {
+        // Scratch and Guillotine modes do not award LP (LP is frozen!)
         lpChange = 0;
       } else {
         // Standard LP calculation
@@ -197,7 +197,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       }
 
       // Reconstruct final Tier and LP preview depending on MatchMode
-      const { newTier, newPoints } = matchMode === 'scratch'
+      const { newTier, newPoints } = (matchMode === 'scratch' || matchMode === 'guillotine')
         ? { newTier: item.player.tier, newPoints: item.player.points }
         : calculateNewTierAndPoints(
             item.player.tier,
@@ -543,6 +543,16 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         className="form-input"
                         value={costsPaid[pId] || '0'}
                         onChange={(e) => setCostsPaid({ ...costsPaid, [pId]: e.target.value })}
+                        onFocus={() => {
+                          if (costsPaid[pId] === '0' || costsPaid[pId] === undefined) {
+                            setCostsPaid({ ...costsPaid, [pId]: '' });
+                          }
+                        }}
+                        onBlur={() => {
+                          if (costsPaid[pId] === '' || costsPaid[pId] === undefined) {
+                            setCostsPaid({ ...costsPaid, [pId]: '0' });
+                          }
+                        }}
                         placeholder="예: 10000"
                         min="0"
                         required
@@ -560,6 +570,16 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                           className="form-input"
                           value={guillotineHandicaps[pId] || '0'}
                           onChange={(e) => setGuillotineHandicaps({ ...guillotineHandicaps, [pId]: e.target.value })}
+                          onFocus={() => {
+                            if (guillotineHandicaps[pId] === '0' || guillotineHandicaps[pId] === undefined) {
+                              setGuillotineHandicaps({ ...guillotineHandicaps, [pId]: '' });
+                            }
+                          }}
+                          onBlur={() => {
+                            if (guillotineHandicaps[pId] === '' || guillotineHandicaps[pId] === undefined) {
+                              setGuillotineHandicaps({ ...guillotineHandicaps, [pId]: '0' });
+                            }
+                          }}
                           placeholder="임시 핸디"
                           min="0"
                           max="72"

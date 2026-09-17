@@ -144,6 +144,7 @@ export interface GameResult {
   tier_after: Tier;
   points_after: number;
   cost_paid: number;
+  bet_amount?: number; // Tracks original bet in Guillotine Mode
   created_at?: string;
 }
 

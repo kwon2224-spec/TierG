@@ -29,6 +29,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       totalCost: number;
       averageCost: number;
       wins: number;
+      guillotineLost: number;
+      guillotineSaved: number;
     };
   } | null>(null);
 
@@ -239,11 +241,24 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             </div>
 
             {/* Expenses Cost Stat Box */}
-            <div className="stat-box cost-box">
-              <div className="stat-val">
-                {stats.totalCost.toLocaleString()}원
+            <div className="stat-box cost-box" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px' }}>
+              <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px', marginBottom: '4px' }}>
+                <div className="stat-val" style={{ fontSize: '18px', color: '#34d399' }}>
+                  {stats.totalCost.toLocaleString()}원
+                </div>
+                <div className="stat-lbl" style={{ fontSize: '10px' }}>누적 일반 지출 비용 (평균: {Math.round(stats.averageCost).toLocaleString()}원)</div>
               </div>
-              <div className="stat-lbl">누적 지출 비용 (평균: {Math.round(stats.averageCost).toLocaleString()}원)</div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                <div style={{ flex: 1, backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '800', color: '#f87171' }}>{stats.guillotineLost.toLocaleString()}원</div>
+                  <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>단두대 독박 비용 💸</div>
+                </div>
+                <div style={{ flex: 1, backgroundColor: 'rgba(16, 185, 129, 0.05)', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '800', color: '#34d399' }}>{stats.guillotineSaved.toLocaleString()}원</div>
+                  <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>단두대 생존 절약 🛡️</div>
+                </div>
+              </div>
             </div>
           </div>
 

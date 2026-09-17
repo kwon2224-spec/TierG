@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS game_results (
   tier_after golf_tier NOT NULL,
   points_after INTEGER NOT NULL,
   cost_paid INTEGER NOT NULL DEFAULT 0 CHECK (cost_paid >= 0),
+  bet_amount INTEGER NOT NULL DEFAULT 0 CHECK (bet_amount >= 0), -- Tracks original bet in Guillotine Mode
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

@@ -584,6 +584,8 @@ class TierGService {
       totalCost: number;
       averageCost: number;
       wins: number; // Rank 1
+      guillotineLost: number;  // Total paid as a Guillotine loser
+      guillotineSaved: number; // Total saved/evaded as a Guillotine survivor
     };
   }> {
     const players = await this.getPlayers();
@@ -619,6 +621,7 @@ class TierGService {
           tier_after: r.tier_after as Tier,
           points_after: r.points_after,
           cost_paid: r.cost_paid,
+          bet_amount: r.bet_amount || 0, // Parse the custom bet amount column
           played_at: r.games?.played_at || '',
           notes: r.games?.notes || '',
         }));
@@ -655,6 +658,17 @@ class TierGService {
     const averageCost = totalGames > 0 ? totalCost / totalGames : 0;
     const wins = history.filter((r) => r.rank === 1).length;
 
+    // Calculate dynamic Guillotine stats based on bet_amount column
+    const guillotineLost = history.reduce((sum, r) => {
+      const bet = r.bet_amount || 0;
+      return sum + (bet > 0 ? r.cost_paid : 0);
+    }, 0);
+
+    const guillotineSaved = history.reduce((sum, r) => {
+      const bet = r.bet_amount || 0;
+      return sum + (bet > 0 && r.cost_paid === 0 ? bet : 0);
+    }, 0);
+
     return {
       player,
       results: history,
@@ -665,6 +679,8 @@ class TierGService {
         totalCost,
         averageCost,
         wins,
+        guillotineLost,
+        guillotineSaved,
       },
     };
   }
