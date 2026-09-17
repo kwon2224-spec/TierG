@@ -122,7 +122,9 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
               {/* Game Card Placements List */}
               <div className="game-history-results">
                 {results.map((res) => {
-                  const isPlus = res.points_changed >= 0;
+                  const lpDiff = res.points_changed;
+                  const isZero = lpDiff === 0;
+                  const isPlus = lpDiff > 0;
 
                   return (
                     <div
@@ -160,7 +162,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원` : '0원'}
                         </div>
                         <div
-                          className={`history-lp-diff ${isPlus ? 'plus' : 'minus'}`}
+                          className={`history-lp-diff ${isZero ? 'zero' : isPlus ? 'plus' : 'minus'}`}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -168,10 +170,12 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                             width: '85px',
                             minWidth: '85px',
                             justifyContent: 'flex-end',
+                            color: isZero ? 'var(--text-muted)' : undefined, // Cool gray color if LP is frozen!
+                            opacity: isZero ? 0.7 : 1
                           }}
                         >
-                          {isPlus ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                          {isPlus ? `+${res.points_changed}` : res.points_changed} LP
+                          {!isZero && (isPlus ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />)}
+                          {isZero ? '0 LP' : (isPlus ? `+${lpDiff}` : lpDiff) + ' LP'}
                         </div>
                       </div>
                     </div>
