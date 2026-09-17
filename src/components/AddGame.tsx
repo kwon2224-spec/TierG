@@ -121,7 +121,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       // Initialize inputs with reasonable defaults (Defaulting to +18 over par i.e. 90 strokes, base handicap, and 0 won/10,000 won bet cost!)
       setRawScores({ ...rawScores, [id]: '90' });
       setScoreSelections({ ...scoreSelections, [id]: '18' });
-      setGuillotineHandicaps({ ...guillotineHandicaps, [id]: player.base_handicap.toString() });
+      setGuillotineHandicaps({ ...guillotineHandicaps, [id]: '0' });
       setCostsPaid({ ...costsPaid, [id]: matchMode === 'guillotine' ? '10000' : '0' });
     }
   };
@@ -507,9 +507,9 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>핸디캡: -{player.base_handicap}개</span>
                   </div>
 
-                  <div className="inputs-row" style={{ gridTemplateColumns: matchMode === 'guillotine' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)' }}>
+                  <div className="inputs-row" style={{ gridTemplateColumns: matchMode === 'guillotine' ? '1.2fr 1fr 0.8fr' : '1fr 1fr' }}>
                     <div className="form-group" style={{ marginBottom: '0' }}>
-                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>원본 스코어 (언더/오버파)</label>
+                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>스코어 (언더/오버)</label>
                       <select
                         className="form-input"
                         value={scoreSelections[pId] || '18'}
@@ -524,9 +524,9 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                       >
                         {Array.from({ length: 51 }, (_, i) => -10 + i).map((v) => {
                           let label = '';
-                          if (v < 0) label = `${v} 언더파 (${72 + v}타)`;
-                          else if (v === 0) label = `이븐파 (72타)`;
-                          else label = `+${v} 오버파 (${72 + v}타)`;
+                          if (v < 0) label = `${v} (${72 + v}타)`;
+                          else if (v === 0) label = `이븐 (${72 + v}타)`;
+                          else label = `+${v} (${72 + v}타)`;
                           return <option key={v} value={v.toString()}>{label}</option>;
                         })}
                         <option value="direct">직접 입력 (타수 직접 타이핑)</option>
