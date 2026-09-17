@@ -122,7 +122,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setRawScores({ ...rawScores, [id]: '90' });
       setScoreSelections({ ...scoreSelections, [id]: '18' });
       setGuillotineHandicaps({ ...guillotineHandicaps, [id]: '' }); // Let placeholder handle 0!
-      setCostsPaid({ ...costsPaid, [id]: matchMode === 'guillotine' ? '10000' : '' }); // Let placeholder handle 0!
+      setCostsPaid({ ...costsPaid, [id]: '' }); // Always start with a clean native 0 placeholder!
     }
   };
 
