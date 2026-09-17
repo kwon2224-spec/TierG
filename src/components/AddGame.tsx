@@ -21,6 +21,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   // Random Room Allocation State
   const [roomCount, setRoomCount] = useState<number>(2);
   const [roomResults, setRoomResults] = useState<string[][]>([]);
+  const [showRoomAssigner, setShowRoomAssigner] = useState<boolean>(false); // Collapsible status
+  const [showPreviewList, setShowPreviewList] = useState<boolean>(false);   // Collapsible status
 
   // Selected player IDs
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
@@ -412,78 +414,96 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           })()}
         </div>
 
-        {/* Random Room Assigner Card (🎲 방 랜덤 배정) */}
+        {/* Random Room Assigner Card (🎲 방 랜덤 배정 - Collapsible) */}
         {selectedPlayerIds.length >= 2 && (
-          <div className="game-setup-card" style={{ borderColor: 'rgba(245, 158, 11, 0.25)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Shuffle size={16} color="#fbbf24" /> 🎲 방 랜덤 배정
+          <div className="game-setup-card" style={{ padding: '0', overflow: 'hidden', borderColor: 'rgba(245, 158, 11, 0.25)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.05)' }}>
+            {/* Clickable Header Bar to Toggle folding */}
+            <div
+              onClick={() => setShowRoomAssigner(!showRoomAssigner)}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '12px 16px',
+                cursor: 'pointer',
+                backgroundColor: showRoomAssigner ? 'rgba(245, 158, 11, 0.05)' : 'transparent',
+                transition: 'background-color 0.2s',
+                userSelect: 'none'
+              }}
+            >
+              <span style={{ fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24' }}>
+                <Shuffle size={15} /> 🎲 방 랜덤 배정 {showRoomAssigner ? '닫기' : '하기'}
               </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                선택된 {selectedPlayerIds.length}명 기준
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {showRoomAssigner ? '▲ 접기' : '▼ 터치하여 열기'}
               </span>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ flex: 1 }}>
-                <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>방 개수 선택</label>
-                <select
-                  className="form-input"
-                  value={roomCount}
-                  onChange={(e) => {
-                    setRoomCount(parseInt(e.target.value, 10));
-                    setRoomResults([]); // Clear when count adjusts
-                  }}
-                  style={{ padding: '8px 12px', backgroundColor: 'var(--bg-hover)' }}
-                >
-                  <option value={2}>2개 방 배정</option>
-                  <option value={3}>3개 방 배정</option>
-                  <option value={4}>4개 방 배정</option>
-                </select>
-              </div>
-              <button
-                type="button"
-                onClick={handleRandomAssign}
-                className="submit-btn"
-                style={{
-                  width: 'auto',
-                  marginTop: '15px',
-                  padding: '10px 18px',
-                  fontSize: '13px',
-                  background: 'linear-gradient(135deg, #f59e0b, #b45309)',
-                  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
-                }}
-              >
-                조편성 시작 🎲
-              </button>
-            </div>
-
-            {/* Render assignments results */}
-            {roomResults.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.03)' }}>
-                <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '4px' }}>✨ 랜덤 추첨 결과 조편성</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                  {roomResults.map((room, roomIdx) => {
-                    if (room.length === 0) return null;
-                    return (
-                      <div key={roomIdx} style={{ flex: '1 1 120px', backgroundColor: 'var(--bg-hover)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent)', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                          🏢 Room {String.fromCharCode(65 + roomIdx)} ({room.length}명)
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {room.map((pId) => {
-                            const pName = players.find(p => p.id === pId)?.name || 'Unknown';
-                            return (
-                              <span key={pId} style={{ fontSize: '13px', fontWeight: '600' }}>
-                                🏌️‍♂️ {pName}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+            {/* Collapsible Content */}
+            {showRoomAssigner && (
+              <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>방 개수 선택</label>
+                    <select
+                      className="form-input"
+                      value={roomCount}
+                      onChange={(e) => {
+                        setRoomCount(parseInt(e.target.value, 10));
+                        setRoomResults([]); // Clear when count adjusts
+                      }}
+                      style={{ padding: '8px 12px', backgroundColor: 'var(--bg-hover)' }}
+                    >
+                      <option value={2}>2개 방 배정</option>
+                      <option value={3}>3개 방 배정</option>
+                      <option value={4}>4개 방 배정</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRandomAssign}
+                    className="submit-btn"
+                    style={{
+                      width: 'auto',
+                      marginTop: '15px',
+                      padding: '10px 18px',
+                      fontSize: '13px',
+                      background: 'linear-gradient(135deg, #f59e0b, #b45309)',
+                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
+                    }}
+                  >
+                    조편성 시작 🎲
+                  </button>
                 </div>
+
+                {/* Render assignments results */}
+                {roomResults.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.03)' }}>
+                    <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '4px' }}>✨ 랜덤 추첨 결과 조편성</h4>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                      {roomResults.map((room, roomIdx) => {
+                        if (room.length === 0) return null;
+                        return (
+                          <div key={roomIdx} style={{ flex: '1 1 120px', backgroundColor: 'var(--bg-hover)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent)', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
+                              🏢 Room {String.fromCharCode(65 + roomIdx)} ({room.length}명)
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {room.map((pId) => {
+                                const pName = players.find(p => p.id === pId)?.name || 'Unknown';
+                                return (
+                                  <span key={pId} style={{ fontSize: '13px', fontWeight: '600' }}>
+                                    🏌️‍♂️ {pName}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -591,57 +611,79 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           </div>
         )}
 
-        {/* Results Live Calculations Preview */}
+        {/* Results Live Calculations Preview (Collapsible) */}
         {previewList.length >= 2 && (
-          <div className="preview-card">
-            <div className="preview-badge-ribbon">실시간 승강등 연산 결과</div>
-            <h4 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '10px', color: 'var(--accent)' }}>
-              ⚡ 경기 예상 시뮬레이션
-            </h4>
+          <div className="preview-card" style={{ padding: '0', overflow: 'hidden' }}>
+            {/* Clickable Header Bar to Toggle folding */}
+            <div
+              onClick={() => setShowPreviewList(!showPreviewList)}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '12px 16px',
+                cursor: 'pointer',
+                backgroundColor: showPreviewList ? 'rgba(16, 185, 129, 0.05)' : 'transparent',
+                transition: 'background-color 0.2s',
+                userSelect: 'none'
+              }}
+            >
+              <span style={{ fontWeight: '800', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
+                <Sparkles size={15} /> ⚡ 실시간 LP 변동 예상 {showPreviewList ? '닫기' : '보기'}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {showPreviewList ? '▲ 접기' : '▼ 터치하여 열기'}
+              </span>
+            </div>
 
-            {previewList.map((item) => {
-              const currentTheme = TIER_THEMES[item.player.tier] || TIER_THEMES.Iron;
-              const nextTheme = TIER_THEMES[item.newTier] || TIER_THEMES.Iron;
-              const isPlus = item.lpChange >= 0;
+            {/* Collapsible Content */}
+            {showPreviewList && (
+              <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+                {previewList.map((item) => {
+                  const currentTheme = TIER_THEMES[item.player.tier] || TIER_THEMES.Iron;
+                  const nextTheme = TIER_THEMES[item.newTier] || TIER_THEMES.Iron;
+                  const isPlus = item.lpChange >= 0;
 
-              return (
-                <div key={item.player.id} className="preview-row">
-                  <div className="preview-rank">
-                    {item.rank}등
-                  </div>
-                  
-                  <div className="preview-name">
-                    <span>{item.player.name}</span>
-                    {item.isPromo && (
-                      <span className="promo-alert" style={{ fontSize: '10px' }}>
-                        🌟 승급 확정!
-                      </span>
-                    )}
-                    {item.isDemo && (
-                      <span className="demo-alert" style={{ fontSize: '10px' }}>
-                        ⚠️ 강등 경고
-                      </span>
-                    )}
-                  </div>
+                  return (
+                    <div key={item.player.id} className="preview-row">
+                      <div className="preview-rank">
+                        {item.rank}등
+                      </div>
+                      
+                      <div className="preview-name">
+                        <span>{item.player.name}</span>
+                        {item.isPromo && (
+                          <span className="promo-alert" style={{ fontSize: '10px' }}>
+                            🌟 승급 확정!
+                          </span>
+                        )}
+                        {item.isDemo && (
+                          <span className="demo-alert" style={{ fontSize: '10px' }}>
+                            ⚠️ 강등 경고
+                          </span>
+                        )}
+                      </div>
 
-                  <div className="preview-scores">
-                    <div className="preview-raw">{item.rawScore}타</div>
-                    <div className="preview-adj">핸디 {item.adjustedScore}타</div>
-                  </div>
+                      <div className="preview-scores">
+                        <div className="preview-raw">{item.rawScore}타</div>
+                        <div className="preview-adj">핸디 {item.adjustedScore}타</div>
+                      </div>
 
-                  <div className="preview-lp-pills-row">
-                    <div className={`preview-lp-change ${isPlus ? 'plus' : 'minus'}`}>
-                      {isPlus ? `+${item.lpChange}` : item.lpChange} LP
+                      <div className="preview-lp-pills-row">
+                        <div className={`preview-lp-change ${isPlus ? 'plus' : 'minus'}`}>
+                          {isPlus ? `+${item.lpChange}` : item.lpChange} LP
+                        </div>
+                        <div className="preview-tier-evolve">
+                          <span style={{ color: currentTheme.color }}>{currentTheme.name}</span>
+                          <span>➡️</span>
+                          <span style={{ color: nextTheme.color, fontWeight: '800' }}>{nextTheme.name} ({item.newPoints}LP)</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="preview-tier-evolve">
-                      <span style={{ color: currentTheme.color }}>{currentTheme.name}</span>
-                      <span>➡️</span>
-                      <span style={{ color: nextTheme.color, fontWeight: '800' }}>{nextTheme.name} ({item.newPoints}LP)</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
