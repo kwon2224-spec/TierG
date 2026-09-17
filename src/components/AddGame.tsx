@@ -231,7 +231,9 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     const resultsPayload = [];
     for (const id of selectedPlayerIds) {
       const raw = getRawScoreForPlayer(id);
-      const cost = parseInt(costsPaid[id], 10);
+      
+      // Default empty string input to 0 instead of NaN alerting!
+      const cost = parseInt(costsPaid[id], 10) || 0;
 
       // Explicit validation for direct typing mode
       if (scoreSelections[id] === 'direct') {
@@ -242,17 +244,17 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         }
       }
 
-      if (isNaN(cost) || cost < 0) {
-        alert(`${players.find((p) => p.id === id)?.name} 선수의 비용 입력값이 올바르지 않습니다.`);
+      if (cost < 0) {
+        alert(`${players.find((p) => p.id === id)?.name} 선수의 비용은 0원 이상이어야 합니다.`);
         return;
       }
 
-      // Explicit validation and extract for custom guillotine handicap
+      // Explicit validation and extract for custom guillotine handicap (Default empty to 0!)
       let customH: number | undefined = undefined;
       if (matchMode === 'guillotine') {
-        const hVal = parseInt(guillotineHandicaps[id], 10);
-        if (isNaN(hVal) || hVal < 0 || hVal > 72) {
-          alert(`${players.find((p) => p.id === id)?.name} 선수의 단두대 임시 핸디캡(0~72개) 입력값이 올바르지 않습니다.`);
+        const hVal = parseInt(guillotineHandicaps[id], 10) || 0;
+        if (hVal < 0 || hVal > 72) {
+          alert(`${players.find((p) => p.id === id)?.name} 선수의 단두대 임시 핸디캡(0~72개)이 올바르지 않습니다.`);
           return;
         }
         customH = hVal;
@@ -286,7 +288,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setMatchMode('handicap'); // reset back to default
       setRoomResults([]); // clear room assignment roulette
       onGameAdded();
-      alert('경기 전적 등록이 완료되었습니다! 실시간 랭킹에 즉시 반영되었습니다.');
+      alert('경기 등록이 완료되었습니다!');
     } catch (error) {
       console.error('Failed to save game results:', error);
       alert('게임 전적 저장에 실패했습니다.');
@@ -338,14 +340,14 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               }}
               style={{ backgroundColor: 'var(--bg-hover)' }}
             >
-              <option value="handicap">핸디 적용 (기본 공식 리그 모드)</option>
-              <option value="scratch">스크래치 (핸디 미적용, 전적/LP 동결 모드)</option>
-              <option value="guillotine">단두대 (핸디 적용, 패자 100% 경기비 독박 모드)</option>
+              <option value="handicap">핸디 적용 (공식 리그전)</option>
+              <option value="scratch">스크래치 (전적 동결)</option>
+              <option value="guillotine">단두대 (패자 독박)</option>
             </select>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block', lineHeight: '1.4' }}>
-              {matchMode === 'handicap' && '💡 현재 적용 중인 정석 리그 규칙입니다. 핸디캡 보정 후 순위에 따라 LP가 증감하여 티어 승강등이 반영됩니다.'}
-              {matchMode === 'scratch' && '💡 핸디캡 보정 없이 원본 스코어로만 순위를 정하며, 경기 역사관 기록만 기록될 뿐 LP 및 티어 전적은 완전히 동결(0 LP)됩니다.'}
-              {matchMode === 'guillotine' && '💥 초강력 내기 모드입니다! 핸디캡을 적용해 LP 점수를 부여하며, 게임에 기입된 전체 부담금 총합(총 게임/식사 비용)을 오직 꼴찌(들)에게만 100% 몰빵(뿜빠이) 정산시키고 승자들은 지출 경비를 0원으로 클라우드에 세팅합니다!'}
+              {matchMode === 'handicap' && '💡 보정 타수로 순위를 정하며, 결과에 따라 LP가 증감하는 정식 공식 리그전입니다.'}
+              {matchMode === 'scratch' && '💡 보정 없이 생타수로 순위를 가리며, 기록 보존용으로만 저장되고 LP 및 티어는 완전히 동결됩니다.'}
+              {matchMode === 'guillotine' && '💡 보정 타수로 등수를 가려 LP는 동결하며, 참여자의 베팅금 총합을 꼴찌가 100% 독박 부담합니다.'}
             </span>
           </div>
 
@@ -410,12 +412,12 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           })()}
         </div>
 
-        {/* Random Room Assigner Card (🎲 방 랜덤 배정 추첨기) */}
+        {/* Random Room Assigner Card (🎲 방 랜덤 배정) */}
         {selectedPlayerIds.length >= 2 && (
           <div className="game-setup-card" style={{ borderColor: 'rgba(245, 158, 11, 0.25)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <span style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Shuffle size={16} color="#fbbf24" /> 🎲 방 랜덤 배정 추첨기
+                <Shuffle size={16} color="#fbbf24" /> 🎲 방 랜덤 배정
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 선택된 {selectedPlayerIds.length}명 기준
@@ -424,7 +426,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ flex: 1 }}>
-                <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>나눌 방 개수 선택</label>
+                <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>방 개수 선택</label>
                 <select
                   className="form-input"
                   value={roomCount}
@@ -452,7 +454,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                   boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
                 }}
               >
-                추첨 배정하기 🎲
+                조편성 시작 🎲
               </button>
             </div>
 
@@ -466,7 +468,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                     return (
                       <div key={roomIdx} style={{ flex: '1 1 120px', backgroundColor: 'var(--bg-hover)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
                         <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent)', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                          🏢 {String.fromCharCode(65 + roomIdx)}번 룸 ({room.length}명)
+                          🏢 Room {String.fromCharCode(65 + roomIdx)} ({room.length}명)
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {room.map((pId) => {
@@ -529,7 +531,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                           else label = `+${v} (${72 + v}타)`;
                           return <option key={v} value={v.toString()}>{label}</option>;
                         })}
-                        <option value="direct">직접 입력 (타수 직접 타이핑)</option>
+                        <option value="direct">직접 입력</option>
                       </select>
                     </div>
 
@@ -648,7 +650,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         {/* Submit Button */}
         {selectedPlayerIds.length >= 2 ? (
           <button type="submit" className="submit-btn" disabled={saving} style={{ marginTop: '10px' }}>
-            {saving ? '경기 기록 전송 및 데이터 동기화 중...' : '🏆 경기 결과 최종 확정 (순위 & 티어 저장)'}
+            {saving ? '경기 저장 중...' : '🏆 경기 결과 최종 확정'}
           </button>
         ) : (
           <div style={{
