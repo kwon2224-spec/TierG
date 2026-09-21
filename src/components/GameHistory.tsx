@@ -17,6 +17,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
 
   // Inline Edit Form State (Single-game edit target)
   const [editingGameId, setEditingGameId] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'handicap' | 'scratch' | 'guillotine'>('all'); // Newly added filter state!
   const [editNotes, setEditNotes] = useState<string>('');
   const [editPlayedAt, setEditPlayedAt] = useState<string>('');
   const [editMatchMode, setEditMatchMode] = useState<MatchMode>('handicap');
@@ -175,6 +176,18 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     }
   };
 
+  // Helper to determine game mode dynamically based on results bet_amount or notes
+  const getGameMode = (gameWithRes: GameWithResults): MatchMode => {
+    if (gameWithRes.results.some((r) => (r.bet_amount || 0) > 0)) return 'guillotine';
+    if (gameWithRes.game.notes?.startsWith('[스크래치]')) return 'scratch';
+    return 'handicap';
+  };
+
+  const filteredGames = games.filter((g) => {
+    if (selectedFilter === 'all') return true;
+    return getGameMode(g) === selectedFilter;
+  });
+
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>이전 경기 이력을 가져오는 중...</div>;
   }
@@ -195,8 +208,43 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
         <History color="var(--accent)" /> 경기 히스토리
       </div>
 
+      {/* Match Mode Capsule Filters */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {[
+          { id: 'all', label: '전체' },
+          { id: 'handicap', label: '핸디캡' },
+          { id: 'scratch', label: '스크래치' },
+          { id: 'guillotine', label: '단두대' }
+        ].map((f) => {
+          const isActive = selectedFilter === f.id;
+          return (
+            <button
+              key={f.id}
+              onClick={() => {
+                setSelectedFilter(f.id as any);
+                setEditingGameId(null); // Close any active inline editors when switching filters!
+              }}
+              style={{
+                background: isActive ? 'var(--accent)' : 'rgba(255,255,255,0.03)',
+                color: isActive ? '#fff' : 'var(--text-secondary)',
+                border: isActive ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '20px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {games.map(({ game, results }) => {
+        {filteredGames.map(({ game, results }) => {
           const totalGameCost = results.reduce((sum, r) => sum + r.cost_paid, 0);
           const isCurrentlyEditing = editingGameId === game.id;
 
