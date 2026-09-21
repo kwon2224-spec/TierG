@@ -427,7 +427,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
               }}
             >
               <UserMinus size={18} />
-              <span>⚠️ 이 플레이어 회원 탈퇴 (영구 삭제)</span>
+              <span>이 플레이어 회원 탈퇴 (영구 삭제)</span>
             </button>
           )}
         </div>

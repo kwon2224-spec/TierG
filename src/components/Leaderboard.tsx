@@ -86,7 +86,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   return (
     <div>
       <div className="leaderboard-title">
-        <span>🏆 실시간 티어 랭킹</span>
+        <span>실시간 티어 랭킹</span>
         <span style={{ fontSize: '13px', fontWeight: 'normal', color: 'var(--text-muted)' }}>
           총 {players.length}명 참여 중
         </span>
@@ -249,12 +249,12 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                   required
                 />
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                  선택하신 티어의 100점 중 몇 점에서 시작할지 포인트를 입력해 주세요. (기본 50LP가 허리 구간으로 가장 안전합니다.)
+                  선택하신 티어의 100점 중 몇 점에서 시작할지 포인트를 입력해 주세요. (초기 정착 지표로 50 LP를 권장합니다.)
                 </span>
               </div>
 
               <button type="submit" className="submit-btn" disabled={submitting}>
-                {submitting ? '선수 등록 중...' : '🏆 신규 선수 가입 승인'}
+                {submitting ? '선수 등록 중...' : '신규 선수 가입 승인'}
               </button>
             </form>
           </div>
