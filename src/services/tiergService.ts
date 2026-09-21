@@ -685,14 +685,8 @@ class TierGService {
     const normalGamesCount = history.filter((r) => (r.bet_amount || 0) === 0).length;
     const averageCost = normalGamesCount > 0 ? totalCost / normalGamesCount : 0;
     
-    // Count both standard league 1st places AND Guillotine match survival wins as official victories!
-    const wins = history.filter((r) => {
-      const isGuillotine = (r.bet_amount || 0) > 0;
-      if (isGuillotine) {
-        return r.cost_paid === 0; // Survived and won the bet!
-      }
-      return r.rank === 1; // Tournament 1st place!
-    }).length;
+    // Wins count strictly tracks handicap & scratch 1st place victories (excluding Guillotine completely!)
+    const wins = history.filter((r) => r.rank === 1 && (r.bet_amount || 0) === 0).length;
 
     // Calculate dynamic Guillotine stats based on bet_amount column
     // Net Guillotine Loss: Only the extra money paid for other players (Total Paid - Own Bet)
