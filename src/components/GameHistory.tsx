@@ -70,7 +70,12 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     }
 
     setEditNotes(cleanNotes);
-    setEditPlayedAt(gameWithRes.game.played_at.substring(0, 16));
+    
+    // Convert DB UTC ISO string safely to Local timezone ISO string for datetime-local input!
+    const utcDate = new Date(gameWithRes.game.played_at);
+    const tzOffset = utcDate.getTimezoneOffset() * 60000;
+    const localISO = new Date(utcDate.getTime() - tzOffset).toISOString().substring(0, 16);
+    setEditPlayedAt(localISO);
 
     // Detect MatchMode
     let mode: MatchMode = 'handicap';
@@ -362,9 +367,10 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                             whiteSpace: 'nowrap',
                             padding: '6px 12px',
                             fontSize: '12px',
-                            backgroundColor: 'var(--bg-hover)',
-                            border: '1px solid var(--border-color)',
-                            color: 'var(--text-secondary)'
+                            background: 'none', // Premium Glass Ghost Button
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: 'var(--text-primary)', // Bright and fully clickable!
+                            fontWeight: '700'
                           }}
                         >
                           지금

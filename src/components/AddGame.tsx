@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, FileText, AlertTriangle, Trophy, Shuffle } from 'lucide-react';
+import { Sparkles, Calendar, FileText, AlertTriangle, Trophy, Shuffle, Zap } from 'lucide-react';
 import { type Player, type MatchMode, TIER_THEMES, TIER_WEIGHTS } from '../types';
 import { tiergService, calculateNewTierAndPoints } from '../services/tiergService';
 
@@ -370,7 +370,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                   gap: '4px'
                 }}
               >
-                🕒 지금
+                지금
               </button>
             </div>
           </div>
@@ -718,8 +718,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                 userSelect: 'none'
               }}
             >
-              <span style={{ fontWeight: '800', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
-                <Sparkles size={15} /> 실시간 LP 변동 예상 {showPreviewList ? '닫기' : '보기'}
+              <span style={{ fontWeight: '800', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24' }}>
+                <Zap size={14} style={{ fill: '#fbbf24', stroke: '#fbbf24' }} /> 실시간 LP 변동 예상 {showPreviewList ? '닫기' : '보기'}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {showPreviewList ? '▲ 접기' : '▼ 터치하여 열기'}
