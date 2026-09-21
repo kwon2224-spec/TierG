@@ -416,9 +416,9 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               }}
               style={{ backgroundColor: 'var(--bg-hover)' }}
             >
-              <option value="handicap">핸디 적용 (공식 리그전)</option>
-              <option value="scratch">스크래치 (전적 동결)</option>
-              <option value="guillotine">단두대 (패자 독박)</option>
+              <option value="handicap">핸디 적용</option>
+              <option value="scratch">스크래치</option>
+              <option value="guillotine">단두대</option>
             </select>
 
             {/* Collapsible Help Popover */}
