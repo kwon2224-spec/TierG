@@ -292,6 +292,7 @@ class TierGService {
             tier_after: r.tier_after as Tier,
             points_after: r.points_after,
             cost_paid: r.cost_paid,
+            bet_amount: r.bet_amount || 0, // Sucessfully retrieve the bet amount from DB to history!
             player_name: r.players?.name || 'Unknown',
             // Since db row has tier_after, we reconstruct before values
             player_tier_before: r.tier_after as Tier, // Approximate or just display current
