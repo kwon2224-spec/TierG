@@ -216,7 +216,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       minute: '2-digit',
                     })}
                   </div>
-                  {game.notes && <div className="game-notes" style={{ marginTop: '2px' }}>📍 {game.notes}</div>}
+                  {game.notes && <div className="game-notes" style={{ marginTop: '2px' }}>{game.notes}</div>}
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
@@ -264,7 +264,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                         }}
                       >
                         <Trash2 size={11} />
-                        <span>{deleting ? '취소 중...' : '경기 취소(롤백)'}</span>
+                        <span>{deleting ? '취소 중...' : '경기 취소'}</span>
                       </button>
                     </div>
                   )}
@@ -278,14 +278,14 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                   
                   {/* Inline Form Title */}
                   <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Sparkles size={14} /> 📝 이 경기 기록 정밀 수정
+                    <Sparkles size={14} /> 경기 기록 수정
                   </div>
 
-                  {/* Inline Game Meta Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {/* Inline Game Meta Fields (No wrapping!) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div className="form-group" style={{ marginBottom: '0' }}>
                       <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>경기 일시</label>
-                      <div style={{ display: 'flex', gap: '4px', width: '100%' }}>
+                      <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
                         <input
                           type="datetime-local"
                           className="form-input"
@@ -312,49 +312,51 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           style={{
                             width: 'auto',
                             whiteSpace: 'nowrap',
-                            padding: '6px 10px',
-                            fontSize: '11px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
                             backgroundColor: 'var(--bg-hover)',
                             border: '1px solid var(--border-color)',
                             color: 'var(--text-secondary)'
                           }}
                         >
-                          🕒 지금
+                          지금
                         </button>
                       </div>
                     </div>
 
-                    <div className="form-group" style={{ marginBottom: '0' }}>
-                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>매치 모드</label>
-                      <select
-                        className="form-input"
-                        value={editMatchMode}
-                        onChange={(e) => setEditMatchMode(e.target.value as MatchMode)}
-                        style={{ backgroundColor: 'var(--bg-hover)', height: '40px !important', padding: '6px 8px !important', fontSize: '13px !important' }}
-                      >
-                        <option value="handicap">핸디 적용 (공식 리그전)</option>
-                        <option value="scratch">스크래치 (전적 동결)</option>
-                        <option value="guillotine">단두대 (패자 독박)</option>
-                      </select>
-                    </div>
-                  </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div className="form-group" style={{ marginBottom: '0' }}>
+                        <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>매치 모드</label>
+                        <select
+                          className="form-input"
+                          value={editMatchMode}
+                          onChange={(e) => setEditMatchMode(e.target.value as MatchMode)}
+                          style={{ backgroundColor: 'var(--bg-hover)', height: '40px !important', padding: '6px 8px !important', fontSize: '13px !important' }}
+                        >
+                          <option value="handicap">핸디 적용 (공식 리그전)</option>
+                          <option value="scratch">스크래치 (전적 동결)</option>
+                          <option value="guillotine">단두대 (패자 독박)</option>
+                        </select>
+                      </div>
 
-                  <div className="form-group" style={{ marginBottom: '0' }}>
-                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>코스명 및 메모</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={editNotes}
-                      onChange={(e) => setEditNotes(e.target.value)}
-                      placeholder="예: 아일랜드CC"
-                      style={{ height: '40px !important', padding: '6px 8px !important', fontSize: '13px !important' }}
-                    />
+                      <div className="form-group" style={{ marginBottom: '0' }}>
+                        <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>코스명 및 메모</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={editNotes}
+                          onChange={(e) => setEditNotes(e.target.value)}
+                          placeholder="예: 아일랜드CC"
+                          style={{ height: '40px !important', padding: '6px 8px !important', fontSize: '13px !important' }}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Inline Players Editor */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px', backgroundColor: 'rgba(0,0,0,0.15)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
                     <div style={{ fontSize: '11px', fontWeight: '800', color: '#fbbf24', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '4px', marginBottom: '4px' }}>
-                      ⛳ 출전 골퍼 스코어 / 비용 개별 조율
+                      선수별 스코어 / 비용 수정
                     </div>
                     {results.map((res) => {
                       const pId = res.player_id;
@@ -364,7 +366,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                         <div key={pId} style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '6px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.02)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '12px', fontWeight: '800' }}>
-                              🏌️‍♂️ {res.player_name}
+                              {res.player_name}
                               <span style={{ fontSize: '10px', color: theme.color, marginLeft: '4px' }}>{theme.name}</span>
                             </span>
                           </div>
@@ -444,8 +446,8 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                         flex: 1,
                         padding: '8px 12px',
                         fontSize: '12px',
-                        backgroundColor: 'var(--bg-hover)',
-                        border: '1px solid var(--border-color)',
+                        background: 'none', // Elegant semi-transparent glass ghost button style
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
                         color: 'var(--text-secondary)'
                       }}
                     >
@@ -462,7 +464,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                         background: 'linear-gradient(135deg, #10b981, #047857)'
                       }}
                     >
-                      {saving ? '수정 저장 중...' : '💾 수정 완료'}
+                      {saving ? '수정 저장 중...' : '수정 완료'}
                     </button>
                   </div>
 

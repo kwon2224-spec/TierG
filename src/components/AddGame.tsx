@@ -17,6 +17,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   );
   const [notes, setNotes] = useState<string>('');
   const [matchMode, setMatchMode] = useState<MatchMode>('handicap');
+  const [showMatchModeHelp, setShowMatchModeHelp] = useState<boolean>(false); // Help popover status
 
   // Random Room Allocation State
   const [roomCount, setRoomCount] = useState<number>(2);
@@ -376,9 +377,36 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
           {/* New Match Mode Selector Dropdown */}
           <div className="form-group" style={{ marginBottom: '14px' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Trophy size={15} color="var(--accent)" /> 매치 모드 선택
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0' }}>
+                <Trophy size={15} color="var(--accent)" /> 매치 모드 선택
+              </label>
+              
+              {/* Sleek, tiny help icon circle */}
+              <span 
+                onClick={() => setShowMatchModeHelp(!showMatchModeHelp)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  backgroundColor: showMatchModeHelp ? 'var(--accent)' : 'rgba(255,255,255,0.06)',
+                  color: showMatchModeHelp ? '#fff' : 'var(--text-muted)',
+                  fontSize: '10px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                  userSelect: 'none',
+                  transition: 'all 0.2s'
+                }}
+                title="매치 모드 설명 보기"
+              >
+                ?
+              </span>
+            </div>
+
             <select
               className="form-input"
               value={matchMode}
@@ -392,11 +420,27 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               <option value="scratch">스크래치 (전적 동결)</option>
               <option value="guillotine">단두대 (패자 독박)</option>
             </select>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block', lineHeight: '1.4' }}>
-              {matchMode === 'handicap' && '💡 보정 타수로 순위를 정하며, 결과에 따라 LP가 증감하는 정식 공식 리그전입니다.'}
-              {matchMode === 'scratch' && '💡 보정 없이 생타수로 순위를 가리며, 기록 보존용으로만 저장되고 LP 및 티어는 완전히 동결됩니다.'}
-              {matchMode === 'guillotine' && '💡 보정 타수로 등수를 가려 LP는 동결하며, 참여자의 베팅금 총합을 꼴찌가 100% 독박 부담합니다.'}
-            </span>
+
+            {/* Collapsible Help Popover */}
+            {showMatchModeHelp && (
+              <div style={{
+                marginTop: '8px',
+                backgroundColor: 'rgba(0,0,0,0.25)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '10px',
+                fontSize: '11px',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                lineHeight: '1.4'
+              }}>
+                <div><strong style={{ color: 'var(--accent)' }}>핸디 적용</strong>: 보정 타수로 순위를 가리며 LP가 상벌로 변동하는 정식 리그전</div>
+                <div><strong style={{ color: '#60a5fa' }}>스크래치</strong>: 보정 없이 날것 그대로 치는 기록용 매치 (LP 변동 없음)</div>
+                <div><strong style={{ color: '#fbbf24' }}>단두대</strong>: 보정 타수 기준 꼴찌가 총 참여 베팅금을 100% 부담 (LP 변동 없음)</div>
+              </div>
+            )}
           </div>
 
           <div className="form-group" style={{ marginBottom: '0' }}>
@@ -427,7 +471,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
             return (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '15px' }}>⛳ 참가 선수 선택 (2~{activePlayers.length}명)</span>
+                  <span style={{ fontWeight: '700', fontSize: '15px' }}>참가 선수 선택 (2~{activePlayers.length}명)</span>
                   <span style={{ fontSize: '12px', color: selectedPlayerIds.length === 4 ? '#10b981' : 'var(--text-muted)' }}>
                     {selectedPlayerIds.length}명 선택함 {selectedPlayerIds.length === 4 ? '(4인 표준 경기)' : ''}
                   </span>
@@ -460,7 +504,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           })()}
         </div>
 
-        {/* Random Room Assigner Card (🎲 방 랜덤 배정 - Collapsible) */}
+        {/* Random Room Assigner Card (방 랜덤 배정 - Collapsible) */}
         {selectedPlayerIds.length >= 2 && (
           <div className="game-setup-card" style={{ padding: '0', overflow: 'hidden', borderColor: 'rgba(245, 158, 11, 0.25)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.05)' }}>
             {/* Clickable Header Bar to Toggle folding */}
@@ -478,7 +522,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               }}
             >
               <span style={{ fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24' }}>
-                <Shuffle size={15} /> 🎲 방 랜덤 배정 {showRoomAssigner ? '닫기' : '하기'}
+                <Shuffle size={15} /> 방 랜덤 배정 {showRoomAssigner ? '닫기' : '하기'}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {showRoomAssigner ? '▲ 접기' : '▼ 터치하여 열기'}
@@ -518,7 +562,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                       boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
                     }}
                   >
-                    조편성 시작 🎲
+                    조편성 시작
                   </button>
                 </div>
 
