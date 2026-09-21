@@ -175,12 +175,22 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       4: -20,
     };
 
+    const maxAdjustedScore = Math.max(...ranked.map(r => r.adjustedScore));
+    const minAdjustedScore = Math.min(...ranked.map(r => r.adjustedScore));
+    const isAllTied = minAdjustedScore === maxAdjustedScore;
+
     return ranked.map((item) => {
       let lpChange = 0;
       
       if (matchMode === 'scratch' || matchMode === 'guillotine') {
         // Scratch and Guillotine modes do not award LP (LP is frozen!)
         lpChange = 0;
+      } else if (isAllTied) {
+        // If everyone has the exact same score, it's a draw (0 LP)
+        lpChange = 0;
+      } else if (item.adjustedScore === maxAdjustedScore) {
+        // If they share the worst score, they are tied last-place (always get -20 LP!)
+        lpChange = -20;
       } else {
         // Standard LP calculation
         if (ranked.length === 4) {

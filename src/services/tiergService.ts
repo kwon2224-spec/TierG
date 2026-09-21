@@ -389,12 +389,22 @@ class TierGService {
       4: -20,
     };
 
+    const maxAdjustedScore = Math.max(...rankedResults.map(r => r.adjustedScore));
+    const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
+    const isAllTied = minAdjustedScore === maxAdjustedScore;
+
     const finalResults = rankedResults.map((item) => {
       let pointsChanged = 0;
       
       if (matchMode === 'scratch' || matchMode === 'guillotine') {
         // Scratch and Guillotine modes do NOT change points or tiers (LP is frozen!)
         pointsChanged = 0;
+      } else if (isAllTied) {
+        // If everyone has the exact same score, it's a draw (0 LP)
+        pointsChanged = 0;
+      } else if (item.adjustedScore === maxAdjustedScore) {
+        // If they share the worst score, they are tied last-place (always get -20 LP!)
+        pointsChanged = -20;
       } else {
         // Handicap modes calculate normal LP changes
         if (rankedResults.length === 4) {
