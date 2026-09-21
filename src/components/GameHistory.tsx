@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { History, Calendar, ArrowUpRight, ArrowDownRight, Trash2 } from 'lucide-react';
+import { History, Calendar, ArrowUpRight, ArrowDownRight, Trash2, Edit2 } from 'lucide-react';
 import { type GameWithResults } from '../types';
 import { tiergService } from '../services/tiergService';
+import { EditGameModal } from './EditGameModal';
 
 interface GameHistoryProps {
   refreshTrigger: number;
@@ -13,6 +14,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
   const [games, setGames] = useState<GameWithResults[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [editingGameId, setEditingGameId] = useState<string | null>(null); // Newly added edit state!
 
   const handleDeleteGame = async (gameId: string) => {
     if (window.confirm('선택하신 이 경기를 정말로 취소(삭제)하시겠습니까?\n\n삭제 시 이 경기로 획득했거나 차감되었던 모든 참여 골퍼들의 LP 전적 포인트가 실시간 현재 티어 점수에서 수학적으로 안전하게 역산 롤백 복구됩니다.')) {
@@ -94,27 +96,48 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                   </div>
                   
                   {isAdmin && (
-                    <button
-                      onClick={() => handleDeleteGame(game.id)}
-                      disabled={deleting}
-                      style={{
-                        background: 'none',
-                        border: '1px solid rgba(239, 68, 68, 0.4)',
-                        color: '#f87171',
-                        fontSize: '11px',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        marginTop: '2px',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      <Trash2 size={11} />
-                      <span>{deleting ? '취소 중...' : '경기 취소(롤백)'}</span>
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '2px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => setEditingGameId(game.id)}
+                        style={{
+                          background: 'none',
+                          border: '1px solid rgba(59, 130, 246, 0.4)',
+                          color: '#60a5fa',
+                          fontSize: '11px',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <Edit2 size={11} />
+                        <span>경기 수정</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteGame(game.id)}
+                        disabled={deleting}
+                        style={{
+                          background: 'none',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          color: '#f87171',
+                          fontSize: '11px',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <Trash2 size={11} />
+                        <span>{deleting ? '취소 중...' : '경기 취소(롤백)'}</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -186,6 +209,14 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
           );
         })}
       </div>
+
+      {editingGameId && (
+        <EditGameModal
+          gameId={editingGameId}
+          onClose={() => setEditingGameId(null)}
+          onGameUpdated={onGameDeleted}
+        />
+      )}
     </div>
   );
 };

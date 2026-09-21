@@ -815,6 +815,353 @@ class TierGService {
     }
   }
 
+  // --- Update Game & Re-evaluate LP/Tier API ---
+  async updateGame(
+    gameId: string,
+    notes: string,
+    playedAt: string,
+    resultsInput: { player_id: string; raw_score: number; cost_paid: number; custom_handicap?: number }[],
+    matchMode: MatchMode = 'handicap'
+  ): Promise<void> {
+    // 1. Fetch current games to locate the target original game
+    const games = await this.getGames();
+    const targetGame = games.find(g => g.game.id === gameId);
+    if (!targetGame) throw new Error('수정할 경기를 찾을 수 없습니다.');
+
+    const resultsToRevert = targetGame.results;
+
+    // Load current live players state so we can apply rollback and recalculation dynamically!
+    const livePlayers = await this.getPlayers();
+
+    if (supabase) {
+      try {
+        // STEP A: Revert old LP and points in Supabase first!
+        for (const res of resultsToRevert) {
+          const livePlayer = livePlayers.find(p => p.id === res.player_id);
+          if (!livePlayer) continue;
+
+          // Inverse LP delta math
+          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+            livePlayer.tier,
+            livePlayer.points,
+            -res.points_changed
+          );
+
+          const { error: playerRollbackError } = await supabase
+            .from('players')
+            .update({ tier: tierBefore, points: pointsBefore })
+            .eq('id', res.player_id);
+
+          if (playerRollbackError) throw playerRollbackError;
+
+          // Update our in-memory livePlayers array to utilize reverted base for subsequent calculation!
+          livePlayer.tier = tierBefore;
+          livePlayer.points = pointsBefore;
+        }
+
+        // STEP B: Update Game Metadata
+        const { error: gameUpdateError } = await supabase
+          .from('games')
+          .update({ notes, played_at: playedAt })
+          .eq('id', gameId);
+
+        if (gameUpdateError) throw gameUpdateError;
+
+        // STEP C: Recalculate ranks, points, and tiers based on edited inputs!
+        const processedResults = resultsInput.map((input) => {
+          const player = livePlayers.find((p) => p.id === input.player_id);
+          if (!player) throw new Error(`Player ${input.player_id} not found`);
+
+          const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : player.base_handicap;
+          const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - finalHandicap;
+          return {
+            ...input,
+            player,
+            adjustedScore,
+          };
+        });
+
+        processedResults.sort((a, b) => a.adjustedScore - b.adjustedScore);
+
+        let currentRank = 1;
+        const rankedResults = processedResults.map((item, index) => {
+          if (index > 0 && item.adjustedScore > processedResults[index - 1].adjustedScore) {
+            currentRank = index + 1;
+          }
+          return {
+            ...item,
+            rank: currentRank,
+          };
+        });
+
+        const lpChangeByRank: Record<number, number> = {
+          1: 20,
+          2: 10,
+          3: -10,
+          4: -20,
+        };
+
+        const maxAdjustedScore = Math.max(...rankedResults.map(r => r.adjustedScore));
+        const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
+        const isAllTied = minAdjustedScore === maxAdjustedScore;
+
+        const finalResults = rankedResults.map((item) => {
+          let pointsChanged = 0;
+          
+          if (matchMode === 'scratch' || matchMode === 'guillotine') {
+            pointsChanged = 0;
+          } else if (isAllTied) {
+            pointsChanged = 0;
+          } else if (item.adjustedScore === maxAdjustedScore) {
+            pointsChanged = -20;
+          } else {
+            if (rankedResults.length === 4) {
+              pointsChanged = lpChangeByRank[item.rank] || 0;
+            } else {
+              const median = (rankedResults.length + 1) / 2;
+              if (item.rank < median) {
+                pointsChanged = item.rank === 1 ? 20 : 10;
+              } else if (item.rank > median) {
+                pointsChanged = item.rank === rankedResults.length ? -20 : -10;
+              } else {
+                pointsChanged = 0;
+              }
+            }
+          }
+
+          const { newTier, newPoints } = calculateNewTierAndPoints(
+            item.player.tier,
+            item.player.points,
+            pointsChanged
+          );
+
+          return {
+            ...item,
+            pointsChanged,
+            newTier,
+            newPoints,
+          };
+        });
+
+        // Recalculate Guillotine cost shares if necessary
+        let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
+        if (matchMode === 'guillotine' && finalResults.length > 0) {
+          const totalCostSum = finalResults.reduce((sum, item) => sum + item.cost_paid, 0);
+          const maxRank = Math.max(...finalResults.map(r => r.rank));
+          const losers = finalResults.filter(r => r.rank === maxRank);
+          const loserCostShare = Math.round(totalCostSum / losers.length);
+
+          finalCosts = finalResults.map(r => {
+            if (r.rank === maxRank) {
+              return { player_id: r.player.id, cost: loserCostShare };
+            }
+            return { player_id: r.player.id, cost: 0 };
+          });
+        }
+
+        // STEP D: Save newly calculated points and tiers to Supabase
+        for (const res of finalResults) {
+          const { error: playerUpdateError } = await supabase
+            .from('players')
+            .update({
+              tier: res.newTier,
+              points: res.newPoints,
+            })
+            .eq('id', res.player.id);
+
+          if (playerUpdateError) throw playerUpdateError;
+        }
+
+        // Delete old results rows from game_results
+        const { error: resultsDeleteError } = await supabase
+          .from('game_results')
+          .delete()
+          .eq('game_id', gameId);
+
+        if (resultsDeleteError) throw resultsDeleteError;
+
+        // Build new results rows to insert
+        const resultsToInsert = finalResults.map((res) => {
+          const computedCost = finalCosts.find(c => c.player_id === res.player.id)?.cost ?? res.cost_paid;
+          return {
+            game_id: gameId,
+            player_id: res.player.id,
+            raw_score: res.raw_score,
+            adjusted_score: res.adjustedScore,
+            rank: res.rank,
+            points_changed: res.pointsChanged,
+            tier_after: res.newTier,
+            points_after: res.newPoints,
+            cost_paid: computedCost,
+            bet_amount: matchMode === 'guillotine' ? res.cost_paid : 0,
+          };
+        });
+
+        // Insert new results rows
+        const { error: resultsInsertError } = await supabase
+          .from('game_results')
+          .insert(resultsToInsert);
+
+        if (resultsInsertError) throw resultsInsertError;
+
+      } catch (err: any) {
+        console.error('Verbose updateGame Supabase failed:', err);
+        throw err;
+      }
+    } else {
+      // Local Storage fallback
+      const localGames = getLocalData<Game[]>('tierg_games', []);
+      const localResults = getLocalData<GameResult[]>('tierg_results', []);
+      const localPlayers = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+
+      // 1. Rollback locally
+      resultsToRevert.forEach((res) => {
+        const playerIndex = localPlayers.findIndex((p) => p.id === res.player_id);
+        if (playerIndex !== -1) {
+          const livePlayer = localPlayers[playerIndex];
+          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+            livePlayer.tier,
+            livePlayer.points,
+            -res.points_changed
+          );
+          localPlayers[playerIndex].tier = tierBefore;
+          localPlayers[playerIndex].points = pointsBefore;
+        }
+      });
+
+      // 2. Update metadata
+      const gameIdx = localGames.findIndex(g => g.id === gameId);
+      if (gameIdx !== -1) {
+        localGames[gameIdx].notes = notes;
+        localGames[gameIdx].played_at = playedAt;
+      }
+
+      // 3. Recalculate locally
+      const processedResults = resultsInput.map((input) => {
+        const player = localPlayers.find((p) => p.id === input.player_id)!;
+        const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : player.base_handicap;
+        const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - finalHandicap;
+        return {
+          ...input,
+          player,
+          adjustedScore,
+        };
+      });
+
+      processedResults.sort((a, b) => a.adjustedScore - b.adjustedScore);
+
+      let currentRank = 1;
+      const rankedResults = processedResults.map((item, index) => {
+        if (index > 0 && item.adjustedScore > processedResults[index - 1].adjustedScore) {
+          currentRank = index + 1;
+        }
+        return {
+          ...item,
+          rank: currentRank,
+        };
+      });
+
+      const lpChangeByRank: Record<number, number> = {
+        1: 20,
+        2: 10,
+        3: -10,
+        4: -20,
+      };
+
+      const maxAdjustedScore = Math.max(...rankedResults.map(r => r.adjustedScore));
+      const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
+      const isAllTied = minAdjustedScore === maxAdjustedScore;
+
+      const finalResults = rankedResults.map((item) => {
+        let pointsChanged = 0;
+        
+        if (matchMode === 'scratch' || matchMode === 'guillotine') {
+          pointsChanged = 0;
+        } else if (isAllTied) {
+          pointsChanged = 0;
+        } else if (item.adjustedScore === maxAdjustedScore) {
+          pointsChanged = -20;
+        } else {
+          if (rankedResults.length === 4) {
+            pointsChanged = lpChangeByRank[item.rank] || 0;
+          } else {
+            const median = (rankedResults.length + 1) / 2;
+            if (item.rank < median) {
+              pointsChanged = item.rank === 1 ? 20 : 10;
+            } else if (item.rank > median) {
+              pointsChanged = item.rank === rankedResults.length ? -20 : -10;
+            } else {
+              pointsChanged = 0;
+            }
+          }
+        }
+
+        const { newTier, newPoints } = calculateNewTierAndPoints(
+          item.player.tier,
+          item.player.points,
+          pointsChanged
+        );
+
+        return {
+          ...item,
+          pointsChanged,
+          newTier,
+          newPoints,
+        };
+      });
+
+      // Cost shares
+      let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
+      if (matchMode === 'guillotine' && finalResults.length > 0) {
+        const totalCostSum = finalResults.reduce((sum, item) => sum + item.cost_paid, 0);
+        const maxRank = Math.max(...finalResults.map(r => r.rank));
+        const losers = finalResults.filter(r => r.rank === maxRank);
+        const loserCostShare = Math.round(totalCostSum / losers.length);
+
+        finalCosts = finalResults.map(r => {
+          if (r.rank === maxRank) {
+            return { player_id: r.player.id, cost: loserCostShare };
+          }
+          return { player_id: r.player.id, cost: 0 };
+        });
+      }
+
+      // Update local players and write new localResults rows
+      finalResults.forEach((res) => {
+        const pIdx = localPlayers.findIndex(p => p.id === res.player_id);
+        if (pIdx !== -1) {
+          localPlayers[pIdx].tier = res.newTier;
+          localPlayers[pIdx].points = res.newPoints;
+        }
+      });
+
+      // Filter out old results rows
+      const filteredResults = localResults.filter(r => r.game_id !== gameId);
+
+      // Insert new results rows
+      finalResults.forEach((res) => {
+        const computedCost = finalCosts.find(c => c.player_id === res.player_id)?.cost ?? res.cost_paid;
+        filteredResults.push({
+          id: `r_${Date.now()}_${res.player_id}`,
+          game_id: gameId,
+          player_id: res.player_id,
+          raw_score: res.raw_score,
+          adjusted_score: res.adjustedScore,
+          rank: res.rank,
+          points_changed: res.pointsChanged,
+          tier_after: res.newTier,
+          points_after: res.newPoints,
+          cost_paid: computedCost,
+          bet_amount: matchMode === 'guillotine' ? res.cost_paid : 0,
+        });
+      });
+
+      setLocalData('tierg_players', localPlayers);
+      setLocalData('tierg_games', localGames);
+      setLocalData('tierg_results', filteredResults);
+    }
+  }
+
   // --- Reset/Demodata Helper (Only in demo mode) ---
   resetDatabase(): void {
     if (this.isSupabaseMode()) {
