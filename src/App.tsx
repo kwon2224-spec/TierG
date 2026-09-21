@@ -215,14 +215,14 @@ function App() {
         <div className="modal-overlay" onClick={() => setShowAdminLoginModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">관리자 권한 로그인</h3>
+              <h3 className="modal-title">관리자 로그인</h3>
               <button className="modal-close-btn" onClick={() => setShowAdminLoginModal(false)}>
                 ✕
               </button>
             </div>
             <form onSubmit={handleAdminLogin} className="modal-body">
               <div className="form-group">
-                <label className="form-label">관리자 선수 지정</label>
+                <label className="form-label">관리자 선택</label>
                 <select
                   className="form-input"
                   value={selectedAdminId}
@@ -231,7 +231,7 @@ function App() {
                 >
                   {players.filter(p => p.is_admin).map((admin) => (
                     <option key={admin.id} value={admin.id}>
-                      {admin.name} (관리자)
+                      {admin.name}
                     </option>
                   ))}
                   {players.filter(p => p.is_admin).length === 0 && (
@@ -241,20 +241,20 @@ function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">관리자 보안 패스워드</label>
+                <label className="form-label">비밀번호</label>
                 <input
                   type="password"
                   className="form-input"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="관리자 보안 비밀번호 입력"
+                  placeholder="비밀번호 입력"
                   required
                 />
               </div>
 
               <button type="submit" className="submit-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                 <Check size={18} />
-                <span>관리자 인증 완료</span>
+                <span>인증하기</span>
               </button>
             </form>
           </div>
