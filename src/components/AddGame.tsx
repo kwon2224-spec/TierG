@@ -569,21 +569,21 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                 {/* Render assignments results */}
                 {roomResults.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.03)' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '4px' }}>✨ 랜덤 추첨 결과 조편성</h4>
+                    <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '4px' }}>랜덤 조편성 결과</h4>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                       {roomResults.map((room, roomIdx) => {
                         if (room.length === 0) return null;
                         return (
                           <div key={roomIdx} style={{ flex: '1 1 120px', backgroundColor: 'var(--bg-hover)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
                             <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent)', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                              🏢 Room {String.fromCharCode(65 + roomIdx)} ({room.length}명)
+                              Room {String.fromCharCode(65 + roomIdx)} ({room.length}명)
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                               {room.map((pId) => {
                                 const pName = players.find(p => p.id === pId)?.name || 'Unknown';
                                 return (
                                   <span key={pId} style={{ fontSize: '13px', fontWeight: '600' }}>
-                                    🏌️‍♂️ {pName}
+                                    {pName}
                                   </span>
                                 );
                               })}
@@ -602,7 +602,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         {/* Input Scores List */}
         {selectedPlayerIds.length > 0 && (
           <div className="score-entry-list">
-            <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '10px 0 5px' }}>📊 선수별 경기 결과 입력</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '10px 0 5px' }}>선수별 스코어 및 벌금 입력</h3>
             {selectedPlayerIds.map((pId) => {
               const player = players.find((p) => p.id === pId)!;
               const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
@@ -719,7 +719,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               }}
             >
               <span style={{ fontWeight: '800', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
-                <Sparkles size={15} /> ⚡ 실시간 LP 변동 예상 {showPreviewList ? '닫기' : '보기'}
+                <Sparkles size={15} /> 실시간 LP 변동 예상 {showPreviewList ? '닫기' : '보기'}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {showPreviewList ? '▲ 접기' : '▼ 터치하여 열기'}
@@ -744,12 +744,12 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         <span>{item.player.name}</span>
                         {item.isPromo && (
                           <span className="promo-alert" style={{ fontSize: '10px' }}>
-                            🌟 승급 확정!
+                            승급 확정
                           </span>
                         )}
                         {item.isDemo && (
                           <span className="demo-alert" style={{ fontSize: '10px' }}>
-                            ⚠️ 강등 경고
+                            강등 경고
                           </span>
                         )}
                       </div>
@@ -780,7 +780,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
         {/* Submit Button */}
         {selectedPlayerIds.length >= 2 ? (
           <button type="submit" className="submit-btn" disabled={saving} style={{ marginTop: '10px' }}>
-            {saving ? '경기 저장 중...' : '🏆 경기 결과 최종 확정'}
+            {saving ? '경기 저장 중...' : '경기 결과 등록'}
           </button>
         ) : (
           <div style={{

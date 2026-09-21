@@ -174,7 +174,7 @@ function App() {
             {!isSupabase && (
               <div className="admin-actions">
                 <button className="reset-db-btn" onClick={handleResetDemoData}>
-                  🔄 데모 데이터 공장 초기화
+                  데모 데이터 초기화
                 </button>
               </div>
             )}
@@ -215,7 +215,7 @@ function App() {
         <div className="modal-overlay" onClick={() => setShowAdminLoginModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">🔓 관리자 권한 로그인</h3>
+              <h3 className="modal-title">관리자 권한 로그인</h3>
               <button className="modal-close-btn" onClick={() => setShowAdminLoginModal(false)}>
                 ✕
               </button>
