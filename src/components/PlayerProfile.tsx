@@ -336,8 +336,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                   style={{ flex: 1, padding: '8px 12px', backgroundColor: 'var(--bg-hover)' }}
                   disabled={updatingStatus}
                 >
-                  <option value="Active">활동 중 (정상 랭크 및 출전 대기)</option>
-                  <option value="Dormant">휴면 (랭킹 음영 처리 및 경기 출전 제외)</option>
+                  <option value="Active">활동중</option>
+                  <option value="Dormant">휴면</option>
                 </select>
               </div>
             </div>
@@ -354,33 +354,54 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
               results.map((res) => {
                 const lpDiff = res.points_changed;
                 const isPlus = lpDiff >= 0;
+
+                // Identify MatchMode parameters
+                const isGuillotine = (res.bet_amount || 0) > 0;
+                const isScratch = res.notes?.startsWith('[스크래치]');
+                const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
+                const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
+                const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
+
+                // Binary Win/Loss for Guillotine matches, otherwise normal Rank placing
+                const isGuillotineWin = isGuillotine && res.cost_paid === 0;
+                const rankDisplay = isGuillotine
+                  ? (isGuillotineWin ? '승' : '패')
+                  : `${res.rank}등`;
+
                 return (
                   <div key={res.id} className="profile-history-item">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span
                         style={{
                           fontWeight: '800',
-                          color: res.rank === 1 ? '#ffd700' : 'var(--text-secondary)',
+                          color: isGuillotine 
+                            ? (isGuillotineWin ? '#34d399' : '#f87171') 
+                            : (res.rank === 1 ? '#ffd700' : 'var(--text-secondary)'),
                           fontSize: '14px',
+                          minWidth: '24px',
+                          textAlign: 'center'
                         }}
                       >
-                        {res.rank}등
+                        {rankDisplay}
                       </span>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: '600' }}>{res.raw_score}타 (핸디 적용 {res.adjusted_score}타)</span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontWeight: '600', fontSize: '13px' }}>{res.raw_score}타 (핸디 적용 {res.adjusted_score}타)</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold' }}>
+                            {modeName}
+                          </span>
                           <Calendar size={10} /> {new Date(res.played_at).toLocaleDateString('ko-KR')}
                         </span>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <span
-                        className={`history-lp-diff ${isPlus ? 'plus' : 'minus'}`}
-                        style={{ fontWeight: '700', fontSize: '14px' }}
+                        className={`history-lp-diff ${isGuillotine ? 'zero' : (isPlus ? 'plus' : 'minus')}`}
+                        style={{ fontWeight: '700', fontSize: '14px', color: isGuillotine ? 'var(--text-muted)' : undefined }}
                       >
-                        {isPlus ? `+${lpDiff}` : lpDiff} LP
+                        {isGuillotine ? '0 LP' : (isPlus ? `+${lpDiff}` : lpDiff) + ' LP'}
                       </span>
-                      <div style={{ fontSize: '10px', color: '#10b981' }}>
+                      <div style={{ fontSize: '10px', color: '#f87171' }}>
                         {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원 지출` : ''}
                       </div>
                     </div>
