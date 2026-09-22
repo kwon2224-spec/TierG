@@ -639,26 +639,39 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           </div>
                         </div>
 
-                        {/* Cost and LP difference on right side */}
-                        <div className="history-lp-pills">
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', width: '55px', textAlign: 'right' }}>
+                        {/* Cost, LP difference, and Resulting Tier/Points on right side */}
+                        <div className="history-lp-pills" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
                             {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원` : '0원'}
                           </div>
-                          <div
-                            className={`history-lp-diff ${isZero ? 'zero' : isPlus ? 'plus' : 'minus'}`}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '2px',
-                              width: '85px',
-                              minWidth: '85px',
-                              justifyContent: 'flex-end',
-                              color: isZero ? 'var(--text-muted)' : undefined, // Cool gray color if LP is frozen!
-                              opacity: isZero ? 0.7 : 1
-                            }}
-                          >
-                            {!isZero && (isPlus ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />)}
-                            {isZero ? '0 LP' : (isPlus ? `+${lpDiff}` : lpDiff) + ' LP'}
+                          
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '75px' }}>
+                            <div
+                              className={`history-lp-diff ${isZero ? 'zero' : isPlus ? 'plus' : 'minus'}`}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '2px',
+                                justifyContent: 'flex-end',
+                                color: isZero ? 'var(--text-muted)' : undefined, // Cool gray color if LP is frozen!
+                                opacity: isZero ? 0.7 : 1,
+                                fontSize: '12px',
+                                fontWeight: '700'
+                              }}
+                            >
+                              {!isZero && (isPlus ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />)}
+                              {isZero ? '0 LP' : (isPlus ? `+${lpDiff}` : lpDiff) + ' LP'}
+                            </div>
+
+                            {/* Resulting Tier & Points After Game */}
+                            {res.tier_after && (
+                              <div style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px', marginTop: '1px' }}>
+                                <span style={{ color: TIER_THEMES[res.tier_after]?.color || 'var(--text-muted)', fontWeight: '700' }}>
+                                  {TIER_THEMES[res.tier_after]?.name || res.tier_after}
+                                </span>
+                                <span style={{ color: 'var(--text-muted)' }}>({res.points_after ?? 0}LP)</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
