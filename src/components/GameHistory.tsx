@@ -43,7 +43,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
   };
 
   const handleDeleteGame = async (gameId: string) => {
-    if (window.confirm('선택하신 이 경기를 정말로 취소(삭제)하시겠습니까?\n\n삭제 시 이 경기로 획득했거나 차감되었던 모든 참여 골퍼들의 LP 전적 포인트가 실시간 현재 티어 점수에서 수학적으로 안전하게 역산 롤백 복구됩니다.')) {
+    if (window.confirm('선택하신 경기를 취소하시겠습니까?\n\n취소 시 해당 경기로 인한 플레이어들의 LP 변동 내역이 자동 차감 및 복구 처리됩니다.')) {
       setDeleting(true);
       try {
         await tiergService.deleteGame(gameId);
@@ -253,21 +253,33 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
           const totalGameCost = results.reduce((sum, r) => sum + r.cost_paid, 0);
           const isCurrentlyEditing = editingGameId === game.id;
 
+          // Declare match mode variables at the card top-level!
+          const isGuillotine = results.some((r) => (r.bet_amount || 0) > 0);
+          const isScratch = game.notes?.startsWith('[스크래치]');
+          const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
+          const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
+          const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
+
           return (
             <div key={game.id} className="game-history-card" style={{ border: isCurrentlyEditing ? '1px solid var(--accent)' : '1px solid var(--border-color)' }}>
               
               {/* Game Card Header */}
               <div className="game-history-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <div className="game-date" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div className="game-date" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                     <Calendar size={13} color="var(--accent)" />
-                    {new Date(game.played_at).toLocaleString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    <span>
+                      {new Date(game.played_at).toLocaleString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 6px', borderRadius: '3px', fontWeight: 'bold', marginLeft: '6px' }}>
+                      {modeName}
+                    </span>
                   </div>
                   {game.notes && <div className="game-notes" style={{ marginTop: '2px' }}>{game.notes}</div>}
                 </div>
@@ -387,9 +399,9 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           onChange={(e) => setEditMatchMode(e.target.value as MatchMode)}
                           style={{ backgroundColor: 'var(--bg-hover)', height: '40px !important', padding: '6px 8px !important', fontSize: '13px !important' }}
                         >
-                          <option value="handicap">핸디 적용 (공식 리그전)</option>
-                          <option value="scratch">스크래치 (전적 동결)</option>
-                          <option value="guillotine">단두대 (패자 독박)</option>
+                          <option value="handicap">핸디 적용</option>
+                          <option value="scratch">스크래치</option>
+                          <option value="guillotine">단두대</option>
                         </select>
                       </div>
 
@@ -531,6 +543,11 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                     const isZero = lpDiff === 0;
                     const isPlus = lpDiff > 0;
 
+                    const isGuillotineWin = isGuillotine && res.cost_paid === 0;
+                    const rankDisplay = isGuillotine
+                      ? (isGuillotineWin ? '승' : '패')
+                      : `${res.rank}등`;
+
                     return (
                       <div
                         key={res.id}
@@ -541,15 +558,21 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                          {/* Placement Index */}
+                          {/* Placement Index (Tied Win/Loss for Guillotine) */}
                           <span
                             className="history-rank"
                             style={{
-                              color: res.rank === 1 ? '#ffd700' : res.rank === 2 ? '#cbd5e1' : 'var(--text-muted)',
-                              fontStyle: 'italic',
+                              color: isGuillotine
+                                ? (isGuillotineWin ? '#34d399' : '#f87171')
+                                : (res.rank === 1 ? '#ffd700' : res.rank === 2 ? '#cbd5e1' : 'var(--text-muted)'),
+                              fontWeight: isGuillotine ? '800' : 'normal',
+                              fontStyle: isGuillotine ? 'normal' : 'italic',
+                              minWidth: '24px',
+                              textAlign: 'center',
+                              display: 'inline-block'
                             }}
                           >
-                            {res.rank}등
+                            {rankDisplay}
                           </span>
                           
                           {/* Player Name and Cost */}

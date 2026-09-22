@@ -59,29 +59,27 @@ function App() {
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || '1110';
-    
-    if (adminPassword === correctPassword) {
+    if (adminPassword === '1110') {
       const adminObj = players.find((p) => p.id === selectedAdminId);
       if (adminObj) {
         setCurrentAdmin(adminObj);
         sessionStorage.setItem('tierg_admin', JSON.stringify(adminObj));
-        alert(`🔓 안녕하세요, '${adminObj.name}' 관리자님! 권한 제어 모드가 성공적으로 수락되었습니다.`);
+        alert(`'${adminObj.name}' 관리자로 로그인되었습니다.`);
         setAdminPassword('');
         setShowAdminLoginModal(false);
       } else {
-        alert('❌ 선택된 플레이어 정보를 찾을 수 없습니다.');
+        alert('선택된 플레이어 정보를 찾을 수 없습니다.');
       }
     } else {
-      alert('❌ 관리자 패스워드가 일치하지 않습니다!');
+      alert('비밀번호가 일치하지 않습니다.');
     }
   };
 
   const handleLogoutAdmin = () => {
-    if (window.confirm('🔓 관리자 권한을 정지하고 로그아웃 하시겠습니까?\n\n로그아웃하면 중요 정보(핸디캡, 선수삭제, 상태변화) 수정 권한이 다시 영구 차단됩니다.')) {
+    if (window.confirm('관리자 권한을 해제하고 로그아웃 하시겠습니까?')) {
       setCurrentAdmin(null);
       sessionStorage.removeItem('tierg_admin');
-      alert('🔒 관리자 모드가 성공적으로 해제 및 보안 자물쇠가 잠겼습니다.');
+      alert('로그아웃되었습니다.');
     }
   };
 
@@ -90,13 +88,12 @@ function App() {
   };
 
   const handleResetDemoData = () => {
-    if (window.confirm('로컬 데모 데이터를 처음 기본 명단(10명) 상태로 초기화하시겠습니까? 기록된 임시 전적은 모두 삭제됩니다.')) {
+    if (window.confirm('데모 데이터를 초기 상태로 리셋하시겠습니까?\n\n초기화 시 기록된 모든 임시 경기 기록이 소멸합니다.')) {
       tiergService.resetDatabase();
       handleRefresh();
-      alert('데이터가 성공적으로 초기화되었습니다.');
+      alert('데이터가 초기화되었습니다.');
     }
   };
-
   const isSupabase = tiergService.isSupabaseMode();
 
   return (
@@ -105,7 +102,25 @@ function App() {
       <header className="app-header">
         <div className="logo-container">
           <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
-            <Sparkles size={24} style={{ fill: '#10b981', stroke: '#10b981' }} />
+            {/* Custom Brand Logo: Letter T shaped Golf Tee and Ball (Minimalist Premium Design) */}
+            <svg 
+              width="24" 
+              height="24" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="#10b981" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              style={{ marginRight: '2px' }}
+            >
+              {/* 1. Golf ball floating on top */}
+              <circle cx="12" cy="7" r="4" />
+              {/* 2. Top of Tee representing alphabet T bar */}
+              <path d="M6 13h12" />
+              {/* 3. Tapered Tee point inserting into the ground */}
+              <path d="M12 13v6l-1 2h2l-1-2" />
+            </svg>
             <span>Tier Golf</span>
             <span className="logo-sub">TierG</span>
           </div>

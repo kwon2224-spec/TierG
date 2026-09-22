@@ -362,9 +362,10 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                   whiteSpace: 'nowrap',
                   padding: '11px 16px',
                   fontSize: '13px',
-                  backgroundColor: 'var(--bg-hover)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-secondary)',
+                  background: 'none', // Premium Glass Ghost Button
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: 'var(--text-primary)', // Bright and fully clickable!
+                  fontWeight: '700',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px'
@@ -471,7 +472,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
             return (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '15px' }}>참가 선수 선택 (2~{activePlayers.length}명)</span>
+                  <span style={{ fontWeight: '700', fontSize: '15px' }}>⛳ 참가 선수 선택 (2~{activePlayers.length}명)</span>
                   <span style={{ fontSize: '12px', color: selectedPlayerIds.length === 4 ? '#10b981' : 'var(--text-muted)' }}>
                     {selectedPlayerIds.length}명 선택함 {selectedPlayerIds.length === 4 ? '(4인 표준 경기)' : ''}
                   </span>
