@@ -102,7 +102,7 @@ function App() {
       <header className="app-header">
         <div className="logo-container">
           <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
-            {/* Custom Brand Logo: Trendy T-Monogram with integrated Golf Flag & Ball (Minimalist Premium Design) */}
+            {/* Custom Brand Logo: Fluid TG Monogram (Highly Stylized, Dynamic Swing Trajectory Design) */}
             <svg 
               width="24" 
               height="24" 
@@ -114,14 +114,14 @@ function App() {
               strokeLinejoin="round"
               style={{ marginRight: '4px' }}
             >
-              {/* 1. Letter T horizontal top bar */}
-              <path d="M6 6h12" />
-              {/* 2. Letter T vertical stem acting as the Flagpole */}
-              <path d="M12 6v14" />
-              {/* 3. Sleek Golf Flag flying off to the right (Solid Emerald Green) */}
-              <path d="M12 6l5 3-5 3z" fill="#10b981" />
-              {/* 4. Tiny Golf Ball nested next to the bottom flagpole */}
-              <circle cx="16" cy="18" r="1.5" fill="#10b981" stroke="none" />
+              {/* 1. Letter T horizontal top bar - Stylized as a smooth dynamic arc/swing wave */}
+              <path d="M5 7c4-2 10-2 14 0" />
+              
+              {/* 2. Letter T stem that seamlessly flows into the Letter G bottom loop in one continuous line */}
+              <path d="M12 7v7c0 3.5 3 4.5 5 4.5s4.5-1.5 4.5-4.5c0-2.5-1.5-3.5-3.5-3.5h-2" />
+              
+              {/* 3. Minimalist Golf Ball nestled right in the negative space of the G loop */}
+              <circle cx="15.5" cy="14.5" r="1.5" fill="#10b981" stroke="none" />
             </svg>
             <span>Tier Golf</span>
             <span className="logo-sub">TierG</span>
