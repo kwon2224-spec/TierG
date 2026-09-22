@@ -77,30 +77,13 @@ html, body {
   white-space: nowrap !important; /* Prevents text wrap on tiny devices! */
 }
 
-/* Premium Glassy Emerald-Bordered Brand Capsule (Luxury Golf Apparel Style!) */
-.logo-brand-capsule {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(4, 120, 87, 0.03) 100%);
-  border: 1px solid rgba(16, 185, 129, 0.22);
-  padding: 5px 12px;
-  border-radius: 20px; /* Perfectly rounded horizontal oval capsule */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-  transition: all 0.2s ease-in-out;
-}
-
-.logo-brand-capsule:hover {
-  border-color: rgba(16, 185, 129, 0.4);
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(4, 120, 87, 0.05) 100%);
-}
-
-/* Typographic Wordmark inside the capsule */
+/* Premium Typographic Wordmark (High-end Pure Minimalism!) */
 .logo-brand-wordmark {
   font-family: var(--font-sans);
   text-transform: uppercase;
   display: inline-flex;
   align-items: center;
+  user-select: none;
 }
 
 .logo-sub {

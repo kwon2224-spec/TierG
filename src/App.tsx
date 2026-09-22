@@ -102,12 +102,10 @@ function App() {
       <header className="app-header">
         <div className="logo-container">
           <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
-            {/* Custom Brand Wordmark Logo enclosed inside a glassy luxury apparel brand capsule/oval! */}
-            <div className="logo-brand-capsule">
-              <div className="logo-brand-wordmark" style={{ fontSize: '14px', letterSpacing: '0.04em' }}>
-                <span style={{ fontWeight: '900', color: '#ffffff' }}>TIER</span>
-                <span style={{ fontWeight: '900', color: '#10b981', marginLeft: '4px' }}>GOLF</span>
-              </div>
+            {/* Custom Brand Wordmark Logo: Bold Pure Minimalism (No capsule, just large, stunning typography!) */}
+            <div className="logo-brand-wordmark" style={{ fontSize: '21px', letterSpacing: '-0.02em' }}>
+              <span style={{ fontWeight: '900', color: '#ffffff' }}>TIER</span>
+              <span style={{ fontWeight: '900', color: '#10b981', marginLeft: '4px' }}>GOLF</span>
             </div>
           </div>
 
