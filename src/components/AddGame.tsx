@@ -592,33 +592,39 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
             {/* Collapsible Content */}
             {showRoomAssigner && (
               <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '14px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>방 개수 선택</label>
-                    <select
-                      className="form-input"
-                      value={roomCount}
-                      onChange={(e) => {
-                        setRoomCount(parseInt(e.target.value, 10));
-                        setRoomResults([]); // Clear when count adjusts
-                      }}
-                      style={{ padding: '8px 12px', backgroundColor: 'var(--bg-hover)' }}
-                    >
-                      <option value={2}>2개 방 배정</option>
-                      <option value={3}>3개 방 배정</option>
-                      <option value={4}>4개 방 배정</option>
-                    </select>
-                  </div>
+                {/* 1. Label placed cleanly on its own full-width row */}
+                <label className="form-label" style={{ fontSize: '11px', marginBottom: '6px', display: 'block' }}>방 개수 선택</label>
+                
+                {/* 2. Symmetrical row with exact 40px heights and vertical center alignment! */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px' }}>
+                  <select
+                    className="form-input"
+                    value={roomCount}
+                    onChange={(e) => {
+                      setRoomCount(parseInt(e.target.value, 10));
+                      setRoomResults([]); // Clear when count adjusts
+                    }}
+                    style={{ flex: 1, height: '40px', padding: '6px 12px', backgroundColor: 'var(--bg-hover)' }}
+                  >
+                    <option value={2}>2개 방 배정</option>
+                    <option value={3}>3개 방 배정</option>
+                    <option value={4}>4개 방 배정</option>
+                  </select>
                   <button
                     type="button"
                     onClick={handleRandomAssign}
                     className="submit-btn"
                     style={{
                       width: 'auto',
-                      padding: '10px 18px',
+                      height: '40px', // Exact 40px match!
+                      padding: '0 20px',
                       fontSize: '13px',
                       background: 'linear-gradient(135deg, #f59e0b, #b45309)',
-                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
+                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '700'
                     }}
                   >
                     조편성 시작
