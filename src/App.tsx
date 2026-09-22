@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Trophy, PlusCircle, History, Sparkles, Database, DatabaseZap, Lock, LockOpen, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, PlusCircle, History, Database, DatabaseZap, Lock, LockOpen, Check } from 'lucide-react';
 import { Leaderboard } from './components/Leaderboard';
 import { AddGame } from './components/AddGame';
 import { GameHistory } from './components/GameHistory';
