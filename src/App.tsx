@@ -102,28 +102,12 @@ function App() {
       <header className="app-header">
         <div className="logo-container">
           <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
-            {/* Custom Brand Logo: Fluid TG Monogram (Highly Stylized, Dynamic Swing Trajectory Design) */}
-            <svg 
-              width="24" 
-              height="24" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="#10b981" 
-              strokeWidth="2.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              style={{ marginRight: '4px' }}
-            >
-              {/* 1. Letter T horizontal top bar - Stylized as a smooth dynamic arc/swing wave */}
-              <path d="M5 7c4-2 10-2 14 0" />
-              
-              {/* 2. Letter T stem that seamlessly flows into the Letter G bottom loop in one continuous line */}
-              <path d="M12 7v7c0 3.5 3 4.5 5 4.5s4.5-1.5 4.5-4.5c0-2.5-1.5-3.5-3.5-3.5h-2" />
-              
-              {/* 3. Minimalist Golf Ball nestled right in the negative space of the G loop */}
-              <circle cx="15.5" cy="14.5" r="1.5" fill="#10b981" stroke="none" />
-            </svg>
-            <span>Tier Golf</span>
+            {/* Custom Brand Wordmark Logo (Highly Stylized Modern Typography) */}
+            <div className="logo-brand-wordmark">
+              <span>TIER</span>
+              <span className="wordmark-light">GOLF</span>
+              <span className="wordmark-ball-dot" />
+            </div>
             <span className="logo-sub">TierG</span>
           </div>
 
