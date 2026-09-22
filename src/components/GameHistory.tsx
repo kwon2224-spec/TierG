@@ -391,32 +391,52 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div className="form-group" style={{ marginBottom: '0' }}>
-                        <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>매치 모드</label>
-                        <select
-                          className="form-input"
-                          value={editMatchMode}
-                          onChange={(e) => setEditMatchMode(e.target.value as MatchMode)}
-                          style={{ backgroundColor: 'var(--bg-hover)', height: '40px !important', padding: '6px 8px !important', fontSize: '13px !important' }}
-                        >
-                          <option value="handicap">핸디 적용</option>
-                          <option value="scratch">스크래치</option>
-                          <option value="guillotine">단두대</option>
-                        </select>
+                    {/* Tactile 3-Segment Button Selector (Full width, no wrapping squishing!) */}
+                    <div className="form-group" style={{ marginBottom: '0' }}>
+                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>매치 모드</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '2px' }}>
+                        {[
+                          { id: 'handicap', label: '핸디 적용' },
+                          { id: 'scratch', label: '스크래치' },
+                          { id: 'guillotine', label: '단두대' }
+                        ].map((m) => {
+                          const isActive = editMatchMode === m.id;
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => setEditMatchMode(m.id as any)}
+                              style={{
+                                padding: '8px 4px',
+                                fontSize: '12px',
+                                fontWeight: isActive ? '800' : '600',
+                                borderRadius: 'var(--radius-sm)',
+                                border: isActive ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.05)',
+                                background: isActive ? 'linear-gradient(135deg, #10b981, #047857)' : 'rgba(255,255,255,0.02)',
+                                color: isActive ? '#fff' : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                textAlign: 'center',
+                                boxShadow: isActive ? '0 4px 12px rgba(16, 185, 129, 0.12)' : 'none'
+                              }}
+                            >
+                              {m.label}
+                            </button>
+                          );
+                        })}
                       </div>
+                    </div>
 
-                      <div className="form-group" style={{ marginBottom: '0' }}>
-                        <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>코스명 및 메모</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={editNotes}
-                          onChange={(e) => setEditNotes(e.target.value)}
-                          placeholder="예: 아일랜드CC"
-                          style={{ height: '40px !important', padding: '6px 8px !important', fontSize: '13px !important' }}
-                        />
-                      </div>
+                    <div className="form-group" style={{ marginBottom: '0' }}>
+                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>코스명 및 메모</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        placeholder="예: 아일랜드CC"
+                        style={{ height: '40px !important', padding: '6px 8px !important', fontSize: '13px !important' }}
+                      />
                     </div>
                   </div>
 

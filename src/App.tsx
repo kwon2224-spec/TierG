@@ -102,23 +102,25 @@ function App() {
       <header className="app-header">
         <div className="logo-container">
           <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
-            {/* Custom Brand Logo: Bold Letter T and golf ball nested on the right (No gender symbol ambiguity!) */}
+            {/* Custom Brand Logo: Modern Country Club Shield Crest (Trendy Premium Golf Brand Style) */}
             <svg 
               width="24" 
               height="24" 
               viewBox="0 0 24 24" 
               fill="none" 
               stroke="#10b981" 
-              strokeWidth="2.5" 
+              strokeWidth="2" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              style={{ marginRight: '4px' }}
+              style={{ marginRight: '6px' }}
             >
-              {/* Clean minimalist Letter T */}
-              <path d="M6 7h12" />
-              <path d="M12 7v12" />
-              {/* Golf ball nested elegantly on the right side */}
-              <circle cx="17" cy="13" r="3" fill="#10b981" />
+              {/* 1. Symmetrical Modern Country Club Shield outline */}
+              <path d="M12 21s7-4 7-9V5l-7-2-7 2v7c0 5 7 9 7 9z" />
+              {/* 2. Minimalist Golf Ball nestled inside the shield */}
+              <circle cx="12" cy="9" r="2" fill="#10b981" stroke="none" />
+              {/* 3. Small Golf Tee supporting the ball */}
+              <path d="M10.5 11.5h3" />
+              <path d="M12 11.5v4" />
             </svg>
             <span>Tier Golf</span>
             <span className="logo-sub">TierG</span>

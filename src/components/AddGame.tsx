@@ -408,19 +408,41 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               </span>
             </div>
 
-            <select
-              className="form-input"
-              value={matchMode}
-              onChange={(e) => {
-                setMatchMode(e.target.value as MatchMode);
-                setRoomResults([]); // Clear previous room results when mode/players adjust
-              }}
-              style={{ backgroundColor: 'var(--bg-hover)' }}
-            >
-              <option value="handicap">핸디 적용</option>
-              <option value="scratch">스크래치</option>
-              <option value="guillotine">단두대</option>
-            </select>
+            {/* Tactile 3-Segment Button Selector (No more clunky dropdown spinner!) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '4px' }}>
+              {[
+                { id: 'handicap', label: '핸디 적용' },
+                { id: 'scratch', label: '스크래치' },
+                { id: 'guillotine', label: '단두대' }
+              ].map((m) => {
+                const isActive = matchMode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      setMatchMode(m.id as any);
+                      setRoomResults([]); // Clear previous room results when mode adjusts
+                    }}
+                    style={{
+                      padding: '10px 4px',
+                      fontSize: '12px',
+                      fontWeight: isActive ? '800' : '600',
+                      borderRadius: 'var(--radius-sm)',
+                      border: isActive ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.05)',
+                      background: isActive ? 'linear-gradient(135deg, #10b981, #047857)' : 'rgba(255,255,255,0.02)',
+                      color: isActive ? '#fff' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      textAlign: 'center',
+                      boxShadow: isActive ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Collapsible Help Popover */}
             {showMatchModeHelp && (
