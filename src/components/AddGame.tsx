@@ -592,7 +592,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
             {/* Collapsible Content */}
             {showRoomAssigner && (
               <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '14px' }}>
                   <div style={{ flex: 1 }}>
                     <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>방 개수 선택</label>
                     <select
@@ -615,7 +615,6 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                     className="submit-btn"
                     style={{
                       width: 'auto',
-                      marginTop: '15px',
                       padding: '10px 18px',
                       fontSize: '13px',
                       background: 'linear-gradient(135deg, #f59e0b, #b45309)',
