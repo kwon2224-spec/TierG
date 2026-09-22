@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, PlusCircle, History, Database, DatabaseZap, Lock, LockOpen, Check } from 'lucide-react';
+import { Trophy, PlusCircle, History, Lock, LockOpen, Check } from 'lucide-react';
 import { Leaderboard } from './components/Leaderboard';
 import { AddGame } from './components/AddGame';
 import { GameHistory } from './components/GameHistory';
@@ -129,24 +129,54 @@ function App() {
 
           {/* Database Mode and Admin Status Badges */}
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {isSupabase ? (
-              <div className="mode-badge supabase">
-                <DatabaseZap size={12} /> Live Cloud DB
-              </div>
-            ) : (
-              <div className="mode-badge demo">
-                <Database size={12} /> Local Demo
-              </div>
-            )}
-
-            {/* Live Admin status lock/unlock badge */}
+            {/* Live Admin status lock/unlock badge - Stylishly redesigned, no clunky Cloud DB jargon! */}
             {currentAdmin ? (
-              <div className="admin-status-badge unlocked" onClick={handleLogoutAdmin} title="관리자 로그아웃 (인증 정지)">
-                <LockOpen size={12} /> {currentAdmin.name}
+              <div 
+                className="admin-status-badge unlocked" 
+                onClick={handleLogoutAdmin} 
+                title="관리자 로그아웃"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                  border: '1px solid rgba(16, 185, 129, 0.15)',
+                  color: '#34d399',
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <LockOpen size={11} />
+                <span>{currentAdmin.name}</span>
               </div>
             ) : (
-              <div className="admin-status-badge locked" onClick={() => { loadPlayersForAdminDropdown(); setShowAdminLoginModal(true); }} title="관리자 권한 로그인">
-                <Lock size={12} /> 잠김
+              <div 
+                className="admin-status-badge locked" 
+                onClick={() => { loadPlayersForAdminDropdown(); setShowAdminLoginModal(true); }} 
+                title="관리자 로그인"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  color: 'var(--text-muted)',
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Lock size={11} />
+                <span>관리자</span>
               </div>
             )}
           </div>
