@@ -57,6 +57,58 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     }
   };
 
+  // Format and share dynamic game results text directly to KakaoTalk or clipboard!
+  const handleShareGameResult = (game: any, results: any[]) => {
+    const isGuillotine = results.some((r) => (r.bet_amount || 0) > 0);
+    const isScratch = game.notes?.includes('[스크래치]');
+    const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디캡';
+
+    const formattedDate = new Date(game.played_at).toLocaleString('ko-KR', {
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    let shareText = `⛳ [TierGolf] 경기 결과 보고\n`;
+    shareText += `일시: ${formattedDate}\n`;
+    shareText += `모드: ${modeName}\n`;
+    
+    let notesText = game.notes || '';
+    if (notesText.startsWith('[스크래치] ')) notesText = notesText.substring(7);
+    else if (notesText.startsWith('[단두대] ')) notesText = notesText.substring(6);
+    if (notesText) {
+      shareText += `코스: ${notesText}\n`;
+    }
+    shareText += `\n■ 경기 결과 현황\n`;
+
+    const sortedResults = [...results].sort((a, b) => a.rank - b.rank);
+    sortedResults.forEach((res) => {
+      const isWin = isGuillotine && res.cost_paid === 0;
+      const rankLabel = isGuillotine ? (isWin ? '승' : '패') : `${res.rank}등`;
+      
+      const lpSign = res.points_changed > 0 ? `+${res.points_changed}` : `${res.points_changed}`;
+      const lpDisplay = (isScratch || isGuillotine) ? `0 LP` : `${lpSign} LP`;
+
+      const costDisplay = res.cost_paid > 0 ? ` [${res.cost_paid.toLocaleString()}원 지출]` : '';
+
+      shareText += `${rankLabel}. ${res.player_name}: ${res.raw_score}타 (${lpDisplay})${costDisplay}\n`;
+    });
+
+    shareText += `\n지금 리더보드를 확인해 보세요! 🏌️‍♂️`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'TierGolf 경기 결과',
+        text: shareText,
+      }).catch((err) => console.log('Share canceled or failed:', err));
+    } else {
+      navigator.clipboard.writeText(shareText)
+        .then(() => alert('결과 리스트가 클립보드에 복사되었습니다! 카톡방에 붙여넣기 하세요.'))
+        .catch(() => alert('복사에 실패했습니다.'));
+    }
+  };
+
   // Populate inline edit states with this game details when editing is clicked
   const handleStartEdit = (gameWithRes: GameWithResults) => {
     setEditingGameId(gameWithRes.game.id);
@@ -291,14 +343,16 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                     총 경비: <strong style={{ color: '#34d399', fontSize: '12px' }}>{totalGameCost.toLocaleString()}원</strong>
                   </div>
                   
-                  {isAdmin && !isCurrentlyEditing && (
+                  {!isCurrentlyEditing && (
                     <div style={{ display: 'flex', gap: '6px', marginTop: '2px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      {/* Share Button - ALWAYS visible to all users (both players and admins!) */}
                       <button
-                        onClick={() => handleStartEdit({ game, results })}
+                        type="button"
+                        onClick={() => handleShareGameResult(game, results)}
                         style={{
                           background: 'none',
-                          border: '1px solid rgba(59, 130, 246, 0.4)',
-                          color: '#60a5fa',
+                          border: '1px solid rgba(245, 158, 11, 0.4)',
+                          color: '#fbbf24',
                           fontSize: '11px',
                           padding: '3px 8px',
                           borderRadius: '4px',
@@ -307,32 +361,58 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           alignItems: 'center',
                           gap: '4px',
                           transition: 'all 0.2s',
+                          fontWeight: '700'
                         }}
                       >
-                        <Edit2 size={11} />
-                        <span>경기 수정</span>
+                        결과 공유
                       </button>
 
-                      <button
-                        onClick={() => handleDeleteGame(game.id)}
-                        disabled={deleting}
-                        style={{
-                          background: 'none',
-                          border: '1px solid rgba(239, 68, 68, 0.4)',
-                          color: '#f87171',
-                          fontSize: '11px',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        <Trash2 size={11} />
-                        <span>{deleting ? '취소 중...' : '경기 취소'}</span>
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit({ game, results })}
+                            style={{
+                              background: 'none',
+                              border: '1px solid rgba(59, 130, 246, 0.4)',
+                              color: '#60a5fa',
+                              fontSize: '11px',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.2s',
+                            }}
+                          >
+                            <Edit2 size={11} />
+                            <span>경기 수정</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGame(game.id)}
+                            disabled={deleting}
+                            style={{
+                              background: 'none',
+                              border: '1px solid rgba(239, 68, 68, 0.4)',
+                              color: '#f87171',
+                              fontSize: '11px',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.2s',
+                            }}
+                          >
+                            <Trash2 size={11} />
+                            <span>{deleting ? '취소 중...' : '경기 취소'}</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
