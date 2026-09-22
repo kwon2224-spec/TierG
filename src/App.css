@@ -77,49 +77,30 @@ html, body {
   white-space: nowrap !important; /* Prevents text wrap on tiny devices! */
 }
 
-/* Premium Typographic Wordmark (High-end designer wear style!) */
-.logo-brand-wordmark {
-  font-family: var(--font-sans);
-  font-weight: 900;       /* TIER is thick and solid white */
-  font-size: 17px;
-  letter-spacing: -0.02em; /* Sleek, tightly compressed letter spacing */
-  text-transform: uppercase;
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-}
-
-.logo-brand-wordmark .wordmark-light {
-  font-weight: 300;       /* GOLF is ultra-thin and elegant */
-  color: #10b981;         /* Emerald brand tone */
-  margin-left: 3px;
-  display: inline-flex;
-  align-items: center;
-}
-
-/* Highly Stylized Golf Ball Ligature replacing letter O in GOLF */
-.logo-brand-wordmark .golf-ball-o {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1.5px solid #10b981; /* Emerald border representing O */
+/* Premium Glassy Emerald-Bordered Brand Capsule (Luxury Golf Apparel Style!) */
+.logo-brand-capsule {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  margin: 0 1px;
-  vertical-align: middle;
-  box-shadow: 0 0 4px rgba(16, 185, 129, 0.3);
-  top: -1px; /* Optical balance adjustment */
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(4, 120, 87, 0.03) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  padding: 5px 12px;
+  border-radius: 20px; /* Perfectly rounded horizontal oval capsule */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease-in-out;
 }
 
-.logo-brand-wordmark .golf-ball-o::after {
-  content: '';
-  width: 2.5px;
-  height: 2.5px;
-  border-radius: 50%;
-  background-color: #10b981; /* Core center dimple of the ball */
-  display: block;
+.logo-brand-capsule:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(4, 120, 87, 0.05) 100%);
+}
+
+/* Typographic Wordmark inside the capsule */
+.logo-brand-wordmark {
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
 }
 
 .logo-sub {
