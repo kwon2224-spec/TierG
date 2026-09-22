@@ -190,30 +190,56 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             </div>
             <div className="profile-lp">기본 핸디캡: {player.base_handicap}개</div>
 
-            {/* Admin Checkbox to delegate/revoke Admin Rights */}
+            {/* Admin Checkbox to delegate/revoke Admin Rights (Premium iOS-Style Toggle Switch!) */}
             {isAdmin && currentAdminId !== player.id && (
-              <div style={{
-                marginTop: '12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                border: '1px solid rgba(245, 158, 11, 0.25)',
-                cursor: 'pointer'
-              }}>
-                <input
-                  type="checkbox"
-                  id="adminRightsCheckbox"
-                  checked={playerIsAdmin}
-                  disabled={updatingAdminStatus}
-                  onChange={(e) => handleToggleAdminRights(e.target.checked)}
-                  style={{ cursor: 'pointer', width: '15px', height: '15px' }}
-                />
-                <label htmlFor="adminRightsCheckbox" style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', cursor: 'pointer', userSelect: 'none' }}>
-                  ⭐ 관리자 권한 부여
-                </label>
+              <div 
+                onClick={() => !updatingAdminStatus && handleToggleAdminRights(!playerIsAdmin)}
+                style={{
+                  marginTop: '12px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 12px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                  cursor: updatingAdminStatus ? 'not-allowed' : 'pointer',
+                  userSelect: 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {/* Custom iOS Slide Toggle Switch */}
+                <div style={{
+                  width: '34px',
+                  height: '18px',
+                  borderRadius: '9px',
+                  backgroundColor: playerIsAdmin ? '#10b981' : 'rgba(255, 255, 255, 0.08)',
+                  position: 'relative',
+                  transition: 'all 0.2s',
+                  border: '1px solid ' + (playerIsAdmin ? '#10b981' : 'rgba(255, 255, 255, 0.1)')
+                }}>
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    backgroundColor: '#fff',
+                    position: 'absolute',
+                    top: '2px',
+                    left: playerIsAdmin ? '18px' : '2px',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.4)'
+                  }} />
+                </div>
+                
+                {/* Dynamic Status Text */}
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '700', 
+                  color: playerIsAdmin ? '#34d399' : 'var(--text-muted)',
+                  transition: 'color 0.2s'
+                }}>
+                  {playerIsAdmin ? '관리자 권한 활성화' : '관리자 권한 부여'}
+                </span>
               </div>
             )}
           </div>
