@@ -375,6 +375,7 @@ html, body {
 
 /* Create New Player Button */
 .add-player-btn {
+  width: 100%; /* Spans full card width for perfect grid alignment! */
   background-color: rgba(16, 185, 129, 0.1);
   border: 1px dashed var(--accent);
   color: var(--accent);
