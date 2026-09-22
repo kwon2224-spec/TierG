@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, HelpCircle, Crown } from 'lucide-react';
-import { type Player, type Tier, TIERS_ORDER, TIER_THEMES, TIER_WEIGHTS } from '../types';
+import { type Player, type Tier, TIERS_ORDER, TIER_THEMES, TIER_WEIGHTS, TIER_HANDICAPS } from '../types';
 import { tiergService } from '../services/tiergService';
 import { TierBadge } from './TierBadge';
 
@@ -19,7 +19,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
 
   // New Player Form State
   const [newName, setNewName] = useState('');
-  const [newHandicap, setNewNameHandicap] = useState('20');
+  const [newHandicap, setNewNameHandicap] = useState('25'); // Default Iron standard is 25!
   const [startTier, setStartTier] = useState<Tier>('Iron');
   const [startPoints, setStartPoints] = useState('50');
   const [submitting, setSubmitting] = useState(false);
@@ -246,7 +246,12 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                 <select
                   className="form-input"
                   value={startTier}
-                  onChange={(e) => setStartTier(e.target.value as Tier)}
+                  onChange={(e) => {
+                    const selected = e.target.value as Tier;
+                    setStartTier(selected);
+                    // Automatically pre-fill the standard starting handicap for this tier to save admin's manual lookups!
+                    setNewNameHandicap(String(TIER_HANDICAPS[selected]));
+                  }}
                   style={{ backgroundColor: 'var(--bg-hover)' }}
                 >
                   {TIERS_ORDER.map((t) => (

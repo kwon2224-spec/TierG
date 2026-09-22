@@ -474,15 +474,22 @@ class TierGService {
 
         const resultsToInsert = [];
 
-        // Update each player and prepare results rows (with automatic handicap sync!)
+        // Update each player and prepare results rows (with intelligent automatic handicap sync on tier change!)
         for (const res of finalResults) {
+          const updatePayload: any = {
+            tier: res.newTier,
+            points: res.newPoints,
+          };
+          
+          // Only force handicap sync if the player actually promoted or demoted to a different tier!
+          // This perfectly preserves any manual custom handicaps adjusted by the admin within the same tier!
+          if (res.newTier !== res.player.tier) {
+            updatePayload.base_handicap = TIER_HANDICAPS[res.newTier];
+          }
+
           const { error: playerUpdateError } = await supabase
             .from('players')
-            .update({
-              tier: res.newTier,
-              points: res.newPoints,
-              base_handicap: TIER_HANDICAPS[res.newTier] // <--- Automatic handicap sync!
-            })
+            .update(updatePayload)
             .eq('id', res.player.id);
 
           if (playerUpdateError) throw playerUpdateError;
@@ -763,13 +770,19 @@ class TierGService {
             -res.points_changed
           );
 
+          const updatePayload: any = {
+            tier: tierBefore,
+            points: pointsBefore,
+          };
+          
+          // Only rollback base_handicap if the player's tier actually rolls back to a different one!
+          if (tierBefore !== livePlayer.tier) {
+            updatePayload.base_handicap = TIER_HANDICAPS[tierBefore];
+          }
+
           const { error: playerUpdateError } = await supabase
             .from('players')
-            .update({
-              tier: tierBefore,
-              points: pointsBefore,
-              base_handicap: TIER_HANDICAPS[tierBefore] // <--- Automatic handicap rollback!
-            })
+            .update(updatePayload)
             .eq('id', res.player_id);
 
           if (playerUpdateError) {
@@ -983,15 +996,22 @@ class TierGService {
           });
         }
 
-        // STEP D: Save newly calculated points and tiers to Supabase (with automatic handicap sync!)
+        // STEP D: Save newly calculated points and tiers to Supabase (with intelligent automatic handicap sync on tier change!)
         for (const res of finalResults) {
+          const updatePayload: any = {
+            tier: res.newTier,
+            points: res.newPoints,
+          };
+          
+          // Only force handicap sync if the player actually promoted or demoted to a different tier!
+          // This perfectly preserves any manual custom handicaps adjusted by the admin within the same tier!
+          if (res.newTier !== res.player.tier) {
+            updatePayload.base_handicap = TIER_HANDICAPS[res.newTier];
+          }
+
           const { error: playerUpdateError } = await supabase
             .from('players')
-            .update({
-              tier: res.newTier,
-              points: res.newPoints,
-              base_handicap: TIER_HANDICAPS[res.newTier] // <--- Automatic handicap sync!
-            })
+            .update(updatePayload)
             .eq('id', res.player.id);
 
           if (playerUpdateError) throw playerUpdateError;
