@@ -71,6 +71,33 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     setRoomResults(allocated);
   };
 
+  // Format and share room assignments text directly to KakaoTalk or clipboard fallback!
+  const handleShareRooms = () => {
+    if (roomResults.length === 0) return;
+
+    let shareText = `⛳ [TierGolf] 방 랜덤 배정 결과\n\n`;
+    roomResults.forEach((room, roomIdx) => {
+      if (room.length === 0) return;
+      const roomLabel = String.fromCharCode(65 + roomIdx);
+      const playerNames = room
+        .map((pId) => players.find((p) => p.id === pId)?.name || 'Unknown')
+        .join(', ');
+      shareText += `■ Room ${roomLabel} (${room.length}명)\n: ${playerNames}\n\n`;
+    });
+    shareText += `신속하게 준비하여 티업해 주세요! 🏌️‍♂️`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'TierGolf 방 배정 결과',
+        text: shareText,
+      }).catch((err) => console.log('Share canceled or failed:', err));
+    } else {
+      navigator.clipboard.writeText(shareText)
+        .then(() => alert('배정 결과가 복사되었습니다! 카톡방에 붙여넣기(Ctrl+V) 하세요.'))
+        .catch(() => alert('복사에 실패했습니다. 결과를 드래그하여 복사해 주세요.'));
+    }
+  };
+
   // Helper to dynamically calculate actual strokes from combo-box or direct inputs
   const getRawScoreForPlayer = (id: string): number => {
     const selection = scoreSelections[id] || '18'; // Default to +18 Over Par (90 strokes)
@@ -602,7 +629,26 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                 {/* Render assignments results */}
                 {roomResults.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.03)' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '4px' }}>랜덤 조편성 결과</h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', margin: 0 }}>랜덤 조편성 결과</h4>
+                      <button
+                        type="button"
+                        onClick={handleShareRooms}
+                        style={{
+                          background: 'none',
+                          border: '1px solid rgba(245, 158, 11, 0.4)',
+                          color: '#fbbf24',
+                          fontSize: '11px',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: '700',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        결과 카톡 공유
+                      </button>
+                    </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                       {roomResults.map((room, roomIdx) => {
                         if (room.length === 0) return null;
