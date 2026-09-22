@@ -33,6 +33,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       guillotineSaved: number;
       guillotineWins?: number;
       guillotineLosses?: number;
+      leagueWins?: number;
+      leagueLosses?: number;
     };
   } | null>(null);
 
@@ -291,12 +293,14 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                 </div>
               </div>
 
-              {/* Guillotine Win/Loss Record & Survival Rate Progress bar */}
-              {((stats.guillotineWins || 0) + (stats.guillotineLosses || 0)) > 0 && (() => {
-                const totalG = (stats.guillotineWins || 0) + (stats.guillotineLosses || 0);
-                const wins = stats.guillotineWins || 0;
-                const losses = stats.guillotineLosses || 0;
-                const survivalRate = Math.round((wins / totalG) * 1000) / 10; // e.g. 80.5%
+              {/* 1. Universal Overall League Record & Win Rate Progress Bar */}
+              {stats.totalGames > 0 && (() => {
+                const wins = stats.leagueWins || 0;
+                const losses = stats.leagueLosses || 0;
+                const total = wins + losses;
+                if (total === 0) return null;
+                
+                const winRate = Math.round((wins / total) * 1000) / 10; // e.g. 72.5%
                 
                 return (
                   <div style={{
@@ -308,22 +312,50 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                     gap: '4px'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', fontWeight: '700' }}>
-                      <span style={{ color: '#fbbf24' }}>단두대 생존율</span>
+                      <span style={{ color: 'var(--accent)' }}>통합 리그 승률</span>
                       <span style={{ color: 'var(--text-secondary)' }}>
-                        {totalG}전 {wins}승 {losses}패 (<span style={{ color: survivalRate >= 50 ? '#34d399' : '#f87171' }}>{survivalRate}%</span>)
+                        {total}전 {wins}승 {losses}패 (<span style={{ color: winRate >= 50 ? '#34d399' : '#f87171' }}>{winRate}%</span>)
                       </span>
                     </div>
                     
                     {/* Custom Micro Progress Bar */}
                     <div style={{ width: '100%', height: '4px', borderRadius: '2px', backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative' }}>
                       <div style={{
-                        width: `${survivalRate}%`,
+                        width: `${winRate}%`,
                         height: '100%',
                         borderRadius: '2px',
                         background: 'linear-gradient(90deg, #10b981, #34d399)',
                         transition: 'width 0.3s'
                       }} />
                     </div>
+                  </div>
+                );
+              })()}
+
+              {/* 2. Secondary Guillotine survival rate (only visible to those who played Guillotine!) */}
+              {((stats.guillotineWins || 0) + (stats.guillotineLosses || 0)) > 0 && (() => {
+                const totalG = (stats.guillotineWins || 0) + (stats.guillotineLosses || 0);
+                const wins = stats.guillotineWins || 0;
+                const losses = stats.guillotineLosses || 0;
+                const survivalRate = Math.round((wins / totalG) * 1000) / 10; // e.g. 80.5%
+                
+                return (
+                  <div style={{
+                    marginTop: '8px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    backgroundColor: 'rgba(255,255,255,0.01)',
+                    padding: '5px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(255,255,255,0.02)'
+                  }}>
+                    <span style={{ color: '#fbbf24' }}>단두대 생존율</span>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      {totalG}전 {wins}승 {losses}패 (<span style={{ color: survivalRate >= 50 ? '#34d399' : '#f87171' }}>{survivalRate}%</span>)
+                    </span>
                   </div>
                 );
               })()}

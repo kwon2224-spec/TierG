@@ -253,7 +253,7 @@ class TierGService {
   async getGames(): Promise<GameWithResults[]> {
     if (supabase) {
       try {
-        // Fetch all games
+        // 1. Fetch all games in one single query
         const { data: gamesData, error: gamesError } = await supabase
           .from('games')
           .select('*')
@@ -263,25 +263,27 @@ class TierGService {
 
         if (!gamesData || gamesData.length === 0) return [];
 
-        const gamesWithResults: GameWithResults[] = [];
+        // 2. Fetch ALL results for ALL games in one single query (Resolves N+1 query bottleneck!)
+        const { data: resultsData, error: resultsError } = await supabase
+          .from('game_results')
+          .select(`
+            *,
+            players (
+              name,
+              tier,
+              points
+            )
+          `);
 
-        for (const game of gamesData) {
-          // Fetch results for this game, joining with players to get names
-          const { data: resultsData, error: resultsError } = await supabase
-            .from('game_results')
-            .select(`
-              *,
-              players (
-                name,
-                tier,
-                points
-              )
-            `)
-            .eq('game_id', game.id);
+        if (resultsError) throw resultsError;
 
-          if (resultsError) throw resultsError;
-
-          const formattedResults = (resultsData || []).map((r: any) => ({
+        // 3. Map and group results by game_id in-memory (Incredibly fast!)
+        const resultsByGameId: Record<string, any[]> = {};
+        (resultsData || []).forEach((r: any) => {
+          if (!resultsByGameId[r.game_id]) {
+            resultsByGameId[r.game_id] = [];
+          }
+          resultsByGameId[r.game_id].push({
             id: r.id,
             game_id: r.game_id,
             player_id: r.player_id,
@@ -292,22 +294,28 @@ class TierGService {
             tier_after: r.tier_after as Tier,
             points_after: r.points_after,
             cost_paid: r.cost_paid,
-            bet_amount: r.bet_amount || 0, // Sucessfully retrieve the bet amount from DB to history!
+            bet_amount: r.bet_amount || 0,
             player_name: r.players?.name || 'Unknown',
-            // Since db row has tier_after, we reconstruct before values
-            player_tier_before: r.tier_after as Tier, // Approximate or just display current
+            player_tier_before: r.tier_after as Tier,
             player_points_before: r.points_after,
-          }));
+          });
+        });
 
-          gamesWithResults.push({
+        // 4. Assemble the final GamesWithResults list
+        const gamesWithResults = gamesData.map((game) => {
+          const formattedResults = resultsByGameId[game.id] || [];
+          // Sort results by rank ascending
+          formattedResults.sort((a, b) => a.rank - b.rank);
+          
+          return {
             game: {
               id: game.id,
               played_at: game.played_at,
               notes: game.notes,
             },
             results: formattedResults,
-          });
-        }
+          };
+        });
 
         return gamesWithResults;
       } catch (error) {
@@ -618,6 +626,8 @@ class TierGService {
       guillotineSaved: number; // Total saved/evaded as a Guillotine survivor
       guillotineWins: number;
       guillotineLosses: number;
+      leagueWins: number;      // Unified wins across all match types!
+      leagueLosses: number;    // Unified losses across all match types!
     };
   }> {
     const players = await this.getPlayers();
@@ -721,6 +731,38 @@ class TierGService {
     const guillotineWins = history.filter((r) => (r.bet_amount || 0) > 0 && r.cost_paid === 0).length;
     const guillotineLosses = history.filter((r) => (r.bet_amount || 0) > 0 && r.cost_paid > 0).length;
 
+    // Calculate dynamic unified League Wins/Losses (Universal Overall Win Rate!)
+    let leagueWins = 0;
+    let leagueLosses = 0;
+
+    history.forEach((r) => {
+      const isGuillotine = (r.bet_amount || 0) > 0;
+      const isScratch = r.notes?.includes('[스크래치]');
+      
+      if (isGuillotine) {
+        // Guillotine: surviving (cost_paid === 0) is a Win!
+        if (r.cost_paid === 0) {
+          leagueWins++;
+        } else {
+          leagueLosses++;
+        }
+      } else if (isScratch) {
+        // Scratch: finishing in the top half (rank 1 or 2, i.e. rank <= 2) is a Win!
+        if (r.rank <= 2) {
+          leagueWins++;
+        } else {
+          leagueLosses++;
+        }
+      } else {
+        // Handicap: positive or neutral LP change (points_changed >= 0) is a Win!
+        if (r.points_changed >= 0) {
+          leagueWins++;
+        } else {
+          leagueLosses++;
+        }
+      }
+    });
+
     return {
       player,
       results: history,
@@ -735,6 +777,8 @@ class TierGService {
         guillotineSaved,
         guillotineWins,
         guillotineLosses,
+        leagueWins,
+        leagueLosses,
       },
     };
   }
