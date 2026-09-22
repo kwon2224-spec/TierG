@@ -12,9 +12,19 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   const [loading, setLoading] = useState(true);
 
   // Match info
-  const [playedAt, setPlayedAt] = useState<string>(
-    new Date().toISOString().substring(0, 16) // Default to local current time formatted for datetime-local
-  );
+  const [playedAt, setPlayedAt] = useState<string>(() => {
+    const nowLocal = new Date();
+    // Smart rounded minutes to nearest 10! (e.g. 14:14 -> 14:10, 14:16 -> 14:20)
+    const minutes = nowLocal.getMinutes();
+    const roundedMinutes = Math.round(minutes / 10) * 10;
+    nowLocal.setMinutes(roundedMinutes);
+    nowLocal.setSeconds(0);
+    nowLocal.setMilliseconds(0);
+    
+    // Extract YYYY-MM-DDTHH:mm safely accounting for timezone offset!
+    const tzOffset = nowLocal.getTimezoneOffset() * 60000;
+    return new Date(nowLocal.getTime() - tzOffset).toISOString().substring(0, 16);
+  });
   const [notes, setNotes] = useState<string>('');
   const [matchMode, setMatchMode] = useState<MatchMode>('handicap');
   const [showMatchModeHelp, setShowMatchModeHelp] = useState<boolean>(false); // Help popover status
