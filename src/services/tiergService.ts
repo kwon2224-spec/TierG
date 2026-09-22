@@ -673,8 +673,11 @@ class TierGService {
     const totalGames = history.length;
     const averageRawScore =
       totalGames > 0 ? history.reduce((sum, r) => sum + r.raw_score, 0) / totalGames : 0;
-    const bestRawScore =
-      totalGames > 0 ? Math.min(...history.map((r) => r.raw_score)) : 0;
+    // Exclude Guillotine (9-hole matches!) from Lifetime Best 18-hole raw score (라베) calculation!
+    const nonGuillotineResults = history.filter((r) => (r.bet_amount || 0) === 0);
+    const bestRawScore = nonGuillotineResults.length > 0
+      ? Math.min(...nonGuillotineResults.map((r) => r.raw_score))
+      : 0;
 
     // Decouple: General Cumulative Spent only sums up normal, non-Guillotine matches (bet_amount === 0)
     // This perfectly prevents double-counting if a Guillotine bet was made based on previous game costs!

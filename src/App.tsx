@@ -102,7 +102,7 @@ function App() {
       <header className="app-header">
         <div className="logo-container">
           <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
-            {/* Custom Brand Logo: Letter T shaped Golf Tee and Ball (Minimalist Premium Design) */}
+            {/* Custom Brand Logo: Bold Letter T and golf ball nested on the right (No gender symbol ambiguity!) */}
             <svg 
               width="24" 
               height="24" 
@@ -112,14 +112,13 @@ function App() {
               strokeWidth="2.5" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              style={{ marginRight: '2px' }}
+              style={{ marginRight: '4px' }}
             >
-              {/* 1. Golf ball floating on top */}
-              <circle cx="12" cy="7" r="4" />
-              {/* 2. Top of Tee representing alphabet T bar */}
-              <path d="M6 13h12" />
-              {/* 3. Tapered Tee point inserting into the ground */}
-              <path d="M12 13v6l-1 2h2l-1-2" />
+              {/* Clean minimalist Letter T */}
+              <path d="M6 7h12" />
+              <path d="M12 7v12" />
+              {/* Golf ball nested elegantly on the right side */}
+              <circle cx="17" cy="13" r="3" fill="#10b981" />
             </svg>
             <span>Tier Golf</span>
             <span className="logo-sub">TierG</span>
@@ -269,7 +268,7 @@ function App() {
 
               <button type="submit" className="submit-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                 <Check size={18} />
-                <span>인증하기</span>
+                <span>로그인</span>
               </button>
             </form>
           </div>
