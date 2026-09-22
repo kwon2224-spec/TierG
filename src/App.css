@@ -82,7 +82,7 @@ html, body {
   font-family: var(--font-sans);
   font-weight: 900;       /* TIER is thick and solid white */
   font-size: 17px;
-  letter-spacing: -0.03em; /* Sleek, tightly compressed letter spacing */
+  letter-spacing: -0.02em; /* Sleek, tightly compressed letter spacing */
   text-transform: uppercase;
   color: #ffffff;
   display: inline-flex;
@@ -93,16 +93,33 @@ html, body {
   font-weight: 300;       /* GOLF is ultra-thin and elegant */
   color: #10b981;         /* Emerald brand tone */
   margin-left: 3px;
+  display: inline-flex;
+  align-items: center;
 }
 
-.logo-brand-wordmark .wordmark-ball-dot {
-  width: 5px;
-  height: 5px;
+/* Highly Stylized Golf Ball Ligature replacing letter O in GOLF */
+.logo-brand-wordmark .golf-ball-o {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background-color: #10b981; /* Glowing neon-emerald golf ball dot */
-  display: inline-block;
-  margin-left: 3px;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+  border: 1.5px solid #10b981; /* Emerald border representing O */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0 1px;
+  vertical-align: middle;
+  box-shadow: 0 0 4px rgba(16, 185, 129, 0.3);
+  top: -1px; /* Optical balance adjustment */
+}
+
+.logo-brand-wordmark .golf-ball-o::after {
+  content: '';
+  width: 2.5px;
+  height: 2.5px;
+  border-radius: 50%;
+  background-color: #10b981; /* Core center dimple of the ball */
+  display: block;
 }
 
 .logo-sub {

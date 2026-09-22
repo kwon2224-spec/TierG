@@ -102,13 +102,15 @@ function App() {
       <header className="app-header">
         <div className="logo-container">
           <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
-            {/* Custom Brand Wordmark Logo (Highly Stylized Modern Typography) */}
+            {/* Custom Brand Wordmark Logo: TIER G[golfball]LF Typographic Ligature (Luxury Modern Design) */}
             <div className="logo-brand-wordmark">
               <span>TIER</span>
-              <span className="wordmark-light">GOLF</span>
-              <span className="wordmark-ball-dot" />
+              <span className="wordmark-light" style={{ marginLeft: '4px' }}>
+                <span>G</span>
+                <span className="golf-ball-o" />
+                <span>LF</span>
+              </span>
             </div>
-            <span className="logo-sub">TierG</span>
           </div>
 
           {/* Database Mode and Admin Status Badges */}
