@@ -102,25 +102,26 @@ function App() {
       <header className="app-header">
         <div className="logo-container">
           <div className="logo" onClick={() => setActiveTab('leaderboard')} style={{ cursor: 'pointer' }} title="티어 랭킹 홈으로 즉시 이동">
-            {/* Custom Brand Logo: Modern Country Club Shield Crest (Trendy Premium Golf Brand Style) */}
+            {/* Custom Brand Logo: Trendy T-Monogram with integrated Golf Flag & Ball (Minimalist Premium Design) */}
             <svg 
               width="24" 
               height="24" 
               viewBox="0 0 24 24" 
               fill="none" 
               stroke="#10b981" 
-              strokeWidth="2" 
+              strokeWidth="2.5" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              style={{ marginRight: '2px' }}
+              style={{ marginRight: '4px' }}
             >
-              {/* 1. Symmetrical Modern Country Club Shield outline */}
-              <path d="M12 21s7-4 7-9V5l-7-2-7 2v7c0 5 7 9 7 9z" />
-              {/* 2. Minimalist Golf Ball nestled inside the shield */}
-              <circle cx="12" cy="9" r="2" fill="#10b981" stroke="none" />
-              {/* 3. Small Golf Tee supporting the ball */}
-              <path d="M10.5 11.5h3" />
-              <path d="M12 11.5v4" />
+              {/* 1. Letter T horizontal top bar */}
+              <path d="M6 6h12" />
+              {/* 2. Letter T vertical stem acting as the Flagpole */}
+              <path d="M12 6v14" />
+              {/* 3. Sleek Golf Flag flying off to the right (Solid Emerald Green) */}
+              <path d="M12 6l5 3-5 3z" fill="#10b981" />
+              {/* 4. Tiny Golf Ball nested next to the bottom flagpole */}
+              <circle cx="16" cy="18" r="1.5" fill="#10b981" stroke="none" />
             </svg>
             <span>Tier Golf</span>
             <span className="logo-sub">TierG</span>
