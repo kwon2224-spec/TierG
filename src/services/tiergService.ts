@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { type Player, type PlayerStatus, type MatchMode, type Game, type GameResult, type GameWithResults, type Tier, TIERS_ORDER } from '../types';
+import { type Player, type PlayerStatus, type MatchMode, type Game, type GameResult, type GameWithResults, type Tier, TIERS_ORDER, TIER_HANDICAPS } from '../types';
 
 // 1. Initialize Supabase Client if env variables are available
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -474,13 +474,14 @@ class TierGService {
 
         const resultsToInsert = [];
 
-        // Update each player and prepare results rows
+        // Update each player and prepare results rows (with automatic handicap sync!)
         for (const res of finalResults) {
           const { error: playerUpdateError } = await supabase
             .from('players')
             .update({
               tier: res.newTier,
               points: res.newPoints,
+              base_handicap: TIER_HANDICAPS[res.newTier] // <--- Automatic handicap sync!
             })
             .eq('id', res.player.id);
 
@@ -551,11 +552,12 @@ class TierGService {
     })[] = [];
 
     finalResults.forEach((res) => {
-      // Update player in local list
+      // Update player in local list (with automatic handicap sync!)
       const playerIndex = localPlayers.findIndex((p) => p.id === res.player.id);
       if (playerIndex !== -1) {
         localPlayers[playerIndex].tier = res.newTier;
         localPlayers[playerIndex].points = res.newPoints;
+        localPlayers[playerIndex].base_handicap = TIER_HANDICAPS[res.newTier]; // <--- Sync!
       }
 
       const computedCost = finalCosts.find(c => c.player_id === res.player.id)?.cost ?? res.cost_paid;
@@ -766,6 +768,7 @@ class TierGService {
             .update({
               tier: tierBefore,
               points: pointsBefore,
+              base_handicap: TIER_HANDICAPS[tierBefore] // <--- Automatic handicap rollback!
             })
             .eq('id', res.player_id);
 
@@ -980,13 +983,14 @@ class TierGService {
           });
         }
 
-        // STEP D: Save newly calculated points and tiers to Supabase
+        // STEP D: Save newly calculated points and tiers to Supabase (with automatic handicap sync!)
         for (const res of finalResults) {
           const { error: playerUpdateError } = await supabase
             .from('players')
             .update({
               tier: res.newTier,
               points: res.newPoints,
+              base_handicap: TIER_HANDICAPS[res.newTier] // <--- Automatic handicap sync!
             })
             .eq('id', res.player.id);
 

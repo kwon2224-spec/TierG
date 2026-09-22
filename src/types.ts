@@ -36,6 +36,19 @@ export const TIER_WEIGHTS: Record<Tier, number> = {
   Challenger: 900,
 };
 
+// Predetermined default handicaps based on Tier Standards (Strict League Rules!)
+export const TIER_HANDICAPS: Record<Tier, number> = {
+  Challenger: 0,
+  Master: 5,
+  Diamond: 8,
+  Emerald: 10,
+  Platinum: 12,
+  Gold: 15,
+  Silver: 18,
+  Bronze: 20,
+  Iron: 25,
+};
+
 // Visual themes for tiers
 export interface TierTheme {
   name: string;
