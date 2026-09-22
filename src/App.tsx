@@ -112,7 +112,7 @@ function App() {
               strokeWidth="2" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              style={{ marginRight: '6px' }}
+              style={{ marginRight: '2px' }}
             >
               {/* 1. Symmetrical Modern Country Club Shield outline */}
               <path d="M12 21s7-4 7-9V5l-7-2-7 2v7c0 5 7 9 7 9z" />

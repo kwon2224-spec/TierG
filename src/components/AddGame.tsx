@@ -495,8 +495,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontWeight: '700', fontSize: '15px' }}>⛳ 참가 선수 선택 (2~{activePlayers.length}명)</span>
-                  <span style={{ fontSize: '12px', color: selectedPlayerIds.length === 4 ? '#10b981' : 'var(--text-muted)' }}>
-                    {selectedPlayerIds.length}명 선택함 {selectedPlayerIds.length === 4 ? '(4인 표준 경기)' : ''}
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    {selectedPlayerIds.length}명 선택함
                   </span>
                 </div>
 
