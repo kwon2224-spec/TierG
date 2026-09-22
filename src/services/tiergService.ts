@@ -829,6 +829,14 @@ class TierGService {
     resultsInput: { player_id: string; raw_score: number; cost_paid: number; custom_handicap?: number }[],
     matchMode: MatchMode = 'handicap'
   ): Promise<void> {
+    // Prefix notes dynamically depending on selected MatchMode to prevent mode erasure!
+    let finalNotes = notes.trim();
+    if (matchMode === 'scratch') {
+      finalNotes = `[스크래치] ${finalNotes}`;
+    } else if (matchMode === 'guillotine') {
+      finalNotes = `[단두대] ${finalNotes}`;
+    }
+
     // 1. Fetch current games to locate the target original game
     const games = await this.getGames();
     const targetGame = games.find(g => g.game.id === gameId);
@@ -865,10 +873,10 @@ class TierGService {
           livePlayer.points = pointsBefore;
         }
 
-        // STEP B: Update Game Metadata
+        // STEP B: Update Game Metadata with prefixed finalNotes!
         const { error: gameUpdateError } = await supabase
           .from('games')
-          .update({ notes, played_at: playedAt })
+          .update({ notes: finalNotes, played_at: playedAt })
           .eq('id', gameId);
 
         if (gameUpdateError) throw gameUpdateError;
@@ -1035,10 +1043,10 @@ class TierGService {
         }
       });
 
-      // 2. Update metadata
+      // 2. Update metadata with prefixed finalNotes!
       const gameIdx = localGames.findIndex(g => g.id === gameId);
       if (gameIdx !== -1) {
-        localGames[gameIdx].notes = notes;
+        localGames[gameIdx].notes = finalNotes;
         localGames[gameIdx].played_at = playedAt;
       }
 

@@ -77,12 +77,13 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     const localISO = new Date(utcDate.getTime() - tzOffset).toISOString().substring(0, 16);
     setEditPlayedAt(localISO);
 
-    // Detect MatchMode
+    // Detect MatchMode with 100% robust cache-free dual check!
     let mode: MatchMode = 'handicap';
-    if (gameWithRes.game.notes?.startsWith('[스크래치]')) {
-      mode = 'scratch';
-    } else if (gameWithRes.game.notes?.startsWith('[단두대]')) {
+    const hasBet = gameWithRes.results.some((r) => (r.bet_amount || 0) > 0);
+    if (hasBet || gameWithRes.game.notes?.includes('[단두대]')) {
       mode = 'guillotine';
+    } else if (gameWithRes.game.notes?.includes('[스크래치]')) {
+      mode = 'scratch';
     }
     setEditMatchMode(mode);
 
