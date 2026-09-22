@@ -31,6 +31,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       wins: number;
       guillotineLost: number;
       guillotineSaved: number;
+      guillotineWins?: number;
+      guillotineLosses?: number;
     };
   } | null>(null);
 
@@ -278,7 +280,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                 <div className="stat-lbl" style={{ fontSize: '10px' }}>누적 일반 지출 비용 (평균: {Math.round(stats.averageCost).toLocaleString()}원)</div>
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
                 <div style={{ flex: 1, backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
                   <div style={{ fontSize: '14px', fontWeight: '800', color: '#f87171' }}>{stats.guillotineLost.toLocaleString()}원</div>
                   <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>단두대 독박 비용 💸</div>
@@ -288,6 +290,43 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                   <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>단두대 생존 절약 🛡️</div>
                 </div>
               </div>
+
+              {/* Guillotine Win/Loss Record & Survival Rate Progress bar */}
+              {((stats.guillotineWins || 0) + (stats.guillotineLosses || 0)) > 0 && (() => {
+                const totalG = (stats.guillotineWins || 0) + (stats.guillotineLosses || 0);
+                const wins = stats.guillotineWins || 0;
+                const losses = stats.guillotineLosses || 0;
+                const survivalRate = Math.round((wins / totalG) * 1000) / 10; // e.g. 80.5%
+                
+                return (
+                  <div style={{
+                    marginTop: '4px',
+                    paddingTop: '8px',
+                    borderTop: '1px dashed rgba(255,255,255,0.04)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10px', fontWeight: '700' }}>
+                      <span style={{ color: '#fbbf24' }}>단두대 생존율</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {totalG}전 {wins}승 {losses}패 (<span style={{ color: survivalRate >= 50 ? '#34d399' : '#f87171' }}>{survivalRate}%</span>)
+                      </span>
+                    </div>
+                    
+                    {/* Custom Micro Progress Bar */}
+                    <div style={{ width: '100%', height: '4px', borderRadius: '2px', backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative' }}>
+                      <div style={{
+                        width: `${survivalRate}%`,
+                        height: '100%',
+                        borderRadius: '2px',
+                        background: 'linear-gradient(90deg, #10b981, #34d399)',
+                        transition: 'width 0.3s'
+                      }} />
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

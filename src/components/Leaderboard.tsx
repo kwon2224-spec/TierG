@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, HelpCircle } from 'lucide-react';
+import { UserPlus, HelpCircle, Crown } from 'lucide-react';
 import { type Player, type Tier, TIERS_ORDER, TIER_THEMES, TIER_WEIGHTS } from '../types';
 import { tiergService } from '../services/tiergService';
 import { TierBadge } from './TierBadge';
@@ -83,6 +83,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>랭킹 정보를 불러오는 중...</div>;
   }
 
+  // Calculate the lowest handicap among all active (non-dormant) players to award the Crown!
+  const activePlayers = players.filter(p => p.status === 'Active');
+  const minHandicap = activePlayers.length > 0 ? Math.min(...activePlayers.map(p => p.base_handicap)) : 999;
+
   return (
     <div>
       <div className="leaderboard-title">
@@ -122,10 +126,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               {/* Player Info Details */}
               <div className="player-info">
                 <div className="player-name-row">
-                  <span className="player-name">
+                  <span className="player-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
                     {player.name}
-                    {player.nickname && <span style={{ fontSize: '11px', color: '#fbbf24', marginLeft: '6px', fontWeight: '600' }}>{player.nickname}</span>}
-                    {isDormant && <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>(휴면)</span>}
+                    {!isDormant && player.base_handicap === minHandicap && (
+                      <span title="모임 최저 핸디캡 실력왕" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        <Crown size={12} color="#ffd700" style={{ fill: '#ffd700', verticalAlign: 'middle' }} />
+                      </span>
+                    )}
+                    {player.nickname && <span style={{ fontSize: '11px', color: '#fbbf24', marginLeft: '3px', fontWeight: '600' }}>{player.nickname}</span>}
+                    {isDormant && <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '3px', fontWeight: 'normal' }}>(휴면)</span>}
                   </span>
                   <span className="player-handicap-badge">핸디: {player.base_handicap}개</span>
                 </div>
@@ -139,15 +148,28 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                   </span>
                 </div>
 
-                {/* LP Progress Bar */}
-                <div className="lp-bar-container">
+                {/* LP Progress Bar with 3D Glossy Finish! */}
+                <div className="lp-bar-container" style={{ height: '8px', overflow: 'hidden', position: 'relative', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)' }}>
                   <div
                     className="lp-bar-fill"
                     style={{
                       width: isDormant ? '0%' : `${lpPercentage}%`,
                       background: isDormant ? '#475569' : theme.gradient,
+                      position: 'relative'
                     }}
-                  />
+                  >
+                    {/* Gloss Shine Overlay */}
+                    {!isDormant && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.15) 100%)'
+                      }} />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

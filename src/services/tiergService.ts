@@ -607,6 +607,8 @@ class TierGService {
       wins: number; // Rank 1
       guillotineLost: number;  // Total paid as a Guillotine loser
       guillotineSaved: number; // Total saved/evaded as a Guillotine survivor
+      guillotineWins: number;
+      guillotineLosses: number;
     };
   }> {
     const players = await this.getPlayers();
@@ -707,6 +709,9 @@ class TierGService {
       return sum + (bet > 0 && r.cost_paid === 0 ? bet : 0);
     }, 0);
 
+    const guillotineWins = history.filter((r) => (r.bet_amount || 0) > 0 && r.cost_paid === 0).length;
+    const guillotineLosses = history.filter((r) => (r.bet_amount || 0) > 0 && r.cost_paid > 0).length;
+
     return {
       player,
       results: history,
@@ -719,6 +724,8 @@ class TierGService {
         wins,
         guillotineLost,
         guillotineSaved,
+        guillotineWins,
+        guillotineLosses,
       },
     };
   }
