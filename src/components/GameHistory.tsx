@@ -181,10 +181,11 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     }
   };
 
-  // Helper to determine game mode dynamically based on the reliable game notes prefix!
+  // Helper to determine game mode dynamically based on the reliable game notes prefix or bet amounts!
   const getGameMode = (gameWithRes: GameWithResults): MatchMode => {
-    if (gameWithRes.game.notes?.startsWith('[단두대]')) return 'guillotine';
-    if (gameWithRes.game.notes?.startsWith('[스크래치]')) return 'scratch';
+    const hasBet = gameWithRes.results.some((r) => (r.bet_amount || 0) > 0);
+    if (hasBet || gameWithRes.game.notes?.includes('[단두대]')) return 'guillotine';
+    if (gameWithRes.game.notes?.includes('[스크래치]')) return 'scratch';
     return 'handicap';
   };
 
