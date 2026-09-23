@@ -506,7 +506,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                         {rankDisplay}
                       </span>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontWeight: '600', fontSize: '13px' }}>{res.raw_score}타 (핸디 적용 {res.adjusted_score}타)</span>
+                        <span style={{ fontWeight: '600', fontSize: '13px' }}>{res.raw_score}타 (핸디 {res.adjusted_score}타)</span>
                         <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold' }}>
                             {modeName}

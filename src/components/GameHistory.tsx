@@ -638,7 +638,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span className="history-name">{res.player_name}</span>
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                              실제 {res.raw_score}타 (핸디 적용 {res.adjusted_score}타)
+                              {res.raw_score}타 (핸디 {res.adjusted_score}타)
                             </span>
                           </div>
                         </div>
