@@ -289,6 +289,14 @@ class TierGService {
           if (!resultsByGameId[r.game_id]) {
             resultsByGameId[r.game_id] = [];
           }
+
+          // Accurately reconstruct the true tier before this game using inverse math!
+          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+            r.tier_after as Tier,
+            r.points_after,
+            -r.points_changed
+          );
+
           resultsByGameId[r.game_id].push({
             id: r.id,
             game_id: r.game_id,
@@ -302,8 +310,8 @@ class TierGService {
             cost_paid: r.cost_paid,
             bet_amount: r.bet_amount || 0,
             player_name: r.players?.name || 'Unknown',
-            player_tier_before: r.tier_after as Tier,
-            player_points_before: r.points_after,
+            player_tier_before: tierBefore,
+            player_points_before: pointsBefore,
           });
         });
 

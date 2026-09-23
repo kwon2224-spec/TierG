@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { History, Calendar, ArrowUpRight, ArrowDownRight, Trash2, Edit2, Sparkles } from 'lucide-react';
-import { type GameWithResults, type MatchMode, TIER_THEMES } from '../types';
+import { type GameWithResults, type MatchMode, TIER_THEMES, TIER_WEIGHTS } from '../types';
 import { tiergService } from '../services/tiergService';
 
 interface GameHistoryProps {
@@ -603,6 +603,10 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       ? (isGuillotineWin ? '승' : '패')
                       : `${res.rank}등`;
 
+                    // Subtle micro promo/demo indicators
+                    const isPromo = res.player_tier_before && res.tier_after && TIER_WEIGHTS[res.tier_after] > TIER_WEIGHTS[res.player_tier_before];
+                    const isDemo = res.player_tier_before && res.tier_after && TIER_WEIGHTS[res.tier_after] < TIER_WEIGHTS[res.player_tier_before];
+
                     return (
                       <div
                         key={res.id}
@@ -670,6 +674,16 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                                   {TIER_THEMES[res.tier_after]?.name || res.tier_after}
                                 </span>
                                 <span style={{ color: 'var(--text-muted)' }}>({res.points_after ?? 0}LP)</span>
+                                {isPromo && (
+                                  <span style={{ fontSize: '9px', color: '#10b981', fontWeight: '800', marginLeft: '2px' }}>
+                                    ▲승급
+                                  </span>
+                                )}
+                                {isDemo && (
+                                  <span style={{ fontSize: '9px', color: '#f87171', fontWeight: '800', marginLeft: '2px' }}>
+                                    ▼강등
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
