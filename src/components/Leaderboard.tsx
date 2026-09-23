@@ -165,16 +165,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
       </div>
 
       {/* 4-Category Multi-Ranking Pill Bar (Monochrome Precision Lucide Icons - Zero Raw Emojis!) */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '6px',
-        marginBottom: '16px',
-        backgroundColor: 'rgba(0,0,0,0.2)',
-        padding: '4px',
-        borderRadius: '10px',
-        border: '1px solid rgba(255,255,255,0.03)'
-      }}>
+      <div 
+        className="ranking-pill-bar"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '6px',
+          marginBottom: '16px',
+          backgroundColor: 'rgba(0,0,0,0.2)',
+          padding: '4px',
+          borderRadius: '10px',
+          border: '1px solid rgba(255,255,255,0.03)'
+        }}
+      >
         {[
           { id: 'tier', label: '티어', icon: Trophy },
           { id: 'bestScore', label: '라베', icon: Target },
@@ -188,6 +191,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setRankingCategory(tab.id as RankingCategory)}
+              className={`ranking-pill-btn ${isActive ? 'active' : ''}`}
               style={{
                 height: '36px',
                 borderRadius: '7px',

@@ -28,7 +28,7 @@
   --border-color: #e2e8f0;
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #64748b;
   --accent: #059669;
   --accent-glow: rgba(5, 150, 105, 0.2);
 }
@@ -41,29 +41,70 @@
 
 [data-theme="light"] .app-container {
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.06);
+  border-left-color: #e2e8f0;
+  border-right-color: #e2e8f0;
+}
+
+[data-theme="light"] .app-header {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-bottom-color: #e2e8f0;
 }
 
 [data-theme="light"] .player-rank-card {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="light"] .player-rank-card:hover {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .player-handicap-badge {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .lp-bar-container {
+  background-color: #e2e8f0;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="light"] .game-history-card,
 [data-theme="light"] .game-setup-card,
-[data-theme="light"] .player-select-card,
-[data-theme="light"] .score-entry-row,
 [data-theme="light"] .profile-main-card,
 [data-theme="light"] .profile-history-card {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .player-select-card {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .player-select-card.selected {
+  background-color: #f0fdf4;
+  border-color: #10b981;
+}
+
+[data-theme="light"] .score-entry-row {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
 }
 
 [data-theme="light"] .form-input {
   background-color: #ffffff;
   border-color: #cbd5e1;
   color: #0f172a;
+}
+
+[data-theme="light"] .form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
 }
 
 [data-theme="light"] .modal-content {
@@ -79,6 +120,56 @@
 [data-theme="light"] .nav-btn:not(.active):hover {
   background-color: #f1f5f9;
   color: #0f172a;
+}
+
+[data-theme="light"] .admin-status-badge.locked {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+[data-theme="light"] .admin-status-badge.unlocked {
+  background-color: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.25);
+  color: #059669;
+}
+
+/* Light theme for Ranking Pill Bar (iOS Segmented Control Style!) */
+[data-theme="light"] .ranking-pill-bar {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .ranking-pill-btn:not(.active) {
+  color: #64748b !important;
+  background-color: transparent !important;
+}
+
+[data-theme="light"] .ranking-pill-btn.active {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .history-result-row {
+  border-bottom-color: #f1f5f9 !important;
+}
+
+[data-theme="light"] .info-notice-card {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .stat-box {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .cost-box {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 * {
