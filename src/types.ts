@@ -170,3 +170,14 @@ export interface GameWithResults {
     player_points_before: number;
   })[];
 }
+
+export type RankingCategory = 'tier' | 'bestScore' | 'winRate' | 'cost';
+
+export interface PlayerWithStats extends Player {
+  bestRawScore: number;
+  totalGames: number;
+  leagueWins: number;
+  leagueLosses: number;
+  winRate: number;
+  totalCost: number;
+}

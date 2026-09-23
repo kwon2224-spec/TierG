@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, HelpCircle, Crown } from 'lucide-react';
-import { type Player, type Tier, TIERS_ORDER, TIER_THEMES, TIER_WEIGHTS, TIER_HANDICAPS } from '../types';
+import { UserPlus, HelpCircle, Crown, Trophy, Target, TrendingUp, Coins } from 'lucide-react';
+import { type PlayerWithStats, type RankingCategory, type Tier, TIERS_ORDER, TIER_THEMES, TIER_WEIGHTS, TIER_HANDICAPS } from '../types';
 import { tiergService } from '../services/tiergService';
 import { TierBadge } from './TierBadge';
 
@@ -13,8 +13,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   onSelectPlayer,
   refreshTrigger,
 }) => {
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<PlayerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rankingCategory, setRankingCategory] = useState<RankingCategory>('tier');
   const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
 
   // New Player Form State
@@ -31,15 +32,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   const loadPlayers = async () => {
     setLoading(true);
     try {
-      const fetchedPlayers = await tiergService.getPlayers();
-      // Sort players by: Tier Weight (desc) -> LP Points (desc) -> Name (asc)
-      const sorted = [...fetchedPlayers].sort((a, b) => {
-        const weightA = TIER_WEIGHTS[a.tier] + a.points;
-        const weightB = TIER_WEIGHTS[b.tier] + b.points;
-        if (weightB !== weightA) return weightB - weightA;
-        return a.name.localeCompare(b.name, 'ko-KR');
-      });
-      setPlayers(sorted);
+      const fetchedPlayers = await tiergService.getPlayersWithStats();
+      setPlayers(fetchedPlayers);
     } catch (error) {
       console.error('Failed to load players:', error);
     } finally {
@@ -84,20 +78,114 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   }
 
   // Calculate the lowest handicap among all active (non-dormant) players to award the Crown!
-  const activePlayers = players.filter(p => p.status === 'Active');
-  const minHandicap = activePlayers.length > 0 ? Math.min(...activePlayers.map(p => p.base_handicap)) : 999;
+  const activePlayers = players.filter((p) => p.status === 'Active');
+  const minHandicap = activePlayers.length > 0 ? Math.min(...activePlayers.map((p) => p.base_handicap)) : 999;
+
+  // Dynamically sort players based on selected ranking category
+  const getSortedPlayers = () => {
+    const list = [...players];
+    if (rankingCategory === 'tier') {
+      return list.sort((a, b) => {
+        const weightA = TIER_WEIGHTS[a.tier] + a.points;
+        const weightB = TIER_WEIGHTS[b.tier] + b.points;
+        if (weightB !== weightA) return weightB - weightA;
+        return a.name.localeCompare(b.name, 'ko-KR');
+      });
+    }
+    if (rankingCategory === 'bestScore') {
+      return list.sort((a, b) => {
+        // Players with recorded 18-hole best score come first
+        if (a.bestRawScore > 0 && b.bestRawScore === 0) return -1;
+        if (a.bestRawScore === 0 && b.bestRawScore > 0) return 1;
+        if (a.bestRawScore !== b.bestRawScore) return a.bestRawScore - b.bestRawScore; // Lower is better!
+        return a.name.localeCompare(b.name, 'ko-KR');
+      });
+    }
+    if (rankingCategory === 'winRate') {
+      return list.sort((a, b) => {
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate; // Higher win rate first!
+        if (b.totalGames !== a.totalGames) return b.totalGames - a.totalGames;
+        return a.name.localeCompare(b.name, 'ko-KR');
+      });
+    }
+    if (rankingCategory === 'cost') {
+      return list.sort((a, b) => {
+        if (b.totalCost !== a.totalCost) return b.totalCost - a.totalCost; // Highest spent first!
+        if (b.totalGames !== a.totalGames) return b.totalGames - a.totalGames;
+        return a.name.localeCompare(b.name, 'ko-KR');
+      });
+    }
+    return list;
+  };
+
+  const sortedPlayers = getSortedPlayers();
+
+  const categoryTitles: Record<RankingCategory, string> = {
+    tier: '실시간 티어 랭킹',
+    bestScore: '18홀 라베(최저타) 랭킹',
+    winRate: '종합 리그 승률 랭킹',
+    cost: '누적 지출 기부 랭킹',
+  };
 
   return (
     <div>
       <div className="leaderboard-title">
-        <span>실시간 티어 랭킹</span>
+        <span>{categoryTitles[rankingCategory]}</span>
         <span style={{ fontSize: '13px', fontWeight: 'normal', color: 'var(--text-muted)' }}>
           총 {players.length}명 참여 중
         </span>
       </div>
 
+      {/* 4-Category Multi-Ranking Pill Bar (Monochrome Precision Lucide Icons - Zero Raw Emojis!) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '6px',
+        marginBottom: '16px',
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        padding: '4px',
+        borderRadius: '10px',
+        border: '1px solid rgba(255,255,255,0.03)'
+      }}>
+        {[
+          { id: 'tier', label: '티어', icon: Trophy },
+          { id: 'bestScore', label: '라베', icon: Target },
+          { id: 'winRate', label: '승률', icon: TrendingUp },
+          { id: 'cost', label: '지출', icon: Coins },
+        ].map((tab) => {
+          const isActive = rankingCategory === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setRankingCategory(tab.id as RankingCategory)}
+              style={{
+                height: '36px',
+                borderRadius: '7px',
+                border: isActive ? '1px solid var(--accent)' : '1px solid transparent',
+                background: isActive ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(4, 120, 87, 0.25))' : 'transparent',
+                color: isActive ? '#fff' : 'var(--text-muted)',
+                fontWeight: isActive ? '800' : '600',
+                fontSize: '12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                transition: 'all 0.2s',
+                boxShadow: isActive ? '0 2px 8px rgba(16, 185, 129, 0.2)' : 'none'
+              }}
+            >
+              <Icon size={13} color={isActive ? 'var(--accent)' : 'currentColor'} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="leaderboard-list">
-        {players.map((player, index) => {
+        {sortedPlayers.map((player, index) => {
           const rank = index + 1;
           const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
           const isDormant = player.status === 'Dormant';
@@ -139,38 +227,132 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                   <span className="player-handicap-badge">핸디: {player.base_handicap}개</span>
                 </div>
 
-                <div className="player-tier-row">
-                  <span className="player-tier-name" style={{ color: isDormant ? 'var(--text-muted)' : theme.color }}>
-                    {isDormant ? '휴면 상태' : theme.name}
-                  </span>
-                  <span className="player-lp">
-                    {isDormant ? '전적 비활동' : player.tier === 'Challenger' ? `${player.points} LP` : `${player.points} / 100 LP`}
-                  </span>
-                </div>
+                {/* 1. TIER RANKING MODE */}
+                {rankingCategory === 'tier' && (
+                  <>
+                    <div className="player-tier-row">
+                      <span className="player-tier-name" style={{ color: isDormant ? 'var(--text-muted)' : theme.color }}>
+                        {isDormant ? '휴면 상태' : theme.name}
+                      </span>
+                      <span className="player-lp">
+                        {isDormant ? '전적 비활동' : player.tier === 'Challenger' ? `${player.points} LP` : `${player.points} / 100 LP`}
+                      </span>
+                    </div>
 
-                {/* LP Progress Bar with 3D Glossy Finish! */}
-                <div className="lp-bar-container" style={{ height: '8px', overflow: 'hidden', position: 'relative', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)' }}>
-                  <div
-                    className="lp-bar-fill"
-                    style={{
-                      width: isDormant ? '0%' : `${lpPercentage}%`,
-                      background: isDormant ? '#475569' : theme.gradient,
-                      position: 'relative'
-                    }}
-                  >
-                    {/* Gloss Shine Overlay */}
-                    {!isDormant && (
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.15) 100%)'
-                      }} />
-                    )}
+                    {/* LP Progress Bar with 3D Glossy Finish! */}
+                    <div className="lp-bar-container" style={{ height: '8px', overflow: 'hidden', position: 'relative', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)' }}>
+                      <div
+                        className="lp-bar-fill"
+                        style={{
+                          width: isDormant ? '0%' : `${lpPercentage}%`,
+                          background: isDormant ? '#475569' : theme.gradient,
+                          position: 'relative'
+                        }}
+                      >
+                        {/* Gloss Shine Overlay */}
+                        {!isDormant && (
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.15) 100%)'
+                          }} />
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* 2. BEST SCORE (라베) RANKING MODE */}
+                {rankingCategory === 'bestScore' && (
+                  <div style={{ marginTop: '2px' }}>
+                    <div className="player-tier-row">
+                      <span className="player-tier-name" style={{ color: theme.color }}>
+                        {theme.name}
+                      </span>
+                      <span style={{ fontSize: '15px', fontWeight: '800', color: rank === 1 && player.bestRawScore > 0 ? '#ffd700' : 'var(--text-primary)' }}>
+                        {player.bestRawScore > 0 ? (
+                          <>
+                            {player.bestRawScore}타
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '4px', fontWeight: 'normal' }}>
+                              ({player.bestRawScore - 72 >= 0 ? `+${player.bestRawScore - 72}` : player.bestRawScore - 72})
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>기록 없음</span>
+                        )}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      {player.totalGames > 0 ? `총 ${player.totalGames}전 출전 | 18홀 정규 라베` : '공식 18홀 경기 미출전'}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* 3. WIN RATE RANKING MODE */}
+                {rankingCategory === 'winRate' && (
+                  <div style={{ marginTop: '2px' }}>
+                    <div className="player-tier-row">
+                      <span className="player-tier-name" style={{ color: theme.color }}>
+                        {theme.name}
+                      </span>
+                      <span style={{ fontSize: '15px', fontWeight: '800', color: player.winRate >= 60 ? '#10b981' : player.winRate >= 40 ? '#fbbf24' : '#f87171' }}>
+                        {player.winRate}%
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '4px', fontWeight: 'normal' }}>
+                          ({player.totalGames}전 {player.leagueWins}승 {player.leagueLosses}패)
+                        </span>
+                      </span>
+                    </div>
+                    {/* 3D Glossy Win Rate Bar */}
+                    <div className="lp-bar-container" style={{ height: '8px', overflow: 'hidden', position: 'relative', marginTop: '6px', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)' }}>
+                      <div
+                        className="lp-bar-fill"
+                        style={{
+                          width: `${player.winRate}%`,
+                          background: 'linear-gradient(135deg, #10b981, #059669)',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.15) 100%)'
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. TOTAL COST RANKING MODE */}
+                {rankingCategory === 'cost' && (
+                  <div style={{ marginTop: '2px' }}>
+                    <div className="player-tier-row">
+                      <span className="player-tier-name" style={{ color: theme.color }}>
+                        {theme.name}
+                      </span>
+                      <span style={{ fontSize: '15px', fontWeight: '800', color: player.totalCost > 0 ? '#f87171' : '#34d399' }}>
+                        {player.totalCost > 0 ? `${player.totalCost.toLocaleString()}원` : '0원 지출'}
+                      </span>
+                    </div>
+                    <div style={{ marginTop: '4px' }}>
+                      {rank === 1 && player.totalCost > 0 ? (
+                        <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Crown size={12} color="#fbbf24" style={{ fill: '#fbbf24' }} /> 모임 공식 후원회장 (총 {player.totalCost.toLocaleString()}원 기부)
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          경기당 평균 {player.totalGames > 0 ? `${Math.round(player.totalCost / player.totalGames).toLocaleString()}원` : '0원'} 지출
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
               </div>
             </div>
           );

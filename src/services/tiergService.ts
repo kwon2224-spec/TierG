@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { type Player, type PlayerStatus, type MatchMode, type Game, type GameResult, type GameWithResults, type Tier, TIERS_ORDER, TIER_HANDICAPS } from '../types';
+import { type Player, type PlayerStatus, type MatchMode, type Game, type GameResult, type GameWithResults, type Tier, type PlayerWithStats, TIERS_ORDER, TIER_HANDICAPS } from '../types';
 
 // 1. Initialize Supabase Client if env variables are available
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -121,6 +121,99 @@ class TierGService {
 
     // Local Storage fallback
     return getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+  }
+
+  async getPlayersWithStats(): Promise<PlayerWithStats[]> {
+    const players = await this.getPlayers();
+    
+    // Fetch all game results in one single high-speed joined query!
+    let allResults: any[] = [];
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('game_results')
+          .select(`
+            player_id,
+            raw_score,
+            cost_paid,
+            points_changed,
+            rank,
+            bet_amount,
+            games ( notes )
+          `);
+        if (!error && data) {
+          allResults = data;
+        }
+      } catch (err) {
+        console.error('Failed to fetch game_results for stats:', err);
+      }
+    } else {
+      const localResults = getLocalData<any[]>('tierg_results', []);
+      const localGames = getLocalData<any[]>('tierg_games', []);
+      allResults = localResults.map((r) => ({
+        ...r,
+        games: localGames.find((g) => g.id === r.game_id),
+      }));
+    }
+
+    // Group results by player_id
+    const resultsByPlayer: Record<string, any[]> = {};
+    allResults.forEach((r) => {
+      if (!resultsByPlayer[r.player_id]) {
+        resultsByPlayer[r.player_id] = [];
+      }
+      resultsByPlayer[r.player_id].push(r);
+    });
+
+    // Compute stats for each player in-memory (0ms lag!)
+    return players.map((player) => {
+      const pResults = resultsByPlayer[player.id] || [];
+      const totalGames = pResults.length;
+
+      // 18-hole non-guillotine matches for Best Raw Score (라베)
+      const nonGuillotine = pResults.filter((r) => (r.bet_amount || 0) === 0);
+      const bestRawScore = nonGuillotine.length > 0
+        ? Math.min(...nonGuillotine.map((r) => r.raw_score))
+        : 0;
+
+      // Cumulative normal match spent (excluding guillotine bets)
+      const totalCost = pResults.reduce((sum, r) => {
+        const bet = r.bet_amount || 0;
+        return sum + (bet === 0 ? r.cost_paid : 0);
+      }, 0);
+
+      // Unified League Win/Loss calculation
+      let leagueWins = 0;
+      let leagueLosses = 0;
+
+      pResults.forEach((r) => {
+        const isGuillotine = (r.bet_amount || 0) > 0;
+        const isScratch = r.games?.notes?.includes('[스크래치]');
+
+        if (isGuillotine) {
+          if (r.cost_paid === 0) leagueWins++;
+          else leagueLosses++;
+        } else if (isScratch) {
+          if (r.rank <= 2) leagueWins++;
+          else leagueLosses++;
+        } else {
+          if (r.points_changed >= 0) leagueWins++;
+          else leagueLosses++;
+        }
+      });
+
+      const winRate = totalGames > 0 ? Math.round((leagueWins / totalGames) * 100) : 0;
+
+      return {
+        ...player,
+        bestRawScore,
+        totalGames,
+        leagueWins,
+        leagueLosses,
+        winRate,
+        totalCost,
+      };
+    });
   }
 
   async addPlayer(
