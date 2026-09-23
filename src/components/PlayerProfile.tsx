@@ -42,6 +42,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const [handicapInput, setHandicapInput] = useState<string>('');
   const [nicknameInput, setNicknameInput] = useState<string>('');
   const [tierInput, setTierInput] = useState<Tier>('Iron'); // Newly added tier edit state!
+  const [pointsInput, setPointsInput] = useState<string>(''); // Newly added points edit state!
   const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('Active');
   const [playerIsAdmin, setPlayerIsAdmin] = useState(false);
   const [updatingHandicap, setUpdatingHandicap] = useState(false);
@@ -61,6 +62,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       setHandicapInput(details.player.base_handicap.toString());
       setNicknameInput((details.player.nickname || '').trim()); // Safely trim trailing db spaces to fix cursor blink!
       setTierInput(details.player.tier); // set initial tier!
+      setPointsInput(details.player.points.toString()); // set initial points!
       setPlayerStatus(details.player.status || 'Active');
       setPlayerIsAdmin(details.player.is_admin || false);
     } catch (error) {
@@ -80,6 +82,12 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       return;
     }
 
+    const newPoints = parseInt(pointsInput, 10);
+    if (isNaN(newPoints) || newPoints < 0) {
+      alert('올바른 LP 점수를 입력해주세요.');
+      return;
+    }
+
     // Defensive formatting: prepend '#' to nickname if missing and not empty
     let formattedNickname = nicknameInput.trim();
     if (formattedNickname && !formattedNickname.startsWith('#')) {
@@ -88,8 +96,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
     setUpdatingHandicap(true);
     try {
-      // Pass tierInput directly to update service!
-      await tiergService.updatePlayerHandicap(data.player.id, newHandicap, formattedNickname, tierInput);
+      // Pass tierInput and newPoints directly to update service!
+      await tiergService.updatePlayerHandicap(data.player.id, newHandicap, formattedNickname, tierInput, newPoints);
       setUpdateSuccess(true);
       onHandicapUpdated();
       setTimeout(() => setUpdateSuccess(false), 2000);
@@ -369,7 +377,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                 <Sparkles size={16} color="var(--accent)" /> 프로필 편집 (관리자용)
               </h4>
               <form onSubmit={handleUpdateHandicap} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '2px' }}>
                   <div>
                     <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>별명 (#태그)</label>
                     <input
@@ -380,19 +388,6 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                       onChange={(e) => setNicknameInput(e.target.value)}
                       placeholder="예: #장타왕"
                       maxLength={10}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>기본 핸디캡 (개)</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      style={{ padding: '8px 12px' }}
-                      value={handicapInput}
-                      onChange={(e) => setHandicapInput(e.target.value)}
-                      placeholder="예: 18"
-                      min="0"
-                      max="72"
                     />
                   </div>
                   <div>
@@ -409,6 +404,35 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                         </option>
                       ))}
                     </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>기본 핸디캡 (개)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ padding: '8px 12px' }}
+                      value={handicapInput}
+                      onChange={(e) => setHandicapInput(e.target.value)}
+                      placeholder="예: 18"
+                      min="0"
+                      max="72"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>LP 점수 (0 ~ 100점)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ padding: '8px 12px' }}
+                      value={pointsInput}
+                      onChange={(e) => setPointsInput(e.target.value)}
+                      placeholder="예: 50"
+                      min="0"
+                      max="9999"
+                    />
                   </div>
                 </div>
                 <button

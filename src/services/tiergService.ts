@@ -157,11 +157,14 @@ class TierGService {
     return newPlayer;
   }
 
-  async updatePlayerHandicap(id: string, newHandicap: number, nickname: string = '', newTier?: Tier): Promise<Player> {
+  async updatePlayerHandicap(id: string, newHandicap: number, nickname: string = '', newTier?: Tier, newPoints?: number): Promise<Player> {
     if (supabase) {
       const updatePayload: any = { base_handicap: newHandicap, nickname };
       if (newTier) {
         updatePayload.tier = newTier;
+      }
+      if (newPoints !== undefined) {
+        updatePayload.points = newPoints;
       }
 
       const { data, error } = await supabase
@@ -183,6 +186,9 @@ class TierGService {
     players[playerIndex].nickname = nickname;
     if (newTier) {
       players[playerIndex].tier = newTier;
+    }
+    if (newPoints !== undefined) {
+      players[playerIndex].points = newPoints;
     }
     setLocalData('tierg_players', players);
     return players[playerIndex];
