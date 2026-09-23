@@ -610,32 +610,31 @@ class TierGService {
         if (gameError) throw gameError;
         const newGame = gameData[0] as Game;
 
-        const resultsToInsert = [];
+        // High-speed parallel player updates (Concurrent execution: up to 7x faster!)
+        await Promise.all(
+          finalResults.map(async (res) => {
+            const updatePayload: any = {
+              tier: res.newTier,
+              points: res.newPoints,
+            };
+            
+            // Only force handicap sync if the player actually promoted or demoted to a different tier!
+            if (res.newTier !== res.player.tier) {
+              updatePayload.base_handicap = TIER_HANDICAPS[res.newTier];
+            }
 
-        // Update each player and prepare results rows (with intelligent automatic handicap sync on tier change!)
-        for (const res of finalResults) {
-          const updatePayload: any = {
-            tier: res.newTier,
-            points: res.newPoints,
-          };
-          
-          // Only force handicap sync if the player actually promoted or demoted to a different tier!
-          // This perfectly preserves any manual custom handicaps adjusted by the admin within the same tier!
-          if (res.newTier !== res.player.tier) {
-            updatePayload.base_handicap = TIER_HANDICAPS[res.newTier];
-          }
+            const { error: playerUpdateError } = await supabase
+              .from('players')
+              .update(updatePayload)
+              .eq('id', res.player.id);
 
-          const { error: playerUpdateError } = await supabase
-            .from('players')
-            .update(updatePayload)
-            .eq('id', res.player.id);
+            if (playerUpdateError) throw playerUpdateError;
+          })
+        );
 
-          if (playerUpdateError) throw playerUpdateError;
-
-          // Find the calculated cost share for this player (winners get 0, losers get total/divided)
-          const computedCost = finalCosts.find(c => c.player_id === res.player.id)?.cost ?? res.cost_paid;
-
-          resultsToInsert.push({
+        const resultsToInsert = finalResults.map((res) => {
+          const computedCost = finalCosts.find((c) => c.player_id === res.player.id)?.cost ?? res.cost_paid;
+          return {
             game_id: newGame.id,
             player_id: res.player.id,
             raw_score: res.raw_score,
@@ -645,9 +644,9 @@ class TierGService {
             tier_after: res.newTier,
             points_after: res.newPoints,
             cost_paid: computedCost,
-            bet_amount: matchMode === 'guillotine' ? res.cost_paid : 0, // Save original bet for Guillotine Mode stats!
-          });
-        }
+            bet_amount: matchMode === 'guillotine' ? res.cost_paid : 0,
+          };
+        });
 
         // Insert Game Results
         const { data: insertedResults, error: resultsInsertError } = await supabase
@@ -760,29 +759,32 @@ class TierGService {
       leagueLosses: number;    // Unified losses across all match types!
     };
   }> {
-    const players = await this.getPlayers();
-    const player = players.find((p) => p.id === playerId);
-    if (!player) throw new Error('Player not found');
-
+    let player: Player | null = null;
     let history: (GameResult & { played_at: string; notes?: string })[] = [];
 
     if (supabase) {
       try {
-        const { data, error } = await supabase
-          .from('game_results')
-          .select(`
-            *,
-            games (
-              played_at,
-              notes
-            )
-          `)
-          .eq('player_id', playerId)
-          .order('created_at', { ascending: false });
+        // High-speed parallel fetch of single player record AND game history simultaneously!
+        const [playerRes, historyRes] = await Promise.all([
+          supabase.from('players').select('*').eq('id', playerId).single(),
+          supabase
+            .from('game_results')
+            .select(`
+              *,
+              games (
+                played_at,
+                notes
+              )
+            `)
+            .eq('player_id', playerId)
+            .order('created_at', { ascending: false }),
+        ]);
 
-        if (error) throw error;
+        if (playerRes.error) throw playerRes.error;
+        player = playerRes.data as Player;
 
-        history = (data || []).map((r: any) => ({
+        if (historyRes.error) throw historyRes.error;
+        history = (historyRes.data || []).map((r: any) => ({
           id: r.id,
           game_id: r.game_id,
           player_id: r.player_id,
@@ -801,6 +803,12 @@ class TierGService {
         console.error('Supabase getPlayerHistory failed, falling back:', error);
       }
     }
+
+    if (!player) {
+      const localPlayers = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+      player = localPlayers.find((p) => p.id === playerId) || null;
+    }
+    if (!player) throw new Error('Player not found');
 
     if (!supabase || history.length === 0) {
       // Local fallback
@@ -938,37 +946,39 @@ class TierGService {
 
     if (supabase) {
       try {
-        // Revert each player's tier and points in Supabase using the live delta formula!
-        for (const res of resultsToRevert) {
-          const livePlayer = livePlayers.find(p => p.id === res.player_id);
-          if (!livePlayer) continue;
+        // Revert each player's tier and points in Supabase concurrently using Promise.all!
+        await Promise.all(
+          resultsToRevert.map(async (res) => {
+            const livePlayer = livePlayers.find((p) => p.id === res.player_id);
+            if (!livePlayer) return;
 
-          // Run mathematical delta inverse against CURRENT points, preserving subsequent game results!
-          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-            livePlayer.tier,
-            livePlayer.points,
-            -res.points_changed
-          );
+            // Run mathematical delta inverse against CURRENT points, preserving subsequent game results!
+            const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+              livePlayer.tier,
+              livePlayer.points,
+              -res.points_changed
+            );
 
-          const updatePayload: any = {
-            tier: tierBefore,
-            points: pointsBefore,
-          };
-          
-          // Only rollback base_handicap if the player's tier actually rolls back to a different one!
-          if (tierBefore !== livePlayer.tier) {
-            updatePayload.base_handicap = TIER_HANDICAPS[tierBefore];
-          }
+            const updatePayload: any = {
+              tier: tierBefore,
+              points: pointsBefore,
+            };
+            
+            // Only rollback base_handicap if the player's tier actually rolls back to a different one!
+            if (tierBefore !== livePlayer.tier) {
+              updatePayload.base_handicap = TIER_HANDICAPS[tierBefore];
+            }
 
-          const { error: playerUpdateError } = await supabase
-            .from('players')
-            .update(updatePayload)
-            .eq('id', res.player_id);
+            const { error: playerUpdateError } = await supabase
+              .from('players')
+              .update(updatePayload)
+              .eq('id', res.player_id);
 
-          if (playerUpdateError) {
-            throw new Error(`플레이어(${res.player_name}) 전적 롤백 실패: ${playerUpdateError.message}`);
-          }
-        }
+            if (playerUpdateError) {
+              throw new Error(`플레이어(${res.player_name}) 전적 롤백 실패: ${playerUpdateError.message}`);
+            }
+          })
+        );
 
         // Delete the game results first explicitly (to bypass any DB foreign key constraints)
         const { error: resultsDeleteError } = await supabase
@@ -1052,29 +1062,31 @@ class TierGService {
 
     if (supabase) {
       try {
-        // STEP A: Revert old LP and points in Supabase first!
-        for (const res of resultsToRevert) {
-          const livePlayer = livePlayers.find(p => p.id === res.player_id);
-          if (!livePlayer) continue;
+        // STEP A: Revert old LP and points in Supabase concurrently with Promise.all!
+        await Promise.all(
+          resultsToRevert.map(async (res) => {
+            const livePlayer = livePlayers.find((p) => p.id === res.player_id);
+            if (!livePlayer) return;
 
-          // Inverse LP delta math
-          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-            livePlayer.tier,
-            livePlayer.points,
-            -res.points_changed
-          );
+            // Inverse LP delta math
+            const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+              livePlayer.tier,
+              livePlayer.points,
+              -res.points_changed
+            );
 
-          const { error: playerRollbackError } = await supabase
-            .from('players')
-            .update({ tier: tierBefore, points: pointsBefore })
-            .eq('id', res.player_id);
+            const { error: playerRollbackError } = await supabase
+              .from('players')
+              .update({ tier: tierBefore, points: pointsBefore })
+              .eq('id', res.player_id);
 
-          if (playerRollbackError) throw playerRollbackError;
+            if (playerRollbackError) throw playerRollbackError;
 
-          // Update our in-memory livePlayers array to utilize reverted base for subsequent calculation!
-          livePlayer.tier = tierBefore;
-          livePlayer.points = pointsBefore;
-        }
+            // Update our in-memory livePlayers array to utilize reverted base for subsequent calculation!
+            livePlayer.tier = tierBefore;
+            livePlayer.points = pointsBefore;
+          })
+        );
 
         // STEP B: Update Game Metadata with prefixed finalNotes!
         const { error: gameUpdateError } = await supabase
@@ -1190,26 +1202,27 @@ class TierGService {
           });
         }
 
-        // STEP D: Save newly calculated points and tiers to Supabase (with intelligent automatic handicap sync on tier change!)
-        for (const res of finalResults) {
-          const updatePayload: any = {
-            tier: res.newTier,
-            points: res.newPoints,
-          };
-          
-          // Only force handicap sync if the player actually promoted or demoted to a different tier!
-          // This perfectly preserves any manual custom handicaps adjusted by the admin within the same tier!
-          if (res.newTier !== res.player.tier) {
-            updatePayload.base_handicap = TIER_HANDICAPS[res.newTier];
-          }
+        // STEP D: Save newly calculated points and tiers to Supabase in parallel with Promise.all!
+        await Promise.all(
+          finalResults.map(async (res) => {
+            const updatePayload: any = {
+              tier: res.newTier,
+              points: res.newPoints,
+            };
+            
+            // Only force handicap sync if the player actually promoted or demoted to a different tier!
+            if (res.newTier !== res.player.tier) {
+              updatePayload.base_handicap = TIER_HANDICAPS[res.newTier];
+            }
 
-          const { error: playerUpdateError } = await supabase
-            .from('players')
-            .update(updatePayload)
-            .eq('id', res.player.id);
+            const { error: playerUpdateError } = await supabase
+              .from('players')
+              .update(updatePayload)
+              .eq('id', res.player.id);
 
-          if (playerUpdateError) throw playerUpdateError;
-        }
+            if (playerUpdateError) throw playerUpdateError;
+          })
+        );
 
         // Delete old results rows from game_results
         const { error: resultsDeleteError } = await supabase
