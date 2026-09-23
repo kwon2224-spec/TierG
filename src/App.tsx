@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, PlusCircle, History, Lock, LockOpen, Check } from 'lucide-react';
+import { Trophy, PlusCircle, History, Lock, LockOpen, Check, Sun, Moon } from 'lucide-react';
 import { Leaderboard } from './components/Leaderboard';
 import { AddGame } from './components/AddGame';
 import { GameHistory } from './components/GameHistory';
@@ -16,6 +16,16 @@ function App() {
   
   // A simple counter to trigger data re-fetching in child components
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Device-isolated Theme State (Saved strictly to each user's phone localStorage!)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('tierg_theme') as 'dark' | 'light') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('tierg_theme', theme);
+  }, [theme]);
 
   // Admin Authorization State
   const [players, setPlayers] = useState<Player[]>([]);
@@ -111,6 +121,31 @@ function App() {
 
           {/* Database Mode and Admin Status Badges */}
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            {/* Device-isolated Theme Toggle (Sun/Moon) */}
+            <button
+              type="button"
+              onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)',
+                padding: '4px 9px',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                userSelect: 'none',
+                transition: 'all 0.2s',
+              }}
+              title={theme === 'dark' ? '화사한 세라믹 라이트 모드로 전환' : '프리미엄 다크 모드로 전환'}
+            >
+              {theme === 'dark' ? <Sun size={12} color="#fbbf24" /> : <Moon size={12} color="#6366f1" />}
+              <span>{theme === 'dark' ? '라이트' : '다크'}</span>
+            </button>
+
             {/* Live Admin status lock/unlock badge - Stylishly redesigned, no clunky Cloud DB jargon! */}
             {currentAdmin ? (
               <div 

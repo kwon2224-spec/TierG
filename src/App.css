@@ -20,6 +20,67 @@
   --radius-lg: 20px;
 }
 
+/* Light Theme - Soft Ceramic / Toss Style */
+[data-theme="light"] {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent: #059669;
+  --accent-glow: rgba(5, 150, 105, 0.2);
+}
+
+[data-theme="light"] html,
+[data-theme="light"] body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .app-container {
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .player-rank-card {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .player-rank-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .game-history-card,
+[data-theme="light"] .game-setup-card,
+[data-theme="light"] .player-select-card,
+[data-theme="light"] .score-entry-row,
+[data-theme="light"] .profile-main-card,
+[data-theme="light"] .profile-history-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .form-input {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .modal-content {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .nav-btn:not(.active) {
+  color: #64748b;
+}
+
+[data-theme="light"] .nav-btn:not(.active):hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
