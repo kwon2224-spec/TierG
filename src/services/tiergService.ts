@@ -416,6 +416,8 @@ class TierGService {
     const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
     const isAllTied = minAdjustedScore === maxAdjustedScore;
 
+    const hasAnyCost = rankedResults.some(r => r.cost_paid > 0);
+
     const finalResults = rankedResults.map((item) => {
       let pointsChanged = 0;
       
@@ -425,22 +427,32 @@ class TierGService {
       } else if (isAllTied) {
         // If everyone has the exact same score, it's a draw (0 LP)
         pointsChanged = 0;
+      } else if (hasAnyCost) {
+        // 룰 적용: 돈 내면 무조건 마이너스 (-), 안 내면 무조건 플러스 (+)
+        // (공동) 1등은 +20, (공동) 꼴찌는 -20 유지!
+        const paidMoney = item.cost_paid > 0;
+        const isFirst = item.rank === 1;
+        const isLast = item.adjustedScore === maxAdjustedScore;
+
+        if (paidMoney) {
+          pointsChanged = isLast ? -20 : -10;
+        } else {
+          pointsChanged = isFirst ? 20 : 10;
+        }
       } else if (item.adjustedScore === maxAdjustedScore) {
-        // If they share the worst score, they are tied last-place (always get -20 LP!)
+        // 비용 미입력 친선전 시 기존 랭킹 기반 분배 폴백
         pointsChanged = -20;
       } else {
-        // Handicap modes calculate normal LP changes
         if (rankedResults.length === 4) {
           pointsChanged = lpChangeByRank[item.rank] || 0;
         } else {
-          // Dynamic formula for size != 4
           const median = (rankedResults.length + 1) / 2;
           if (item.rank < median) {
             pointsChanged = item.rank === 1 ? 20 : 10;
           } else if (item.rank > median) {
             pointsChanged = item.rank === rankedResults.length ? -20 : -10;
           } else {
-            pointsChanged = 0; // Middle gets 0
+            pointsChanged = 0;
           }
         }
       }
@@ -1000,6 +1012,8 @@ class TierGService {
         const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
         const isAllTied = minAdjustedScore === maxAdjustedScore;
 
+        const hasAnyCost = rankedResults.some(r => r.cost_paid > 0);
+
         const finalResults = rankedResults.map((item) => {
           let pointsChanged = 0;
           
@@ -1007,6 +1021,18 @@ class TierGService {
             pointsChanged = 0;
           } else if (isAllTied) {
             pointsChanged = 0;
+          } else if (hasAnyCost) {
+            // 룰 적용: 돈 내면 무조건 마이너스 (-), 안 내면 무조건 플러스 (+)
+            // (공동) 1등은 +20, (공동) 꼴찌는 -20 유지!
+            const paidMoney = item.cost_paid > 0;
+            const isFirst = item.rank === 1;
+            const isLast = item.adjustedScore === maxAdjustedScore;
+
+            if (paidMoney) {
+              pointsChanged = isLast ? -20 : -10;
+            } else {
+              pointsChanged = isFirst ? 20 : 10;
+            }
           } else if (item.adjustedScore === maxAdjustedScore) {
             pointsChanged = -20;
           } else {
@@ -1175,6 +1201,8 @@ class TierGService {
       const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
       const isAllTied = minAdjustedScore === maxAdjustedScore;
 
+      const hasAnyCost = rankedResults.some(r => r.cost_paid > 0);
+
       const finalResults = rankedResults.map((item) => {
         let pointsChanged = 0;
         
@@ -1182,6 +1210,18 @@ class TierGService {
           pointsChanged = 0;
         } else if (isAllTied) {
           pointsChanged = 0;
+        } else if (hasAnyCost) {
+          // 룰 적용: 돈 내면 무조건 마이너스 (-), 안 내면 무조건 플러스 (+)
+          // (공동) 1등은 +20, (공동) 꼴찌는 -20 유지!
+          const paidMoney = item.cost_paid > 0;
+          const isFirst = item.rank === 1;
+          const isLast = item.adjustedScore === maxAdjustedScore;
+
+          if (paidMoney) {
+            pointsChanged = isLast ? -20 : -10;
+          } else {
+            pointsChanged = isFirst ? 20 : 10;
+          }
         } else if (item.adjustedScore === maxAdjustedScore) {
           pointsChanged = -20;
         } else {

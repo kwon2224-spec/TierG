@@ -217,6 +217,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     const minAdjustedScore = Math.min(...ranked.map(r => r.adjustedScore));
     const isAllTied = minAdjustedScore === maxAdjustedScore;
 
+    const hasAnyCost = ranked.some(r => (parseInt(costsPaid[r.player.id], 10) || 0) > 0);
+
     return ranked.map((item) => {
       let lpChange = 0;
       
@@ -226,8 +228,21 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       } else if (isAllTied) {
         // If everyone has the exact same score, it's a draw (0 LP)
         lpChange = 0;
+      } else if (hasAnyCost) {
+        // 룰 적용: 돈 내면 무조건 마이너스 (-), 안 내면 무조건 플러스 (+)
+        // (공동) 1등은 +20, (공동) 꼴찌는 -20 유지!
+        const playerCost = parseInt(costsPaid[item.player.id], 10) || 0;
+        const paidMoney = playerCost > 0;
+        const isFirst = item.rank === 1;
+        const isLast = item.adjustedScore === maxAdjustedScore;
+
+        if (paidMoney) {
+          lpChange = isLast ? -20 : -10;
+        } else {
+          lpChange = isFirst ? 20 : 10;
+        }
       } else if (item.adjustedScore === maxAdjustedScore) {
-        // If they share the worst score, they are tied last-place (always get -20 LP!)
+        // 비용 미입력 친선전 시 기존 랭킹 기반 분배 폴백
         lpChange = -20;
       } else {
         // Standard LP calculation
