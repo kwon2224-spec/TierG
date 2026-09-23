@@ -75,6 +75,6 @@ INSERT INTO players (name, tier, points, base_handicap) VALUES
   ('이승무', 'Platinum', 0, 12),   
   ('황지운', 'Gold', 0, 15),    
   ('나용성', 'Gold', 0, 15),     
-  ('이창훈', 'Silver', 0, 20),       
+  ('이창훈', 'Bronze', 0, 20),       
   ('박진범', 'Silver', 0, 20)        
 ON CONFLICT (name) DO NOTHING;

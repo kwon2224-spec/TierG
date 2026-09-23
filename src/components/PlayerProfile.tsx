@@ -98,10 +98,23 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
     try {
       // Pass tierInput and newPoints directly to update service!
       await tiergService.updatePlayerHandicap(data.player.id, newHandicap, formattedNickname, tierInput, newPoints);
+      
+      // Optimistically update local player state immediately so top badge and tier reflect changes with ZERO delay!
+      setData((prev) => prev ? {
+        ...prev,
+        player: {
+          ...prev.player,
+          tier: tierInput,
+          points: newPoints,
+          base_handicap: newHandicap,
+          nickname: formattedNickname,
+        }
+      } : null);
+
       setUpdateSuccess(true);
       onHandicapUpdated();
       setTimeout(() => setUpdateSuccess(false), 2000);
-      loadPlayerDetails();
+      await loadPlayerDetails();
     } catch (error) {
       console.error('Failed to update profile:', error);
       alert('프로필 정보 업데이트에 실패했습니다.');

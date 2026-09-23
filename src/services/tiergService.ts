@@ -28,7 +28,7 @@ const INITIAL_MOCK_PLAYERS: Player[] = [
   { id: 'p7', name: '이승무', tier: 'Platinum', points: 50, base_handicap: 12, status: 'Active', is_admin: false, nickname: '#인생라베타수' },
   { id: 'p8', name: '황지운', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active', is_admin: false, nickname: '#퍼터의신' },
   { id: 'p9', name: '나용성', tier: 'Gold', points: 50, base_handicap: 15, status: 'Active', is_admin: false, nickname: '#필드버디왕' },
-  { id: 'p10', name: '이창훈', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active', is_admin: false, nickname: '#슬라이스정복' },
+  { id: 'p10', name: '이창훈', tier: 'Bronze', points: 50, base_handicap: 20, status: 'Active', is_admin: false, nickname: '#슬라이스정복' },
   { id: 'p11', name: '박진범', tier: 'Silver', points: 50, base_handicap: 20, status: 'Active', is_admin: false, nickname: '#골프천재새내기' },
 ];
 
