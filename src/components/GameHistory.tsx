@@ -643,13 +643,15 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           </div>
                         </div>
 
-                        {/* Cost, LP difference, and Resulting Tier/Points on right side */}
-                        <div className="history-lp-pills" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
+                        {/* Cost, LP difference, and Resulting Tier/Points on right side (Fixed Columns - Never Shifts!) */}
+                        <div className="history-lp-pills" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                          {/* Dedicated Cost Column with fixed width to prevent shifting! */}
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', width: '54px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
                             {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원` : '0원'}
                           </div>
                           
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '75px' }}>
+                          {/* Dedicated LP & Tier Column with guaranteed 112px width so '다이아몬드' never pushes cost! */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '112px', minWidth: '112px', flexShrink: 0 }}>
                             <div
                               className={`history-lp-diff ${isZero ? 'zero' : isPlus ? 'plus' : 'minus'}`}
                               style={{
@@ -669,7 +671,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
 
                             {/* Resulting Tier & Points After Game */}
                             {res.tier_after && (
-                              <div style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px', marginTop: '1px' }}>
+                              <div style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px', marginTop: '1px', whiteSpace: 'nowrap' }}>
                                 <span style={{ color: TIER_THEMES[res.tier_after]?.color || 'var(--text-muted)', fontWeight: '700' }}>
                                   {TIER_THEMES[res.tier_after]?.name || res.tier_after}
                                 </span>
