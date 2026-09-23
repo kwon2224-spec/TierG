@@ -370,8 +370,12 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                       <span className="player-tier-name" style={{ color: theme.color }}>
                         {theme.name}
                       </span>
-                      <span style={{ fontSize: '15px', fontWeight: '800', color: player.totalCost > 0 ? '#f87171' : '#34d399' }}>
-                        {player.totalCost > 0 ? `${player.totalCost.toLocaleString()}원` : '0원 지출'}
+                      <span style={{ fontSize: '15px', fontWeight: '800', color: player.totalCost > 0 ? '#f87171' : player.totalCost < 0 ? '#10b981' : '#34d399' }}>
+                        {player.totalCost > 0 
+                          ? `${player.totalCost.toLocaleString()}원` 
+                          : player.totalCost < 0
+                          ? `+${Math.abs(player.totalCost).toLocaleString()}원 (수익)`
+                          : '0원 지출'}
                       </span>
                     </div>
                     <div style={{ height: '12px', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
@@ -381,7 +385,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         </span>
                       ) : (
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '12px', whiteSpace: 'nowrap' }}>
-                          경기당 평균 {player.totalGames > 0 ? `${Math.round(player.totalCost / player.totalGames).toLocaleString()}원` : '0원'} 지출
+                          {player.totalCost < 0 
+                            ? '단두대 생존으로 순수 지출 완벽 방어' 
+                            : `경기당 평균 ${player.totalGames > 0 ? `${Math.round(player.totalCost / player.totalGames).toLocaleString()}원` : '0원'} 지출`}
                         </span>
                       )}
                     </div>

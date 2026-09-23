@@ -171,14 +171,27 @@ class TierGService {
       const totalGames = pResults.length;
 
       // 18-hole non-guillotine matches for Best Raw Score (라베)
-      const nonGuillotine = pResults.filter((r) => (r.bet_amount || 0) === 0);
+      // Excludes both bet_amount > 0 and games with [단두대] notes!
+      const nonGuillotine = pResults.filter((r) => {
+        const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
+        return !isGuillotine;
+      });
       const bestRawScore = nonGuillotine.length > 0
         ? Math.min(...nonGuillotine.map((r) => r.raw_score))
         : 0;
 
-      // Real out-of-pocket cash spent (includes normal match expenses + concentrated Guillotine loser bills!)
-      // Survivors pay 0 won, while the Guillotine loser takes the entire concentrated bill, matching real wallet transactions!
-      const totalCost = pResults.reduce((sum, r) => sum + (r.cost_paid || 0), 0);
+      // Net Real Out-of-Pocket Cash: Normal matches & Guillotine loser bills MINUS money saved by Guillotine survivors!
+      const totalCost = pResults.reduce((sum, r) => {
+        const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
+        const bet = r.bet_amount || 0;
+        const paid = r.cost_paid || 0;
+
+        if (isGuillotine && paid === 0 && bet > 0) {
+          // Survived Guillotine: saved stake, so deduct from net expenditure!
+          return sum - bet;
+        }
+        return sum + paid;
+      }, 0);
 
       // Unified League Win/Loss calculation
       let leagueWins = 0;
@@ -812,14 +825,25 @@ class TierGService {
     const averageRawScore =
       totalGames > 0 ? history.reduce((sum, r) => sum + r.raw_score, 0) / totalGames : 0;
     // Exclude Guillotine (9-hole matches!) from Lifetime Best 18-hole raw score (라베) calculation!
-    const nonGuillotineResults = history.filter((r) => (r.bet_amount || 0) === 0);
+    const nonGuillotineResults = history.filter((r) => {
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      return !isGuillotine;
+    });
     const bestRawScore = nonGuillotineResults.length > 0
       ? Math.min(...nonGuillotineResults.map((r) => r.raw_score))
       : 0;
 
-    // Real out-of-pocket cash spent (includes normal match expenses + concentrated Guillotine loser bills!)
-    // Survivors pay 0 won, while the Guillotine loser takes the entire concentrated bill!
-    const totalCost = history.reduce((sum, r) => sum + (r.cost_paid || 0), 0);
+    // Net Real Out-of-Pocket Cash: Normal matches & Guillotine loser bills MINUS money saved by Guillotine survivors!
+    const totalCost = history.reduce((sum, r) => {
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      const bet = r.bet_amount || 0;
+      const paid = r.cost_paid || 0;
+
+      if (isGuillotine && paid === 0 && bet > 0) {
+        return sum - bet;
+      }
+      return sum + paid;
+    }, 0);
     const averageCost = totalGames > 0 ? totalCost / totalGames : 0;
     
     // Wins count strictly tracks handicap & scratch 1st place victories (excluding Guillotine completely!)
