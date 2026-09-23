@@ -176,11 +176,9 @@ class TierGService {
         ? Math.min(...nonGuillotine.map((r) => r.raw_score))
         : 0;
 
-      // Cumulative normal match spent (excluding guillotine bets)
-      const totalCost = pResults.reduce((sum, r) => {
-        const bet = r.bet_amount || 0;
-        return sum + (bet === 0 ? r.cost_paid : 0);
-      }, 0);
+      // Real out-of-pocket cash spent (includes normal match expenses + concentrated Guillotine loser bills!)
+      // Survivors pay 0 won, while the Guillotine loser takes the entire concentrated bill, matching real wallet transactions!
+      const totalCost = pResults.reduce((sum, r) => sum + (r.cost_paid || 0), 0);
 
       // Unified League Win/Loss calculation
       let leagueWins = 0;
@@ -819,15 +817,10 @@ class TierGService {
       ? Math.min(...nonGuillotineResults.map((r) => r.raw_score))
       : 0;
 
-    // Decouple: General Cumulative Spent only sums up normal, non-Guillotine matches (bet_amount === 0)
-    // This perfectly prevents double-counting if a Guillotine bet was made based on previous game costs!
-    const totalCost = history.reduce((sum, r) => {
-      const bet = r.bet_amount || 0;
-      return sum + (bet === 0 ? r.cost_paid : 0);
-    }, 0);
-
-    const normalGamesCount = history.filter((r) => (r.bet_amount || 0) === 0).length;
-    const averageCost = normalGamesCount > 0 ? totalCost / normalGamesCount : 0;
+    // Real out-of-pocket cash spent (includes normal match expenses + concentrated Guillotine loser bills!)
+    // Survivors pay 0 won, while the Guillotine loser takes the entire concentrated bill!
+    const totalCost = history.reduce((sum, r) => sum + (r.cost_paid || 0), 0);
+    const averageCost = totalGames > 0 ? totalCost / totalGames : 0;
     
     // Wins count strictly tracks handicap & scratch 1st place victories (excluding Guillotine completely!)
     const wins = history.filter((r) => r.rank === 1 && (r.bet_amount || 0) === 0).length;
