@@ -232,6 +232,7 @@ function App() {
             <Leaderboard
               onSelectPlayer={(id) => setSelectedPlayerId(id)}
               refreshTrigger={refreshTrigger}
+              isAdmin={!!currentAdmin}
             />
 
             {/* Reset Database Button (Only visible in Demo Mode for admins/users testing) */}

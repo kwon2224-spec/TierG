@@ -7,11 +7,13 @@ import { TierBadge } from './TierBadge';
 interface LeaderboardProps {
   onSelectPlayer: (id: string) => void;
   refreshTrigger: number;
+  isAdmin?: boolean;
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({
   onSelectPlayer,
   refreshTrigger,
+  isAdmin = false,
 }) => {
   const [players, setPlayers] = useState<PlayerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,9 +133,35 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     <div>
       <div className="leaderboard-title">
         <span>{categoryTitles[rankingCategory]}</span>
-        <span style={{ fontSize: '13px', fontWeight: 'normal', color: 'var(--text-muted)' }}>
-          총 {players.length}명 참여 중
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 'normal', color: 'var(--text-muted)' }}>
+            총 {players.length}명
+          </span>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowAddPlayerModal(true)}
+              style={{
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                color: '#34d399',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px',
+                transition: 'all 0.2s',
+              }}
+              title="새로운 골퍼 추가"
+            >
+              <UserPlus size={12} />
+              <span>선수 추가</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 4-Category Multi-Ranking Pill Bar (Monochrome Precision Lucide Icons - Zero Raw Emojis!) */}
@@ -211,9 +239,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               {/* Circular Tier Badge */}
               <TierBadge tier={player.tier} />
 
-              {/* Player Info Details */}
-              <div className="player-info">
-                <div className="player-name-row">
+              {/* Player Info Details (Locked to exact 60px inner content height!) */}
+              <div className="player-info" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div className="player-name-row" style={{ height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
                   <span className="player-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
                     {player.name}
                     {!isDormant && player.base_handicap === minHandicap && (
@@ -230,7 +258,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                 {/* 1. TIER RANKING MODE */}
                 {rankingCategory === 'tier' && (
                   <>
-                    <div className="player-tier-row">
+                    <div className="player-tier-row" style={{ height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span className="player-tier-name" style={{ color: isDormant ? 'var(--text-muted)' : theme.color }}>
                         {isDormant ? '휴면 상태' : theme.name}
                       </span>
@@ -239,27 +267,27 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                       </span>
                     </div>
 
-                    {/* LP Progress Bar with 3D Glossy Finish! */}
-                    <div className="lp-bar-container" style={{ height: '8px', overflow: 'hidden', position: 'relative', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)' }}>
-                      <div
-                        className="lp-bar-fill"
-                        style={{
-                          width: isDormant ? '0%' : `${lpPercentage}%`,
-                          background: isDormant ? '#475569' : theme.gradient,
-                          position: 'relative'
-                        }}
-                      >
-                        {/* Gloss Shine Overlay */}
-                        {!isDormant && (
-                          <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.15) 100%)'
-                          }} />
-                        )}
+                    <div style={{ height: '12px', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                      <div className="lp-bar-container" style={{ width: '100%', height: '8px', overflow: 'hidden', position: 'relative', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)' }}>
+                        <div
+                          className="lp-bar-fill"
+                          style={{
+                            width: isDormant ? '0%' : `${lpPercentage}%`,
+                            background: isDormant ? '#475569' : theme.gradient,
+                            position: 'relative'
+                          }}
+                        >
+                          {!isDormant && (
+                            <div style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.15) 100%)'
+                            }} />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </>
@@ -267,8 +295,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
 
                 {/* 2. BEST SCORE (라베) RANKING MODE */}
                 {rankingCategory === 'bestScore' && (
-                  <div style={{ marginTop: '2px' }}>
-                    <div className="player-tier-row">
+                  <>
+                    <div className="player-tier-row" style={{ height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span className="player-tier-name" style={{ color: theme.color }}>
                         {theme.name}
                       </span>
@@ -285,16 +313,18 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         )}
                       </span>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      {player.totalGames > 0 ? `총 ${player.totalGames}전 출전 | 18홀 정규 라베` : '공식 18홀 경기 미출전'}
+                    <div style={{ height: '12px', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '12px', whiteSpace: 'nowrap' }}>
+                        {player.totalGames > 0 ? `총 ${player.totalGames}전 출전 | 18홀 정규 라베` : '공식 18홀 경기 미출전'}
+                      </span>
                     </div>
-                  </div>
+                  </>
                 )}
 
                 {/* 3. WIN RATE RANKING MODE */}
                 {rankingCategory === 'winRate' && (
-                  <div style={{ marginTop: '2px' }}>
-                    <div className="player-tier-row">
+                  <>
+                    <div className="player-tier-row" style={{ height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span className="player-tier-name" style={{ color: theme.color }}>
                         {theme.name}
                       </span>
@@ -305,33 +335,34 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         </span>
                       </span>
                     </div>
-                    {/* 3D Glossy Win Rate Bar */}
-                    <div className="lp-bar-container" style={{ height: '8px', overflow: 'hidden', position: 'relative', marginTop: '6px', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)' }}>
-                      <div
-                        className="lp-bar-fill"
-                        style={{
-                          width: `${player.winRate}%`,
-                          background: 'linear-gradient(135deg, #10b981, #059669)',
-                          position: 'relative'
-                        }}
-                      >
-                        <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.15) 100%)'
-                        }} />
+                    <div style={{ height: '12px', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                      <div className="lp-bar-container" style={{ width: '100%', height: '8px', overflow: 'hidden', position: 'relative', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)' }}>
+                        <div
+                          className="lp-bar-fill"
+                          style={{
+                            width: `${player.winRate}%`,
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            position: 'relative'
+                          }}
+                        >
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.15) 100%)'
+                          }} />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </>
                 )}
 
                 {/* 4. TOTAL COST RANKING MODE */}
                 {rankingCategory === 'cost' && (
-                  <div style={{ marginTop: '2px' }}>
-                    <div className="player-tier-row">
+                  <>
+                    <div className="player-tier-row" style={{ height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span className="player-tier-name" style={{ color: theme.color }}>
                         {theme.name}
                       </span>
@@ -339,18 +370,18 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         {player.totalCost > 0 ? `${player.totalCost.toLocaleString()}원` : '0원 지출'}
                       </span>
                     </div>
-                    <div style={{ marginTop: '4px' }}>
+                    <div style={{ height: '12px', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                       {rank === 1 && player.totalCost > 0 ? (
-                        <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Crown size={12} color="#fbbf24" style={{ fill: '#fbbf24' }} /> 모임 공식 후원회장 (총 {player.totalCost.toLocaleString()}원 기부)
-                        </div>
+                        <span style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '700', lineHeight: '12px', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
+                          <Crown size={11} color="#fbbf24" style={{ fill: '#fbbf24' }} /> 모임 공식 후원회장 (총 {player.totalCost.toLocaleString()}원)
+                        </span>
                       ) : (
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '12px', whiteSpace: 'nowrap' }}>
                           경기당 평균 {player.totalGames > 0 ? `${Math.round(player.totalCost / player.totalGames).toLocaleString()}원` : '0원'} 지출
-                        </div>
+                        </span>
                       )}
                     </div>
-                  </div>
+                  </>
                 )}
 
               </div>
@@ -358,11 +389,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           );
         })}
       </div>
-
-      {/* Button to add a new player */}
-      <button className="add-player-btn" onClick={() => setShowAddPlayerModal(true)}>
-        <UserPlus size={18} /> 신규 선수 추가 (회원 등록)
-      </button>
 
       {/* Info Notice card */}
       <div style={{
