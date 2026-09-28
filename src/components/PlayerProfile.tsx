@@ -244,7 +244,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       { id: 'single', title: '신의 영역', desc: '18홀 정규 79타 이하 싱글 골퍼 등극', icon: '🦅', unlocked: hasSingle, color: '#ffd700' },
       { id: 'breaking90', title: '일취월장', desc: '18홀 89타 이하 보기 플레이어 진입', icon: '🎯', unlocked: hasBreaking90, color: '#60a5fa' },
       { id: 'consecWins', title: '파죽지세', desc: '거침없는 3경기 연속 1위 독주', icon: '⚡', unlocked: has3ConsecWins, color: '#10b981' },
-      { id: 'consecLosses', title: '와신상담', desc: '눈물의 3연속 최하위 (칼을 갈며 존버 중)', icon: '🕳️', unlocked: has3ConsecLosses, color: '#f87171' },
+      { id: 'consecLosses', title: 'ATM', desc: '눈물의 3연속 꼴찌 (모임 공식 현금지급기)', icon: '🏧', unlocked: has3ConsecLosses, color: '#f87171' },
       { id: 'guillotineKing', title: '불사조', desc: '단두대 사투에서 3승 이상 생존 방어', icon: '🛡️', unlocked: hasGuillotineKing, color: '#34d399' },
       { id: 'games10', title: '골프 중독', desc: '모임 통산 10경기 출전 돌파', icon: '🏌️‍♂️', unlocked: has10Games, color: '#a855f7' },
       { id: 'games50', title: '백전노장', desc: '모임 통산 50경기 출전 베테랑', icon: '🌪️', unlocked: has50Games, color: '#ec4899' },
