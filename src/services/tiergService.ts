@@ -577,19 +577,17 @@ class TierGService {
     });
 
     // Recalculate cost distribution if MatchMode is 'guillotine'
+    // Rule: Losers only pay the WINNERS' bet shares (상대방 금액만 추가 대납!)
+    // Winners pay 0 in this game (and get reimbursed in net spent calculations)!
     let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
     if (matchMode === 'guillotine' && finalResults.length > 0) {
-      // Calculate total group expense
-      const totalCostSum = finalResults.reduce((sum, item) => sum + item.cost_paid, 0);
-      
-      // Find the absolute last place (maximum rank number, e.g. 4th place)
       const maxRank = Math.max(...finalResults.map(r => r.rank));
-      
-      // Find how many players are in this last place (to divide the bill in case of ties!)
+      const winners = finalResults.filter(r => r.rank < maxRank);
       const losers = finalResults.filter(r => r.rank === maxRank);
-      const loserCostShare = Math.round(totalCostSum / losers.length);
 
-      // Set losers to pay the total/divided share, and winners pay 0!
+      const winnersTotalBet = winners.reduce((sum, item) => sum + item.cost_paid, 0);
+      const loserCostShare = losers.length > 0 ? Math.round(winnersTotalBet / losers.length) : 0;
+
       finalCosts = finalResults.map(r => {
         if (r.rank === maxRank) {
           return { player_id: r.player.id, cost: loserCostShare };
@@ -1187,12 +1185,15 @@ class TierGService {
         });
 
         // Recalculate Guillotine cost shares if necessary
+        // Rule: Losers only pay the WINNERS' bet shares (상대방 금액만 추가 대납!)
         let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
         if (matchMode === 'guillotine' && finalResults.length > 0) {
-          const totalCostSum = finalResults.reduce((sum, item) => sum + item.cost_paid, 0);
           const maxRank = Math.max(...finalResults.map(r => r.rank));
+          const winners = finalResults.filter(r => r.rank < maxRank);
           const losers = finalResults.filter(r => r.rank === maxRank);
-          const loserCostShare = Math.round(totalCostSum / losers.length);
+
+          const winnersTotalBet = winners.reduce((sum, item) => sum + item.cost_paid, 0);
+          const loserCostShare = losers.length > 0 ? Math.round(winnersTotalBet / losers.length) : 0;
 
           finalCosts = finalResults.map(r => {
             if (r.rank === maxRank) {
@@ -1377,12 +1378,15 @@ class TierGService {
       });
 
       // Cost shares
+      // Rule: Losers only pay the WINNERS' bet shares (상대방 금액만 추가 대납!)
       let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
       if (matchMode === 'guillotine' && finalResults.length > 0) {
-        const totalCostSum = finalResults.reduce((sum, item) => sum + item.cost_paid, 0);
         const maxRank = Math.max(...finalResults.map(r => r.rank));
+        const winners = finalResults.filter(r => r.rank < maxRank);
         const losers = finalResults.filter(r => r.rank === maxRank);
-        const loserCostShare = Math.round(totalCostSum / losers.length);
+
+        const winnersTotalBet = winners.reduce((sum, item) => sum + item.cost_paid, 0);
+        const loserCostShare = losers.length > 0 ? Math.round(winnersTotalBet / losers.length) : 0;
 
         finalCosts = finalResults.map(r => {
           if (r.rank === maxRank) {
