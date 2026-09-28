@@ -79,10 +79,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>랭킹 정보를 불러오는 중...</div>;
   }
 
-  // Calculate the lowest handicap among all active (non-dormant) players to award the Crown!
-  const activePlayers = players.filter((p) => p.status === 'Active');
-  const minHandicap = activePlayers.length > 0 ? Math.min(...activePlayers.map((p) => p.base_handicap)) : 999;
-
   // Dynamically sort players based on selected ranking category
   const getSortedPlayers = () => {
     const list = [...players];
@@ -248,8 +244,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                 <div className="player-name-row" style={{ height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
                   <span className="player-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
                     {player.name}
-                    {!isDormant && player.base_handicap === minHandicap && (
-                      <span title="모임 최저 핸디캡 실력왕" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {!isDormant && rank === 1 && (
+                      <span title="현재 랭킹 1위 황제" style={{ display: 'inline-flex', alignItems: 'center' }}>
                         <Crown size={12} color="#ffd700" style={{ fill: '#ffd700', verticalAlign: 'middle' }} />
                       </span>
                     )}
