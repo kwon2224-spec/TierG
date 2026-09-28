@@ -43,6 +43,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const [nicknameInput, setNicknameInput] = useState<string>('');
   const [tierInput, setTierInput] = useState<Tier>('Iron'); // Newly added tier edit state!
   const [pointsInput, setPointsInput] = useState<string>(''); // Newly added points edit state!
+  const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null); // Interactive mobile achievement tap state!
   const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('Active');
   const [playerIsAdmin, setPlayerIsAdmin] = useState(false);
   const [updatingHandicap, setUpdatingHandicap] = useState(false);
@@ -575,69 +576,154 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
               gridTemplateColumns: 'repeat(5, 1fr)',
               gap: '10px'
             }}>
-              {achievements.map((item) => (
-                <div
-                  key={item.id}
-                  title={`${item.title}: ${item.desc} (${item.unlocked ? '달성 완료' : '미달성'})`}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    position: 'relative'
-                  }}
-                >
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '18px',
-                    backgroundColor: item.unlocked ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.2)',
-                    border: item.unlocked ? `1.5px solid ${item.color}` : '1px dashed rgba(255, 255, 255, 0.1)',
-                    boxShadow: item.unlocked ? `0 0 10px ${item.color}40` : 'none',
-                    filter: item.unlocked ? 'none' : 'grayscale(100%) opacity(0.35)',
-                    position: 'relative',
-                    transition: 'all 0.2s',
-                    userSelect: 'none'
-                  }}>
-                    <span>{item.icon}</span>
+              {achievements.map((item) => {
+                const isSelected = selectedBadgeId === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedBadgeId(selectedBadgeId === item.id ? null : item.id)}
+                    title={`${item.title}: ${item.desc} (${item.unlocked ? '달성 완료' : '미달성'})`}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      position: 'relative',
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s ease'
+                    }}
+                  >
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px',
+                      backgroundColor: item.unlocked ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.2)',
+                      border: isSelected 
+                        ? '2px solid #ffffff' 
+                        : item.unlocked 
+                        ? `1.5px solid ${item.color}` 
+                        : '1px dashed rgba(255, 255, 255, 0.1)',
+                      boxShadow: isSelected
+                        ? '0 0 14px rgba(255, 255, 255, 0.6)'
+                        : item.unlocked 
+                        ? `0 0 10px ${item.color}40` 
+                        : 'none',
+                      transform: isSelected ? 'scale(1.12)' : 'none',
+                      filter: item.unlocked ? 'none' : 'grayscale(100%) opacity(0.35)',
+                      position: 'relative',
+                      transition: 'all 0.2s',
+                      userSelect: 'none'
+                    }}>
+                      <span>{item.icon}</span>
 
-                    {!item.unlocked && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '-2px',
-                        right: '-2px',
-                        backgroundColor: '#1e293b',
-                        borderRadius: '50%',
-                        padding: '2px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid rgba(255,255,255,0.1)'
-                      }}>
-                        <Lock size={8} color="#94a3b8" />
-                      </div>
-                    )}
+                      {!item.unlocked && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '-2px',
+                          right: '-2px',
+                          backgroundColor: '#1e293b',
+                          borderRadius: '50%',
+                          padding: '2px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                          <Lock size={8} color="#94a3b8" />
+                        </div>
+                      )}
+                    </div>
+
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: isSelected || item.unlocked ? '700' : '500',
+                      color: isSelected ? '#ffffff' : item.unlocked ? 'var(--text-primary)' : 'var(--text-muted)',
+                      marginTop: '5px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '56px'
+                    }}>
+                      {item.title}
+                    </span>
                   </div>
-
-                  <span style={{
-                    fontSize: '10px',
-                    fontWeight: item.unlocked ? '700' : '500',
-                    color: item.unlocked ? 'var(--text-primary)' : 'var(--text-muted)',
-                    marginTop: '5px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: '54px'
-                  }}>
-                    {item.title}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
+            {/* Selected Achievement Interactive Mobile Explanation Guide! */}
+            {(() => {
+              const selectedBadge = achievements.find((a) => a.id === selectedBadgeId);
+              if (selectedBadge) {
+                return (
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    backgroundColor: selectedBadge.unlocked ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                    border: selectedBadge.unlocked ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '20px' }}>{selectedBadge.icon}</span>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: '800', color: selectedBadge.unlocked ? selectedBadge.color : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span>{selectedBadge.title}</span>
+                          <span style={{
+                            fontSize: '9px',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            backgroundColor: selectedBadge.unlocked ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                            color: selectedBadge.unlocked ? '#34d399' : 'var(--text-muted)',
+                            fontWeight: '700'
+                          }}>
+                            {selectedBadge.unlocked ? '달성 완료' : '미달성'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          {selectedBadge.desc}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBadgeId(null)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        padding: '4px 6px'
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              }
+              return (
+                <div style={{
+                  marginTop: '12px',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  textAlign: 'center',
+                  padding: '6px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.01)',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(255, 255, 255, 0.02)'
+                }}>
+                  💡 뱃지를 터치하면 달성 조건과 설명을 확인할 수 있습니다.
+                </div>
+              );
+            })()}
           </div>
 
           {/* Admin Handicap & Nickname Edit Form (Only visible to logged-in admins!) */}
