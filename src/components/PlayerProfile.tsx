@@ -248,8 +248,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       { id: 'consecLosses', title: 'ATM', desc: '눈물의 3연속 꼴찌 (모임 공식 현금지급기)', icon: '🏧', unlocked: has3ConsecLosses, color: '#f87171' },
       { id: 'guillotineKing', title: '불사조', desc: '단두대 사투에서 3승 이상 생존 방어', icon: '🛡️', unlocked: hasGuillotineKing, color: '#34d399' },
       { id: 'games10', title: '골프 중독', desc: '모임 통산 10경기 출전 돌파', icon: '🏌️‍♂️', unlocked: has10Games, color: '#a855f7' },
-      { id: 'games50', title: '백전노장', desc: '모임 통산 50경기 출전 베테랑', icon: '🌪️', unlocked: has50Games, color: '#ec4899' },
-      { id: 'games100', title: '살아있는 전설', desc: '모임 통산 100경기 출전 레전드', icon: '🏛️', unlocked: has100Games, color: '#f59e0b' },
+      { id: 'games50', title: '고인물', desc: '모임 통산 50경기 출전 베테랑', icon: '🌪️', unlocked: has50Games, color: '#ec4899' },
+      { id: 'games100', title: '전설', desc: '모임 통산 100경기 출전 레전드', icon: '🏛️', unlocked: has100Games, color: '#f59e0b' },
       { id: 'challenger', title: '천상계 정복', desc: '최상위 등급 챌린저 티어 도달', icon: '👑', unlocked: hasChallenger, color: '#ffd700' },
       { id: 'bigSponsor', title: '만수르', desc: '단일 경기 독박 결제 10만원 이상 쾌척', icon: '💸', unlocked: hasBigSponsor, color: '#f43f5e' },
     ];
