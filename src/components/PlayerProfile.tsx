@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Calendar, Sparkles, Check, UserCheck, UserMinus } from 'lucide-react';
+import { X, Calendar, Sparkles, Check, UserCheck, UserMinus, Award, TrendingUp, Lock } from 'lucide-react';
 import { type Player, type PlayerStatus, TIER_THEMES, type GameResult, type Tier, TIERS_ORDER } from '../types';
 import { tiergService } from '../services/tiergService';
 import { TierBadge } from './TierBadge';
@@ -184,6 +184,77 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
   const { player, results, stats } = data;
   const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
+
+  // 10 Official Achievements Calculation Engine
+  const achievements = (() => {
+    const chronological = [...results].reverse();
+
+    // 1. Single (79 or below)
+    const hasSingle = stats.bestRawScore > 0 && stats.bestRawScore <= 79;
+
+    // 2. Breaking 90 (89 or below)
+    const hasBreaking90 = stats.bestRawScore > 0 && stats.bestRawScore <= 89;
+
+    // 3. 3 Consecutive 1st places
+    let maxWins = 0;
+    let curWins = 0;
+    chronological.forEach((r) => {
+      if (r.rank === 1) {
+        curWins++;
+        if (curWins > maxWins) maxWins = curWins;
+      } else {
+        curWins = 0;
+      }
+    });
+    const has3ConsecWins = maxWins >= 3;
+
+    // 4. 3 Consecutive Last places (points_changed === -20 or guillotine loser)
+    let maxLosses = 0;
+    let curLosses = 0;
+    chronological.forEach((r) => {
+      const isLast = r.points_changed === -20 || ((r.bet_amount || 0) > 0 && r.cost_paid > 0);
+      if (isLast) {
+        curLosses++;
+        if (curLosses > maxLosses) maxLosses = curLosses;
+      } else {
+        curLosses = 0;
+      }
+    });
+    const has3ConsecLosses = maxLosses >= 3;
+
+    // 5. Guillotine Survival Master (3+ wins)
+    const hasGuillotineKing = (stats.guillotineWins || 0) >= 3;
+
+    // 6. 10 Games (골프 중독자)
+    const has10Games = stats.totalGames >= 10;
+
+    // 7. 50 Games (필드의 지배자)
+    const has50Games = stats.totalGames >= 50;
+
+    // 8. 100 Games (전설의 고인물)
+    const has100Games = stats.totalGames >= 100;
+
+    // 9. Challenger Reached
+    const hasChallenger = player.tier === 'Challenger';
+
+    // 10. Big Sponsor (Single match 100,000+ won paid)
+    const hasBigSponsor = results.some((r) => (r.cost_paid || 0) >= 100000);
+
+    return [
+      { id: 'single', title: '싱글 달성', desc: '18홀 정규 79타 이하 돌파', icon: '🦅', unlocked: hasSingle, color: '#ffd700' },
+      { id: 'breaking90', title: '80대 진입', desc: '18홀 89타 이하 진입', icon: '🎯', unlocked: hasBreaking90, color: '#60a5fa' },
+      { id: 'consecWins', title: '3연속 1등', desc: '3경기 연속 1위 독주', icon: '⚡', unlocked: has3ConsecWins, color: '#10b981' },
+      { id: 'consecLosses', title: '3연속 꼴찌', desc: '눈물의 3연속 최하위 (존버)', icon: '🕳️', unlocked: has3ConsecLosses, color: '#f87171' },
+      { id: 'guillotineKing', title: '단두대 생존왕', desc: '단두대 사투 3승 이상 생존', icon: '🛡️', unlocked: hasGuillotineKing, color: '#34d399' },
+      { id: 'games10', title: '골프 중독자', desc: '모임 통산 10경기 출전 돌파', icon: '🏌️‍♂️', unlocked: has10Games, color: '#a855f7' },
+      { id: 'games50', title: '필드의 지배자', desc: '모임 통산 50경기 출전 베테랑', icon: '🌪️', unlocked: has50Games, color: '#ec4899' },
+      { id: 'games100', title: '전설의 고인물', desc: '모임 통산 100경기 출전 레전드', icon: '🏛️', unlocked: has100Games, color: '#f59e0b' },
+      { id: 'challenger', title: '챌린저 달성', desc: '최상위 챌린저 티어 정복', icon: '👑', unlocked: hasChallenger, color: '#ffd700' },
+      { id: 'bigSponsor', title: '특급 스폰서', desc: '단일 경기 독박 결제 10만원 이상', icon: '💸', unlocked: hasBigSponsor, color: '#f43f5e' },
+    ];
+  })();
+
+  const unlockedAchievementsCount = achievements.filter((a) => a.unlocked).length;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -380,6 +451,192 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                   </div>
                 );
               })()}
+            </div>
+          </div>
+
+          {/* 1. Recent 5 Games Stroke Trend Chart (Pure SVG Lightweight Neon Line Chart!) */}
+          {(() => {
+            const trendMatches = results
+              .filter(r => !((r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]')))
+              .slice(0, 5)
+              .reverse();
+
+            if (trendMatches.length < 2) return null;
+
+            const scores = trendMatches.map(m => m.raw_score);
+            const minScore = Math.min(...scores);
+            const maxScore = Math.max(...scores);
+            const scoreRange = maxScore === minScore ? 10 : maxScore - minScore;
+
+            // In golf, LOWER score is BETTER, so lower score is mapped HIGHER up on the Y axis!
+            const getY = (s: number) => {
+              if (maxScore === minScore) return 40;
+              return 22 + ((s - minScore) / scoreRange) * (62 - 22);
+            };
+
+            const getX = (idx: number) => {
+              const total = trendMatches.length;
+              return 35 + (idx / (total - 1)) * 230;
+            };
+
+            const points = trendMatches.map((m, idx) => ({ x: getX(idx), y: getY(m.raw_score), score: m.raw_score, date: m.played_at }));
+            const pathD = points.reduce((acc, pt, idx) => {
+              if (idx === 0) return `M ${pt.x} ${pt.y}`;
+              const prev = points[idx - 1];
+              const cpX = (prev.x + pt.x) / 2;
+              return `${acc} C ${cpX} ${prev.y}, ${cpX} ${pt.y}, ${pt.x} ${pt.y}`;
+            }, '');
+
+            const areaD = `${pathD} L ${points[points.length - 1].x} 74 L ${points[0].x} 74 Z`;
+
+            const firstScore = scores[0];
+            const lastScore = scores[scores.length - 1];
+            const diff = firstScore - lastScore;
+
+            return (
+              <div style={{
+                backgroundColor: 'var(--bg-hover)',
+                borderRadius: 'var(--radius-md)',
+                padding: '14px 16px',
+                border: '1px solid var(--border-color)',
+                marginBottom: '16px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <TrendingUp size={15} color="var(--accent)" /> 최근 타수 페이스 추이
+                  </h4>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: diff > 0 ? '#10b981' : diff < 0 ? '#fbbf24' : '#60a5fa' }}>
+                    {diff > 0 ? `🔥 ${diff}타 줄이며 상승세!` : diff < 0 ? `⛳ +${Math.abs(diff)}타 페이스 조율 중` : `🎯 일관된 타수 유지 중`}
+                  </span>
+                </div>
+
+                <div style={{ width: '100%', overflow: 'hidden' }}>
+                  <svg viewBox="0 0 300 85" style={{ width: '100%', height: 'auto', display: 'block' }}>
+                    <defs>
+                      <linearGradient id="strokeAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+
+                    <path d={areaD} fill="url(#strokeAreaGrad)" />
+                    <path d={pathD} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+
+                    {points.map((pt, idx) => {
+                      const dateObj = new Date(pt.date);
+                      const dateStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+                      const isBestInRecent = pt.score === minScore;
+
+                      return (
+                        <g key={idx}>
+                          <circle cx={pt.x} cy={pt.y} r="4" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
+                          <text
+                            x={pt.x}
+                            y={pt.y - 7}
+                            fill={isBestInRecent ? '#ffd700' : 'var(--text-primary)'}
+                            fontSize="10"
+                            fontWeight="800"
+                            textAnchor="middle"
+                          >
+                            {pt.score}타
+                          </text>
+                          <text x={pt.x} y="82" fill="var(--text-muted)" fontSize="9" textAnchor="middle">
+                            {dateStr}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* 2. 10 Official Achievements Collection Grid */}
+          <div style={{
+            backgroundColor: 'var(--bg-hover)',
+            borderRadius: 'var(--radius-md)',
+            padding: '14px 16px',
+            border: '1px solid var(--border-color)',
+            marginBottom: '16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h4 style={{ fontSize: '13px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Award size={15} color="#ffd700" /> 명예의 공식 업적 (10선)
+              </h4>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent)' }}>
+                {unlockedAchievementsCount} / 10개 달성 ({Math.round(unlockedAchievementsCount * 10)}%)
+              </span>
+            </div>
+
+            {/* 10 Achievements Grid (5x2 layout) */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: '10px'
+            }}>
+              {achievements.map((item) => (
+                <div
+                  key={item.id}
+                  title={`${item.title}: ${item.desc} (${item.unlocked ? '달성 완료' : '미달성'})`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    backgroundColor: item.unlocked ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.2)',
+                    border: item.unlocked ? `1.5px solid ${item.color}` : '1px dashed rgba(255, 255, 255, 0.1)',
+                    boxShadow: item.unlocked ? `0 0 10px ${item.color}40` : 'none',
+                    filter: item.unlocked ? 'none' : 'grayscale(100%) opacity(0.35)',
+                    position: 'relative',
+                    transition: 'all 0.2s',
+                    userSelect: 'none'
+                  }}>
+                    <span>{item.icon}</span>
+
+                    {!item.unlocked && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '-2px',
+                        right: '-2px',
+                        backgroundColor: '#1e293b',
+                        borderRadius: '50%',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid rgba(255,255,255,0.1)'
+                      }}>
+                        <Lock size={8} color="#94a3b8" />
+                      </div>
+                    )}
+                  </div>
+
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: item.unlocked ? '700' : '500',
+                    color: item.unlocked ? 'var(--text-primary)' : 'var(--text-muted)',
+                    marginTop: '5px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '54px'
+                  }}>
+                    {item.title}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
