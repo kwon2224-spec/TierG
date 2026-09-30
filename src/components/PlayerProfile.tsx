@@ -58,12 +58,29 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
     loadPlayerDetails();
   }, [playerId]);
 
-  // Lock background window scroll when PlayerProfile modal is open!
+  // Bulletproof iOS Safari Background Scroll Lock!
   useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    
+    // Save original styles
+    const prevPosition = document.body.style.position;
+    const prevTop = document.body.style.top;
+    const prevWidth = document.body.style.width;
+    const prevOverflow = document.body.style.overflow;
+
+    // Hard freeze body on viewport
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
     document.body.style.overflow = 'hidden';
+
     return () => {
-      document.body.style.overflow = originalOverflow;
+      // Restore on modal close
+      document.body.style.position = prevPosition;
+      document.body.style.top = prevTop;
+      document.body.style.width = prevWidth;
+      document.body.style.overflow = prevOverflow;
+      window.scrollTo(0, scrollY);
     };
   }, []);
 
