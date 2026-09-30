@@ -427,56 +427,6 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       >
                         결과 공유
                       </button>
-
-                      {/* Admin Controls right next to Share Button! */}
-                      {isAdmin && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleStartEdit({ game, results })}
-                            style={{
-                              background: 'none',
-                              border: '1px solid rgba(59, 130, 246, 0.4)',
-                              color: '#60a5fa',
-                              fontSize: '11px',
-                              padding: '3px 8px',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '3px',
-                              transition: 'all 0.2s',
-                              fontWeight: '600'
-                            }}
-                          >
-                            <Edit2 size={11} />
-                            <span>수정</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteGame(game.id)}
-                            disabled={deleting}
-                            style={{
-                              background: 'none',
-                              border: '1px solid rgba(239, 68, 68, 0.4)',
-                              color: '#f87171',
-                              fontSize: '11px',
-                              padding: '3px 8px',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '3px',
-                              transition: 'all 0.2s',
-                              fontWeight: '600'
-                            }}
-                          >
-                            <Trash2 size={11} />
-                            <span>{deleting ? '...' : '취소'}</span>
-                          </button>
-                        </>
-                      )}
                     </div>
                   )}
                 </div>
@@ -887,6 +837,64 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       </div>
                     );
                   })}
+
+                  {/* Admin Only Footer Controls (Compact & Tightly Attached!) */}
+                  {isAdmin && (
+                    <div style={{
+                      display: 'flex',
+                      gap: '8px',
+                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      marginTop: '8px',
+                      paddingTop: '8px',
+                      borderTop: '1px solid var(--border-color)',
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit({ game, results })}
+                        style={{
+                          background: 'none',
+                          border: '1px solid rgba(59, 130, 246, 0.4)',
+                          color: '#60a5fa',
+                          fontSize: '11px',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s',
+                          fontWeight: '600'
+                        }}
+                      >
+                        <Edit2 size={11} />
+                        <span>경기 수정</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteGame(game.id)}
+                        disabled={deleting}
+                        style={{
+                          background: 'none',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          color: '#f87171',
+                          fontSize: '11px',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s',
+                          fontWeight: '600'
+                        }}
+                      >
+                        <Trash2 size={11} />
+                        <span>{deleting ? '취소 중...' : '경기 취소'}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
