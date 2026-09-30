@@ -20,156 +20,239 @@
   --radius-lg: 20px;
 }
 
-/* Light Theme - Soft Ceramic / Toss Style */
+/* Light Theme - Authentic Toss / Apple Fintech Ceramic Style */
 [data-theme="light"] {
-  --bg-main: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-hover: #f1f5f9;
-  --border-color: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --accent: #059669;
-  --accent-glow: rgba(5, 150, 105, 0.2);
+  --bg-main: #F2F4F6;        /* Toss Soft Ceramic Grey - Calm & eye-friendly, no blinding white! */
+  --bg-card: #FFFFFF;        /* Pure White Elevated Card */
+  --bg-hover: #F8F9FA;       /* Soft Light Tint */
+  --border-color: #E5E8EB;   /* Toss Clean 1px Border */
+  --text-primary: #191F28;   /* Toss Deep Ink Charcoal - 100% Crisp High-Contrast */
+  --text-secondary: #4E5968; /* Toss Slate Gray */
+  --text-muted: #8B95A1;     /* Toss Warm Muted Gray */
+  --accent: #00C471;         /* Toss Vibrant Emerald Green */
+  --accent-glow: rgba(0, 196, 113, 0.18);
 }
 
 [data-theme="light"] html,
 [data-theme="light"] body {
-  background-color: var(--bg-main);
-  color: var(--text-primary);
+  background-color: #F2F4F6 !important;
+  color: #191F28 !important;
 }
 
 [data-theme="light"] .app-container {
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.06);
-  border-left-color: #e2e8f0;
-  border-right-color: #e2e8f0;
+  background-color: #F2F4F6 !important;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.05);
+  border-left-color: #E5E8EB !important;
+  border-right-color: #E5E8EB !important;
 }
 
 [data-theme="light"] .app-header {
-  background-color: rgba(255, 255, 255, 0.9);
-  border-bottom-color: #e2e8f0;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-bottom: 1px solid #E5E8EB !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02) !important;
 }
 
-[data-theme="light"] .player-rank-card {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .player-rank-card:hover {
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-  border-color: #cbd5e1;
-}
-
-[data-theme="light"] .player-handicap-badge {
-  background-color: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-}
-
-[data-theme="light"] .lp-bar-container {
-  background-color: #e2e8f0;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
+/* Floating Clean White Cards with Toss Soft Elevation */
+[data-theme="light"] .player-rank-card,
 [data-theme="light"] .game-history-card,
 [data-theme="light"] .game-setup-card,
 [data-theme="light"] .profile-main-card,
 [data-theme="light"] .profile-history-card {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background-color: #FFFFFF !important;
+  border: 1px solid #E5E8EB !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="light"] .player-rank-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06) !important;
+  border-color: #D1D6DB !important;
+}
+
+[data-theme="light"] .player-handicap-badge {
+  background-color: #F2F4F6 !important;
+  border: 1px solid #E5E8EB !important;
+  color: #4E5968 !important;
+}
+
+[data-theme="light"] .lp-bar-container {
+  background-color: #E5E8EB !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
 
 [data-theme="light"] .player-select-card {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
+  background-color: #FFFFFF !important;
+  border: 1px solid #E5E8EB !important;
 }
 
 [data-theme="light"] .player-select-card.selected {
-  background-color: #f0fdf4;
-  border-color: #10b981;
+  background-color: #F0FDF4 !important;
+  border: 1.5px solid #00C471 !important;
 }
 
 [data-theme="light"] .score-entry-row {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
+  background-color: #FFFFFF !important;
+  border-color: #E5E8EB !important;
 }
 
-[data-theme="light"] .form-input {
-  background-color: #ffffff;
-  border-color: #cbd5e1;
-  color: #0f172a;
+/* Clean, crisp form inputs with subtle off-white background */
+[data-theme="light"] .form-input,
+[data-theme="light"] input,
+[data-theme="light"] select {
+  background-color: #F9FAFB !important;
+  border: 1px solid #E5E8EB !important;
+  color: #191F28 !important;
 }
 
-[data-theme="light"] .form-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+[data-theme="light"] .form-input::placeholder,
+[data-theme="light"] input::placeholder {
+  color: #8B95A1 !important;
+  opacity: 0.6 !important;
 }
 
-[data-theme="light"] .modal-content {
-  background-color: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+[data-theme="light"] .form-input:focus,
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus {
+  background-color: #FFFFFF !important;
+  border-color: #00C471 !important;
+  box-shadow: 0 0 0 3px rgba(0, 196, 113, 0.15) !important;
 }
 
-[data-theme="light"] .nav-btn:not(.active) {
-  color: #64748b;
+[data-theme="light"] .form-label {
+  color: #4E5968 !important;
 }
 
-[data-theme="light"] .nav-btn:not(.active):hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
-}
-
-[data-theme="light"] .admin-status-badge.locked {
-  background-color: #f1f5f9;
-  border-color: #e2e8f0;
-  color: #64748b;
-}
-
-[data-theme="light"] .admin-status-badge.unlocked {
-  background-color: rgba(5, 150, 105, 0.1);
-  border-color: rgba(5, 150, 105, 0.25);
-  color: #059669;
-}
-
-/* Light theme for Ranking Pill Bar (iOS Segmented Control Style!) */
+/* High-Contrast Navigation Pill Bar (iOS / Toss Segmented Bar) */
 [data-theme="light"] .ranking-pill-bar {
-  background-color: #e2e8f0 !important;
-  border-color: #cbd5e1 !important;
+  background-color: #E5E8EB !important;
+  border: 1px solid #D1D6DB !important;
 }
 
 [data-theme="light"] .ranking-pill-btn:not(.active) {
-  color: #64748b !important;
+  color: #4E5968 !important;
   background-color: transparent !important;
 }
 
 [data-theme="light"] .ranking-pill-btn.active {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  background-color: #FFFFFF !important;
+  color: #191F28 !important;
+  border-color: #D1D6DB !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 
-[data-theme="light"] .history-result-row {
-  border-bottom-color: #f1f5f9 !important;
+/* Navigation Buttons */
+[data-theme="light"] .nav-btn:not(.active) {
+  color: #4E5968 !important;
+  background-color: transparent !important;
 }
 
-[data-theme="light"] .info-notice-card {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
+[data-theme="light"] .nav-btn:not(.active):hover {
+  background-color: #E5E8EB !important;
+  color: #191F28 !important;
 }
 
+[data-theme="light"] .nav-btn.active {
+  background: linear-gradient(135deg, #00C471, #059669) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(0, 196, 113, 0.25) !important;
+}
+
+/* Modal and Overlays */
+[data-theme="light"] .modal-overlay {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+[data-theme="light"] .modal-content {
+  background-color: #FFFFFF !important;
+  border: 1px solid #E5E8EB !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12) !important;
+  color: #191F28 !important;
+}
+
+[data-theme="light"] .modal-title {
+  color: #191F28 !important;
+}
+
+[data-theme="light"] .modal-close-btn {
+  color: #4E5968 !important;
+}
+
+[data-theme="light"] .modal-close-btn:hover {
+  background-color: #F2F4F6 !important;
+  color: #191F28 !important;
+}
+
+/* Profile and Stats Panels in Light Mode */
 [data-theme="light"] .stat-box {
-  background-color: #f8fafc;
-  border-color: #e2e8f0;
+  background-color: #F8F9FA !important;
+  border: 1px solid #E5E8EB !important;
+}
+
+[data-theme="light"] .stat-val {
+  color: #191F28 !important;
+}
+
+[data-theme="light"] .stat-lbl {
+  color: #4E5968 !important;
 }
 
 [data-theme="light"] .cost-box {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background-color: #FFFFFF !important;
+  border: 1px solid #E5E8EB !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .profile-history-item {
+  background-color: #F8F9FA !important;
+  border: 1px solid #E5E8EB !important;
+  color: #191F28 !important;
+}
+
+[data-theme="light"] .history-result-row {
+  border-bottom: 1px solid #F2F4F6 !important;
+}
+
+[data-theme="light"] .history-name {
+  color: #191F28 !important;
+}
+
+[data-theme="light"] .info-notice-card {
+  background-color: #F8F9FA !important;
+  border: 1px solid #E5E8EB !important;
+  color: #4E5968 !important;
+}
+
+/* Fix White-on-White Inline Styles across all components in Light Mode */
+[data-theme="light"] div[style*="rgba(255, 255, 255, 0.0"],
+[data-theme="light"] div[style*="rgba(255, 255, 255, 0.1"],
+[data-theme="light"] div[style*="rgba(0, 0, 0, 0.15)"],
+[data-theme="light"] div[style*="rgba(0, 0, 0, 0.2)"] {
+  background-color: #F8F9FA !important;
+  border-color: #E5E8EB !important;
+}
+
+[data-theme="light"] button[style*="rgba(255, 255, 255, 0.0"] {
+  background-color: #F2F4F6 !important;
+  border-color: #E5E8EB !important;
+  color: #4E5968 !important;
+}
+
+/* Achievements in Light Mode */
+[data-theme="light"] div[style*="padding: '14px 14px'"][style*="border: '1px solid var(--border-color)'"] {
+  background-color: #F8F9FA !important;
+  border-color: #E5E8EB !important;
+}
+
+[data-theme="light"] .admin-status-badge.locked {
+  background-color: #F2F4F6 !important;
+  border-color: #E5E8EB !important;
+  color: #4E5968 !important;
+}
+
+[data-theme="light"] .admin-status-badge.unlocked {
+  background-color: rgba(0, 196, 113, 0.1) !important;
+  border-color: rgba(0, 196, 113, 0.25) !important;
+  color: #00C471 !important;
 }
 
 * {
