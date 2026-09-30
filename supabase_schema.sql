@@ -11,8 +11,12 @@ CREATE TYPE golf_tier AS ENUM (
   'Emerald', 
   'Diamond', 
   'Master', 
-  'Challenger'
+  'Challenger',
+  'Semi-Pro'
 );
+
+-- For existing database upgrades, run this in Supabase SQL Editor:
+-- ALTER TYPE golf_tier ADD VALUE IF NOT EXISTS 'Semi-Pro';
 
 -- 2. Create players table
 CREATE TABLE IF NOT EXISTS players (

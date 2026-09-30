@@ -21,6 +21,7 @@ export const TierBadge: React.FC<TierBadgeProps> = ({ tier, size = 44 }) => {
       case 'Diamond': return 'D';
       case 'Master': return 'M';
       case 'Challenger': return 'C';
+      case 'Semi-Pro': return 'PRO';
       default: return 'I';
     }
   };

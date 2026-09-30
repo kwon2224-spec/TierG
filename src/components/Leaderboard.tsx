@@ -48,8 +48,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     if (!newName.trim()) return;
 
     const handicapNum = parseInt(newHandicap, 10);
-    if (isNaN(handicapNum) || handicapNum < 0) {
-      alert('올바른 핸디캡 숫자를 입력해주세요.');
+    if (isNaN(handicapNum) || handicapNum < -10) {
+      alert('올바른 핸디캡 숫자(-10 이상)를 입력해주세요.');
       return;
     }
 
@@ -218,8 +218,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
           const isDormant = player.status === 'Dormant';
           
-          // Determine LP bar fill (Challenger doesn't have 100 ceiling, so cap display percentage at 100)
-          const lpPercentage = player.tier === 'Challenger' ? 100 : Math.min(100, Math.max(0, player.points));
+          // Determine LP bar fill (Semi-Pro is top tier without 100 ceiling, so cap display percentage at 100)
+          const lpPercentage = player.tier === 'Semi-Pro' ? 100 : Math.min(100, Math.max(0, player.points));
 
           return (
             <div
@@ -263,7 +263,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         {isDormant ? '휴면 상태' : theme.name}
                       </span>
                       <span className="player-lp">
-                        {isDormant ? '전적 비활동' : player.tier === 'Challenger' ? `${player.points} LP` : `${player.points} / 100 LP`}
+                        {isDormant ? '전적 비활동' : player.tier === 'Semi-Pro' ? `${player.points} LP` : `${player.points} / 100 LP`}
                       </span>
                     </div>
 
@@ -458,7 +458,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                   value={newHandicap}
                   onChange={(e) => setNewNameHandicap(e.target.value)}
                   placeholder="예: 18"
-                  min="0"
+                  min="-10"
                   max="72"
                   required
                 />

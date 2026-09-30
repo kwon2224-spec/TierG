@@ -85,8 +85,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
     if (!data) return;
 
     const newHandicap = parseInt(handicapInput, 10);
-    if (isNaN(newHandicap) || newHandicap < 0) {
-      alert('올바른 핸디캡 숫자를 입력해주세요.');
+    if (isNaN(newHandicap) || newHandicap < -10) {
+      alert('올바른 핸디캡 숫자(-10 이상)를 입력해주세요.');
       return;
     }
 
@@ -970,7 +970,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                       value={handicapInput}
                       onChange={(e) => setHandicapInput(e.target.value)}
                       placeholder="예: 18"
-                      min="0"
+                      min="-10"
                       max="72"
                     />
                   </div>

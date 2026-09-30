@@ -9,7 +9,8 @@ export type Tier =
   | 'Emerald'
   | 'Diamond'
   | 'Master'
-  | 'Challenger';
+  | 'Challenger'
+  | 'Semi-Pro';
 
 export const TIERS_ORDER: Tier[] = [
   'Iron',
@@ -21,6 +22,7 @@ export const TIERS_ORDER: Tier[] = [
   'Diamond',
   'Master',
   'Challenger',
+  'Semi-Pro',
 ];
 
 // Numeric weight for sorting tiers (Iron starts at 100, Bronze 200, etc.)
@@ -34,10 +36,12 @@ export const TIER_WEIGHTS: Record<Tier, number> = {
   Diamond: 700,
   Master: 800,
   Challenger: 900,
+  'Semi-Pro': 1000,
 };
 
 // Predetermined default handicaps based on Tier Standards (Strict League Rules!)
 export const TIER_HANDICAPS: Record<Tier, number> = {
+  'Semi-Pro': -3,
   Challenger: 0,
   Master: 5,
   Diamond: 8,
@@ -121,6 +125,13 @@ export const TIER_THEMES: Record<Tier, TierTheme> = {
     color: '#dc2626',
     textColor: '#ffffff',
     shadow: 'rgba(220, 38, 38, 0.7)',
+  },
+  'Semi-Pro': {
+    name: '세미프로',
+    gradient: 'linear-gradient(135deg, #f43f5e, #be123c, #fbbf24)',
+    color: '#fb7185',
+    textColor: '#ffffff',
+    shadow: 'rgba(244, 63, 94, 0.8)',
   },
 };
 

@@ -55,27 +55,27 @@ export const calculateNewTierAndPoints = (
   let newTier = currentTier;
   let newPoints = currentPoints + pointsChanged;
 
-  // Handling Challenger tier edge case: points can accumulate infinitely (no tier above)
-  if (currentTier === 'Challenger') {
+  // Handling Semi-Pro tier edge case: points can accumulate infinitely (no tier above)
+  if (currentTier === 'Semi-Pro') {
     if (newPoints < 0) {
-      // Demote to Master
-      newTier = 'Master';
+      // Demote to Challenger
+      newTier = 'Challenger';
       newPoints = 100 + newPoints; // e.g. 100 + (-15) = 85 LP
     } else {
-      // Keep Challenger and accumulate points
+      // Keep Semi-Pro and accumulate points
       return { newTier, newPoints };
     }
   }
 
-  // Handle Promotion for non-Challenger tiers
-  while (newPoints >= 100 && newTier !== 'Challenger') {
+  // Handle Promotion for non-Semi-Pro tiers
+  while (newPoints >= 100 && newTier !== 'Semi-Pro') {
     const currentIndex = TIERS_ORDER.indexOf(newTier);
     if (currentIndex < TIERS_ORDER.length - 1) {
       newTier = TIERS_ORDER[currentIndex + 1];
       newPoints = newPoints - 100;
     } else {
-      // Reach Challenger
-      newTier = 'Challenger';
+      // Reach Semi-Pro
+      newTier = 'Semi-Pro';
       break;
     }
   }
