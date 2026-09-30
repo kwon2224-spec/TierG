@@ -458,7 +458,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
           {/* 1. Recent 5 Games Stroke Trend Chart (Pure SVG Lightweight Neon Line Chart!) */}
           {(() => {
             const trendMatches = results
-              .filter(r => !((r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]')))
+              .filter(r => !((r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]') || (r.notes || '').includes('9홀') || r.raw_score < 65))
               .slice(0, 5)
               .reverse();
 

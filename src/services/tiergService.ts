@@ -171,10 +171,11 @@ class TierGService {
       const totalGames = pResults.length;
 
       // 18-hole non-guillotine matches for Best Raw Score (라베)
-      // Excludes both bet_amount > 0 and games with [단두대] notes!
+      // Excludes both bet_amount > 0 and games with [단두대] notes, as well as 9-hole games!
       const nonGuillotine = pResults.filter((r) => {
         const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
-        return !isGuillotine;
+        const is9Holes = (r.games?.notes || '').includes('9홀') || r.raw_score < 65;
+        return !isGuillotine && !is9Holes;
       });
       const bestRawScore = nonGuillotine.length > 0
         ? Math.min(...nonGuillotine.map((r) => r.raw_score))
@@ -198,7 +199,7 @@ class TierGService {
       let leagueLosses = 0;
 
       pResults.forEach((r) => {
-        const isGuillotine = (r.bet_amount || 0) > 0;
+        const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
         const isScratch = r.games?.notes?.includes('[스크래치]');
 
         if (isGuillotine) {
@@ -828,12 +829,22 @@ class TierGService {
 
     // Calculate Stats
     const totalGames = history.length;
+
+    // Exclude 9-hole matches from 18-hole average raw score so 42타 doesn't falsely drag 18-hole average down!
+    const regular18HoleResults = history.filter((r) => {
+      const is9Holes = (r.notes || '').includes('9홀') || r.raw_score < 65;
+      return !is9Holes;
+    });
     const averageRawScore =
-      totalGames > 0 ? history.reduce((sum, r) => sum + r.raw_score, 0) / totalGames : 0;
-    // Exclude Guillotine (9-hole matches!) from Lifetime Best 18-hole raw score (라베) calculation!
+      regular18HoleResults.length > 0
+        ? regular18HoleResults.reduce((sum, r) => sum + r.raw_score, 0) / regular18HoleResults.length
+        : 0;
+
+    // Exclude Guillotine (and 9-hole matches!) from Lifetime Best 18-hole raw score (라베) calculation!
     const nonGuillotineResults = history.filter((r) => {
       const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
-      return !isGuillotine;
+      const is9Holes = (r.notes || '').includes('9홀') || r.raw_score < 65;
+      return !isGuillotine && !is9Holes;
     });
     const bestRawScore = nonGuillotineResults.length > 0
       ? Math.min(...nonGuillotineResults.map((r) => r.raw_score))
@@ -853,7 +864,10 @@ class TierGService {
     const averageCost = totalGames > 0 ? totalCost / totalGames : 0;
     
     // Wins count strictly tracks handicap & scratch 1st place victories (excluding Guillotine completely!)
-    const wins = history.filter((r) => r.rank === 1 && (r.bet_amount || 0) === 0).length;
+    const wins = history.filter((r) => {
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      return r.rank === 1 && !isGuillotine;
+    }).length;
 
     // Calculate dynamic Guillotine stats based on bet_amount column
     // Net Guillotine Loss: Only the extra money paid for other players (Total Paid - Own Bet)
@@ -870,15 +884,21 @@ class TierGService {
       return sum + (bet > 0 && r.cost_paid === 0 ? bet : 0);
     }, 0);
 
-    const guillotineWins = history.filter((r) => (r.bet_amount || 0) > 0 && r.cost_paid === 0).length;
-    const guillotineLosses = history.filter((r) => (r.bet_amount || 0) > 0 && r.cost_paid > 0).length;
+    const guillotineWins = history.filter((r) => {
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      return isGuillotine && r.cost_paid === 0;
+    }).length;
+    const guillotineLosses = history.filter((r) => {
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      return isGuillotine && r.cost_paid > 0;
+    }).length;
 
     // Calculate dynamic unified League Wins/Losses (Universal Overall Win Rate!)
     let leagueWins = 0;
     let leagueLosses = 0;
 
     history.forEach((r) => {
-      const isGuillotine = (r.bet_amount || 0) > 0;
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
       const isScratch = r.notes?.includes('[스크래치]');
       
       if (isGuillotine) {
