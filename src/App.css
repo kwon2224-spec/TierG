@@ -1270,7 +1270,6 @@ html, body {
 /* Deep mobile input width override (Forcing iOS Safari / Mobile Chrome) */
 input[type="text"].form-input,
 input[type="number"].form-input,
-input[type="datetime-local"].form-input,
 select.form-input {
   display: block !important;
   width: 100% !important;
@@ -1285,4 +1284,33 @@ select.form-input {
   -webkit-appearance: none !important;
   border-radius: var(--radius-sm) !important;
   text-align: left !important; /* Forces cursor and text to start from the left edge, preventing inherited center alignment! */
+}
+
+/* Perfect Vertical Centering for Datetime-Local Input in iOS Safari & WebKit */
+input[type="datetime-local"].form-input {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  height: 48px !important;
+  padding-top: 13px !important; /* +2px compensates for WebKit's native upward baseline bias */
+  padding-bottom: 9px !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  font-size: 15px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border-radius: var(--radius-sm) !important;
+  line-height: normal !important;
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+  height: 100% !important;
+  line-height: 1 !important;
 }

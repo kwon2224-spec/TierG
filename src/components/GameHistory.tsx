@@ -374,9 +374,9 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
               {/* Game Card Header */}
               <div className="game-history-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <div className="game-date" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                    <Calendar size={13} color="var(--accent)" />
-                    <span>
+                  <div className="game-date" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', lineHeight: '1.2' }}>
+                    <Calendar size={13} color="var(--accent)" style={{ flexShrink: 0, marginTop: '-1px' }} />
+                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
                       {new Date(game.played_at).toLocaleString('ko-KR', {
                         year: 'numeric',
                         month: 'long',
@@ -385,7 +385,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                         minute: '2-digit',
                       })}
                     </span>
-                    <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 6px', borderRadius: '3px', fontWeight: 'bold', marginLeft: '6px' }}>
+                    <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 6px', borderRadius: '3px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center' }}>
                       {modeName}
                     </span>
                   </div>
