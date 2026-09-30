@@ -369,8 +369,7 @@ html, body {
 .app-content {
   flex: 1;
   padding: 20px;
-  overflow-y: auto;
-  padding-bottom: 80px; /* Safe space for mobile */
+  padding-bottom: 90px; /* Safe space for mobile */
 }
 
 /* Tier Badge Component */
