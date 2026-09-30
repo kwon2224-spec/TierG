@@ -27,6 +27,8 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       averageRawScore: number;
       bestRawScore: number;
       totalCost: number;
+      normalCost?: number;
+      netCost?: number;
       averageCost: number;
       wins: number;
       guillotineLost: number;
@@ -370,19 +372,23 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             <div className="stat-box cost-box" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px' }}>
               <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px', marginBottom: '4px' }}>
                 <div className="stat-val" style={{ fontSize: '18px', color: '#34d399' }}>
-                  {stats.totalCost.toLocaleString()}원
+                  {(stats.netCost ?? stats.totalCost).toLocaleString()}원
                 </div>
-                <div className="stat-lbl" style={{ fontSize: '10px' }}>누적 일반 지출 비용 (평균: {Math.round(stats.averageCost).toLocaleString()}원)</div>
+                <div className="stat-lbl" style={{ fontSize: '10px' }}>실질 누적 순지출 (경기당 평균: {Math.round(stats.averageCost).toLocaleString()}원)</div>
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
-                <div style={{ flex: 1, backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
-                  <div style={{ fontSize: '14px', fontWeight: '800', color: '#f87171' }}>{stats.guillotineLost.toLocaleString()}원</div>
-                  <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>단두대 독박 비용 💸</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '4px' }}>
+                <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '6px 4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-primary)' }}>{(stats.normalCost ?? 0).toLocaleString()}원</div>
+                  <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>정규전 지출 ⛳</div>
                 </div>
-                <div style={{ flex: 1, backgroundColor: 'rgba(16, 185, 129, 0.05)', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
-                  <div style={{ fontSize: '14px', fontWeight: '800', color: '#34d399' }}>{stats.guillotineSaved.toLocaleString()}원</div>
-                  <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>단두대 생존 절약 🛡️</div>
+                <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '6px 4px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.15)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#f87171' }}>{stats.guillotineLost.toLocaleString()}원</div>
+                  <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>단두대 독박 💸</div>
+                </div>
+                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)', padding: '6px 4px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.15)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#34d399' }}>{stats.guillotineSaved.toLocaleString()}원</div>
+                  <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '2px' }}>단두대 절약 🛡️</div>
                 </div>
               </div>
 

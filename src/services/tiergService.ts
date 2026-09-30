@@ -748,6 +748,8 @@ class TierGService {
       averageRawScore: number;
       bestRawScore: number;
       totalCost: number;
+      normalCost: number;
+      netCost: number;
       averageCost: number;
       wins: number; // Rank 1
       guillotineLost: number;  // Total paid as a Guillotine loser
@@ -850,17 +852,28 @@ class TierGService {
       ? Math.min(...nonGuillotineResults.map((r) => r.raw_score))
       : 0;
 
-    // Net Real Out-of-Pocket Cash: Normal matches & Guillotine loser bills MINUS money saved by Guillotine survivors!
-    const totalCost = history.reduce((sum, r) => {
+    // 1. Regular League Matches Out-of-Pocket Expense
+    const normalCost = history.reduce((sum, r) => {
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      return isGuillotine ? sum : sum + (r.cost_paid || 0);
+    }, 0);
+
+    // 2. Guillotine Lost: Actual bill paid by losers (r.cost_paid)
+    const guillotineLost = history.reduce((sum, r) => {
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      return isGuillotine && r.cost_paid > 0 ? sum + r.cost_paid : sum;
+    }, 0);
+
+    // 3. Guillotine Saved: Money saved by survivors (r.bet_amount)
+    const guillotineSaved = history.reduce((sum, r) => {
       const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
       const bet = r.bet_amount || 0;
-      const paid = r.cost_paid || 0;
-
-      if (isGuillotine && paid === 0 && bet > 0) {
-        return sum - bet;
-      }
-      return sum + paid;
+      return isGuillotine && r.cost_paid === 0 && bet > 0 ? sum + bet : sum;
     }, 0);
+
+    // 4. Net Out-of-Pocket Cost: Regular Matches + Guillotine Lost - Guillotine Saved
+    const netCost = normalCost + guillotineLost - guillotineSaved;
+    const totalCost = netCost; // for backward compatibility
     const averageCost = totalGames > 0 ? totalCost / totalGames : 0;
     
     // Wins count strictly tracks handicap & scratch 1st place victories (excluding Guillotine completely!)
@@ -868,21 +881,6 @@ class TierGService {
       const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
       return r.rank === 1 && !isGuillotine;
     }).length;
-
-    // Calculate dynamic Guillotine stats based on bet_amount column
-    // Net Guillotine Loss: Only the extra money paid for other players (Total Paid - Own Bet)
-    const guillotineLost = history.reduce((sum, r) => {
-      const bet = r.bet_amount || 0;
-      if (bet > 0 && r.cost_paid > bet) {
-        return sum + (r.cost_paid - bet); // Only add the extra net loss paid on behalf of others!
-      }
-      return sum;
-    }, 0);
-
-    const guillotineSaved = history.reduce((sum, r) => {
-      const bet = r.bet_amount || 0;
-      return sum + (bet > 0 && r.cost_paid === 0 ? bet : 0);
-    }, 0);
 
     const guillotineWins = history.filter((r) => {
       const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
@@ -933,6 +931,8 @@ class TierGService {
         averageRawScore,
         bestRawScore,
         totalCost,
+        normalCost,
+        netCost,
         averageCost,
         wins,
         guillotineLost,
