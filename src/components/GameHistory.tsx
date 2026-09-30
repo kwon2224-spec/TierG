@@ -99,7 +99,18 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
         ? `${res.raw_score}타`
         : `${res.raw_score}타 (${isGuillotine ? `${is9Holes ? '9홀' : '18홀'} ` : ''}핸디 ${res.adjusted_score}타)`;
 
-      const costDisplay = res.cost_paid > 0 ? ` [${res.cost_paid.toLocaleString()}원 지출]` : '';
+      let costDisplay = '';
+      if (isGuillotine) {
+        if (isWin) {
+          costDisplay = (res.bet_amount || 0) > 0 
+            ? ` [🛡️ ${(res.bet_amount || 0).toLocaleString()}원 세이브 (약정 베팅: ${(res.bet_amount || 0).toLocaleString()}원)]`
+            : ' [🛡️ 생존 면제]';
+        } else {
+          costDisplay = ` [💸 ${res.cost_paid.toLocaleString()}원 독박 대납${(res.bet_amount || 0) > 0 ? ` (본인 베팅: ${(res.bet_amount || 0).toLocaleString()}원)` : ''}]`;
+        }
+      } else {
+        costDisplay = res.cost_paid > 0 ? ` [${res.cost_paid.toLocaleString()}원 지출]` : '';
+      }
 
       shareText += `${rankLabel}. ${res.player_name}: ${scoreDisplay} | ${lpDisplay}${costDisplay}\n`;
     });
@@ -768,8 +779,13 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           {/* Player Name and Cost */}
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span className="history-name">{res.player_name}</span>
-                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                              {res.raw_score}타 ({isGuillotine ? `${is9Holes ? '9홀 ' : '18홀 '}` : ''}핸디 {res.adjusted_score}타)
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              <span>{res.raw_score}타 ({isGuillotine ? `${is9Holes ? '9홀 ' : '18홀 '}` : ''}핸디 {res.adjusted_score}타)</span>
+                              {isGuillotine && (res.bet_amount || 0) > 0 && (
+                                <span style={{ color: '#fbbf24', fontSize: '9px', fontWeight: '700' }}>
+                                  · 베팅 {(res.bet_amount || 0).toLocaleString()}원
+                                </span>
+                              )}
                             </span>
                           </div>
                         </div>
@@ -777,8 +793,30 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                         {/* Cost, LP difference, and Resulting Tier/Points on right side (Fixed Columns - Never Shifts!) */}
                         <div className="history-lp-pills" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
                           {/* Dedicated Cost Column with fixed width to prevent shifting! */}
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', width: '54px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원` : '0원'}
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', minWidth: isGuillotine ? '65px' : '54px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            {isGuillotine ? (
+                              isGuillotineWin ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#34d399' }}>0원</span>
+                                  {(res.bet_amount || 0) > 0 && (
+                                    <span style={{ fontSize: '9px', color: '#34d399', fontWeight: '700' }}>
+                                      🛡️세이브
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#f87171' }}>
+                                    {res.cost_paid.toLocaleString()}원
+                                  </span>
+                                  <span style={{ fontSize: '9px', color: '#f87171', fontWeight: '700' }}>
+                                    💸독박대납
+                                  </span>
+                                </div>
+                              )
+                            ) : (
+                              res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원` : '0원'
+                            )}
                           </div>
                           
                           {/* Dedicated LP & Tier Column with guaranteed 112px width so '다이아몬드' never pushes cost! */}
