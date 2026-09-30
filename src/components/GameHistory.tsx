@@ -159,8 +159,15 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
       const handicapUsed = res.raw_score - res.adjusted_score;
       handicapsMap[res.player_id] = handicapUsed.toString();
 
-      // Original Bet amount (use bet_amount fallback, if not cost_paid)
-      costsMap[res.player_id] = (res.bet_amount !== undefined ? res.bet_amount : res.cost_paid).toString();
+      // Original Bet or Cost amount (properly pre-fills existing costs!)
+      let costToFill = 0;
+      if (mode === 'guillotine') {
+        costToFill = (res.bet_amount ?? 0) > 0 ? (res.bet_amount ?? 0) : (res.cost_paid || 0);
+      } else {
+        costToFill = res.cost_paid || 0;
+      }
+      // If 0, keep empty string so placeholder '0' shows without forcing user to delete '0' on click!
+      costsMap[res.player_id] = costToFill > 0 ? costToFill.toString() : '';
     });
 
     setEditRawScores(scoresMap);
@@ -202,6 +209,8 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
           return;
         }
 
+        // Strictly preserve the historical handicap applied on that game day!
+        // This ensures subsequent promotions/demotions never corrupt past game recalculations!
         let customH: number | undefined = undefined;
         if (editMatchMode === 'guillotine') {
           const hVal = parseInt(editGuillotineHandicaps[id], 10) || 0;
@@ -211,6 +220,9 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
             return;
           }
           customH = hVal;
+        } else if (editMatchMode === 'handicap') {
+          // Strictly lock to the exact handicap used on the day of this game!
+          customH = res.raw_score - res.adjusted_score;
         }
 
         resultsPayload.push({
@@ -520,6 +532,11 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                               className="form-input"
                               value={editCostsPaid[pId] ?? ''}
                               onChange={(e) => setEditCostsPaid({ ...editCostsPaid, [pId]: e.target.value })}
+                              onFocus={(e) => {
+                                if (e.target.value === '0') {
+                                  setEditCostsPaid({ ...editCostsPaid, [pId]: '' });
+                                }
+                              }}
                               placeholder="0"
                               min="0"
                               style={{ fontSize: '12px', padding: '6px' }}
@@ -557,18 +574,20 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                     })}
                   </div>
 
-                  {/* Inline Form Control Footer Buttons */}
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  {/* Inline Form Control Footer Buttons (Symmetrical 5:5 Layout!) */}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                     <button
                       type="button"
                       onClick={() => setEditingGameId(null)}
                       className="submit-btn"
                       style={{
                         flex: 1,
-                        padding: '8px 12px',
-                        fontSize: '12px',
-                        background: 'none', // Elegant semi-transparent glass ghost button style
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        height: '42px',
+                        padding: '0 14px',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        background: 'none',
+                        border: '1px solid var(--border-color)',
                         color: 'var(--text-secondary)'
                       }}
                     >
@@ -579,10 +598,13 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       className="submit-btn"
                       disabled={saving}
                       style={{
-                        flex: 2,
-                        padding: '8px 12px',
-                        fontSize: '12px',
-                        background: 'linear-gradient(135deg, #10b981, #047857)'
+                        flex: 1,
+                        height: '42px',
+                        padding: '0 14px',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        background: 'linear-gradient(135deg, #10b981, #047857)',
+                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
                       }}
                     >
                       {saving ? '수정 저장 중...' : '수정 완료'}

@@ -1073,9 +1073,15 @@ class TierGService {
               -res.points_changed
             );
 
+            const updatePayload: any = { tier: tierBefore, points: pointsBefore };
+            if (tierBefore !== livePlayer.tier) {
+              updatePayload.base_handicap = TIER_HANDICAPS[tierBefore];
+              livePlayer.base_handicap = TIER_HANDICAPS[tierBefore];
+            }
+
             const { error: playerRollbackError } = await supabase
               .from('players')
-              .update({ tier: tierBefore, points: pointsBefore })
+              .update(updatePayload)
               .eq('id', res.player_id);
 
             if (playerRollbackError) throw playerRollbackError;
@@ -1099,7 +1105,11 @@ class TierGService {
           const player = livePlayers.find((p) => p.id === input.player_id);
           if (!player) throw new Error(`Player ${input.player_id} not found`);
 
-          const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : player.base_handicap;
+          // Strictly preserve historical game handicap so promoted/demoted handicaps never corrupt edits!
+          const originalResult = resultsToRevert.find((r) => r.player_id === input.player_id);
+          const originalGameHandicap = originalResult ? (originalResult.raw_score - originalResult.adjusted_score) : player.base_handicap;
+          const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : originalGameHandicap;
+
           const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - finalHandicap;
           return {
             ...input,
@@ -1279,6 +1289,9 @@ class TierGService {
           );
           localPlayers[playerIndex].tier = tierBefore;
           localPlayers[playerIndex].points = pointsBefore;
+          if (tierBefore !== livePlayer.tier) {
+            localPlayers[playerIndex].base_handicap = TIER_HANDICAPS[tierBefore];
+          }
         }
       });
 
@@ -1292,7 +1305,10 @@ class TierGService {
       // 3. Recalculate locally
       const processedResults = resultsInput.map((input) => {
         const player = localPlayers.find((p) => p.id === input.player_id)!;
-        const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : player.base_handicap;
+        const originalResult = resultsToRevert.find((r) => r.player_id === input.player_id);
+        const originalGameHandicap = originalResult ? (originalResult.raw_score - originalResult.adjusted_score) : player.base_handicap;
+        const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : originalGameHandicap;
+
         const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - finalHandicap;
         return {
           ...input,
