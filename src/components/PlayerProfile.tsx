@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, Calendar, Sparkles, Check, UserCheck, UserMinus, Award, TrendingUp, Lock } from 'lucide-react';
-import { type Player, type PlayerStatus, TIER_THEMES, type GameResult, type Tier, TIERS_ORDER } from '../types';
+import { type Player, type PlayerStatus, TIER_THEMES, type GameResult, type Tier, TIERS_ORDER, type GameWithResults } from '../types';
 import { tiergService } from '../services/tiergService';
 import { TierBadge } from './TierBadge';
 
@@ -41,6 +41,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [allGames, setAllGames] = useState<GameWithResults[]>([]);
   const [handicapInput, setHandicapInput] = useState<string>('');
   const [nicknameInput, setNicknameInput] = useState<string>('');
   const [tierInput, setTierInput] = useState<Tier>('Iron'); // Newly added tier edit state!
@@ -60,8 +61,12 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const loadPlayerDetails = async () => {
     setLoading(true);
     try {
-      const details = await tiergService.getPlayerHistory(playerId);
+      const [details, fetchedGames] = await Promise.all([
+        tiergService.getPlayerHistory(playerId),
+        tiergService.getGames(),
+      ]);
       setData(details);
+      setAllGames(fetchedGames);
       setHandicapInput(details.player.base_handicap.toString());
       setNicknameInput((details.player.nickname || '').trim()); // Safely trim trailing db spaces to fix cursor blink!
       setTierInput(details.player.tier); // set initial tier!
@@ -188,17 +193,49 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const { player, results, stats } = data;
   const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
 
-  // 10 Official Achievements Calculation Engine
+  // 20 Official Achievements Calculation Engine (5x4 = 20선 명예의 전당)
   const achievements = (() => {
     const chronological = [...results].reverse();
 
-    // 1. Single (79 or below)
+    // 1. 신의영역: 18홀 정규 71타 이하 (언더파)
+    const hasUnderPar = stats.bestRawScore > 0 && stats.bestRawScore <= 71;
+
+    // 2. 어,싱글이야: 18홀 정규 79타 이하
     const hasSingle = stats.bestRawScore > 0 && stats.bestRawScore <= 79;
 
-    // 2. Breaking 90 (89 or below)
+    // 3. 수도권: 18홀 정규 89타 이하 (깨백)
     const hasBreaking90 = stats.bestRawScore > 0 && stats.bestRawScore <= 89;
 
-    // 3. 3 Consecutive 1st places
+    // 4. 라베달성: 기존 최고 스코어 갱신
+    let hasLaBe = false;
+    const nonGChronological = chronological.filter((r) => {
+      const isG = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      const is9H = (r.notes || '').includes('9홀') || r.raw_score < 65;
+      return !isG && !is9H;
+    });
+    if (nonGChronological.length >= 2) {
+      let lowestSoFar = nonGChronological[0].raw_score;
+      for (let i = 1; i < nonGChronological.length; i++) {
+        if (nonGChronological[i].raw_score < lowestSoFar) {
+          hasLaBe = true;
+          break;
+        }
+      }
+    }
+
+    // 5. 양민학살: 2등과 10타 차 이상 우승
+    const hasYangmin = results.some((r) => {
+      if (r.rank !== 1) return false;
+      const g = allGames.find((gm) => gm.game.id === r.game_id);
+      if (!g || g.results.length < 2) return false;
+      const runnerUp = g.results.find((other) => other.rank === 2);
+      if (!runnerUp) return false;
+      const diffAdjusted = runnerUp.adjusted_score - r.adjusted_score;
+      const diffRaw = runnerUp.raw_score - r.raw_score;
+      return diffAdjusted >= 10 || diffRaw >= 10;
+    });
+
+    // 6. 파죽지세: 3경기 연속 1위 독주
     let maxWins = 0;
     let curWins = 0;
     chronological.forEach((r) => {
@@ -211,49 +248,127 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
     });
     const has3ConsecWins = maxWins >= 3;
 
-    // 4. 3 Consecutive Last places (points_changed === -20 or guillotine loser)
-    let maxLosses = 0;
-    let curLosses = 0;
-    chronological.forEach((r) => {
-      const isLast = r.points_changed === -20 || ((r.bet_amount || 0) > 0 && r.cost_paid > 0);
-      if (isLast) {
-        curLosses++;
-        if (curLosses > maxLosses) maxLosses = curLosses;
-      } else {
-        curLosses = 0;
+    // 7. 골프황제: 정규 리그 통산 10회 우승
+    const has10Wins = (stats.wins || 0) >= 10;
+
+    // 8. 인간승리: 직전 경기 패배 후 바로 다음 경기 1위 탈환
+    let hasComeback = false;
+    for (let i = 0; i < chronological.length - 1; i++) {
+      const prevGame = chronological[i];
+      const nextGame = chronological[i + 1];
+      const isPrevGuillotine = (prevGame.bet_amount || 0) > 0 || (prevGame.notes || '').includes('[단두대]');
+      const isPrevLoss = isPrevGuillotine ? prevGame.cost_paid > 0 : prevGame.points_changed < 0;
+      if (isPrevLoss && nextGame.rank === 1) {
+        hasComeback = true;
+        break;
       }
-    });
-    const has3ConsecLosses = maxLosses >= 3;
+    }
 
-    // 5. Guillotine Survival Master (3+ wins)
-    const hasGuillotineKing = (stats.guillotineWins || 0) >= 3;
+    // 9. 승부사: 스크래치 모드 3회 우승
+    const scratchWins = results.filter((r) => (r.notes || '').includes('[스크래치]') && r.rank === 1).length;
+    const hasScratchMaster = scratchWins >= 3;
 
-    // 6. 10 Games (골프 중독자)
-    const has10Games = stats.totalGames >= 10;
-
-    // 7. 50 Games (필드의 지배자)
-    const has50Games = stats.totalGames >= 50;
-
-    // 8. 100 Games (전설의 고인물)
-    const has100Games = stats.totalGames >= 100;
-
-    // 9. Challenger Reached
+    // 10. 천상계: 챌린저(Challenger) 티어 달성
     const hasChallenger = player.tier === 'Challenger';
 
-    // 10. Big Sponsor (Single match 100,000+ won paid)
-    const hasBigSponsor = results.some((r) => (r.cost_paid || 0) >= 100000);
+    // 11. 불사조: 단두대 사투 3회 이상 생존 방어
+    const hasPhoenix = (stats.guillotineWins || 0) >= 3;
+
+    // 12. 집행자: 단두대 매치 통산 5회 이상 승리
+    const hasExecutioner = (stats.guillotineWins || 0) >= 5;
+
+    // 13. 무임승차: 5경기 연속 본인 지출 0원 달성
+    let maxFree = 0;
+    let curFree = 0;
+    chronological.forEach((r) => {
+      if ((r.cost_paid || 0) === 0) {
+        curFree++;
+        if (curFree > maxFree) maxFree = curFree;
+      } else {
+        curFree = 0;
+      }
+    });
+    const hasFreeRider = maxFree >= 5;
+
+    // 14. ATM: 3경기 연속 비용 지출
+    let maxPaid = 0;
+    let curPaid = 0;
+    chronological.forEach((r) => {
+      if ((r.cost_paid || 0) > 0) {
+        curPaid++;
+        if (curPaid > maxPaid) maxPaid = curPaid;
+      } else {
+        curPaid = 0;
+      }
+    });
+    const hasATM = maxPaid >= 3;
+
+    // 15. 도시락: 통산 꼴찌 10회 달성
+    const lastPlacesCount = results.filter((r) => {
+      const isG = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      if (isG) return r.cost_paid > 0;
+      const g = allGames.find((gm) => gm.game.id === r.game_id);
+      if (g) {
+        const maxRank = Math.max(...g.results.map((res) => res.rank));
+        return r.rank === maxRank && maxRank > 1;
+      }
+      return r.points_changed === -20;
+    }).length;
+    const hasDosirak = lastPlacesCount >= 10;
+
+    // 16. 만수르: 단일 경기 결제 10만원 이상 쾌척
+    const hasMansour = results.some((r) => (r.cost_paid || 0) >= 100000);
+
+    // 17. 스폰서: 누적 실질 지출 50만원 돌파
+    const hasSponsor = (stats.netCost ?? stats.totalCost) >= 500000;
+
+    // 18. 골프중독: 7일(일주일) 이내 라운드 3회 이상 출전
+    let hasAddict = false;
+    const dates = results
+      .map((r) => new Date(r.played_at).getTime())
+      .filter((t) => !isNaN(t))
+      .sort((a, b) => a - b);
+    for (let i = 0; i <= dates.length - 3; i++) {
+      if (dates[i + 2] - dates[i] <= 7 * 24 * 60 * 60 * 1000) {
+        hasAddict = true;
+        break;
+      }
+    }
+
+    // 19. 고인물: 정규 경기 통산 50회 출전 달성
+    const has50Games = stats.totalGames >= 50;
+
+    // 20. 레전드: 정규 경기 통산 100회 출전 대기록
+    const has100Games = stats.totalGames >= 100;
 
     return [
-      { id: 'single', title: '신의 영역', desc: '18홀 정규 79타 이하 싱글 골퍼 등극', icon: '🦅', unlocked: hasSingle, color: '#ffd700' },
-      { id: 'breaking90', title: '일취월장', desc: '18홀 89타 이하 보기 플레이어 진입', icon: '🎯', unlocked: hasBreaking90, color: '#60a5fa' },
-      { id: 'consecWins', title: '파죽지세', desc: '거침없는 3경기 연속 1위 독주', icon: '⚡', unlocked: has3ConsecWins, color: '#10b981' },
-      { id: 'consecLosses', title: 'ATM', desc: '눈물의 3연속 꼴찌 (모임 공식 현금지급기)', icon: '🏧', unlocked: has3ConsecLosses, color: '#f87171' },
-      { id: 'guillotineKing', title: '불사조', desc: '단두대 사투에서 3승 이상 생존 방어', icon: '🛡️', unlocked: hasGuillotineKing, color: '#34d399' },
-      { id: 'games10', title: '골프 중독', desc: '모임 통산 10경기 출전 돌파', icon: '🏌️‍♂️', unlocked: has10Games, color: '#a855f7' },
-      { id: 'games50', title: '고인물', desc: '모임 통산 50경기 출전 베테랑', icon: '🌪️', unlocked: has50Games, color: '#ec4899' },
-      { id: 'games100', title: '전설', desc: '모임 통산 100경기 출전 레전드', icon: '🏛️', unlocked: has100Games, color: '#f59e0b' },
-      { id: 'challenger', title: '천상계 정복', desc: '최상위 등급 챌린저 티어 도달', icon: '👑', unlocked: hasChallenger, color: '#ffd700' },
-      { id: 'bigSponsor', title: '만수르', desc: '단일 경기 독박 결제 10만원 이상 쾌척', icon: '💸', unlocked: hasBigSponsor, color: '#f43f5e' },
+      // 1줄: 스코어 & 타수 (5개)
+      { id: 'underPar', title: '신의영역', icon: '👑', condition: '18홀 정규 71타 이하 (언더파) 기록', comment: '기계 고장 아닙니다. 인간계를 벗어난 꿈의 언더파.', unlocked: hasUnderPar, color: '#ffd700' },
+      { id: 'single', title: '어,싱글이야', icon: '🦅', condition: '18홀 정규 79타 이하 싱글 골퍼 등극', comment: '요새 몇 개 치냐고? ...어, 싱글이야.', unlocked: hasSingle, color: '#f59e0b' },
+      { id: 'breaking90', title: '수도권', icon: '🎯', condition: '18홀 정규 89타 이하 (깨백) 달성', comment: '백돌이 생활 청산하고 당당하게 수도권(80타대) 입성.', unlocked: hasBreaking90, color: '#60a5fa' },
+      { id: 'laBe', title: '라베달성', icon: '📈', condition: '역대 18홀 개인 최저타(라베) 경신', comment: '손맛 제대로 본 날. 내 골프 인생 커리어 하이 경신.', unlocked: hasLaBe, color: '#10b981' },
+      { id: 'massacre', title: '양민학살', icon: '💣', condition: '경기 2위와 10타 차 이상 격차로 압도적 1위', comment: '2등과 10타 차. 변명의 여지가 없는 완벽한 압승.', unlocked: hasYangmin, color: '#ef4444' },
+
+      // 2줄: 승부 & 리그 제패 (5개)
+      { id: 'consecWins', title: '파죽지세', icon: '⚡', condition: '3경기 연속 1위 우승 독주', comment: '물오른 샷감. 3경기 연속 단독 1위 독주.', unlocked: has3ConsecWins, color: '#10b981' },
+      { id: 'emperor', title: '골프황제', icon: '🏆', condition: '정규 리그 통산 10회 우승 달성', comment: '트로피 10개 수집 완료. 이 모임의 공식 최강자.', unlocked: has10Wins, color: '#ffd700' },
+      { id: 'comeback', title: '인간승리', icon: '🦁', condition: '직전 경기 패배 후 바로 다음 경기 1위 탈환', comment: '전 경기 꼴찌에서 다음 경기 바로 1등. 멘탈 인정.', unlocked: hasComeback, color: '#f97316' },
+      { id: 'scratchMaster', title: '승부사', icon: '⚔️', condition: '핸디 없는 스크래치 매치 통산 3회 우승', comment: '핸디캡 핑계는 없다. 날것의 진검승부 3회 제패.', unlocked: hasScratchMaster, color: '#8b5cf6' },
+      { id: 'challenger', title: '천상계', icon: '👑', condition: '최고 등급인 챌린저(Challenger) 티어 도달', comment: 'TierG 최고 존엄 등급 안착. 감히 넘볼 수 없는 천상계.', unlocked: hasChallenger, color: '#ffd700' },
+
+      // 3줄: 단두대 & 서바이벌 (5개)
+      { id: 'phoenix', title: '불사조', icon: '🛡️', condition: '단두대 사투 3회 이상 생존 (게임비 0원 방어)', comment: '끝까지 살아남았다. 단두대 3회 생존 방어 성공.', unlocked: hasPhoenix, color: '#34d399' },
+      { id: 'executioner', title: '집행자', icon: '🔪', condition: '단두대 매치 통산 5회 이상 승리 달성', comment: '단두대 전적 5승. 매치 들어갈 때 상대가 긴장하는 이유.', unlocked: hasExecutioner, color: '#f43f5e' },
+      { id: 'freeRider', title: '무임승차', icon: '🧚', condition: '5경기 연속 본인 지출 0원 달성', comment: '5경기 연속 지갑 안 열고 귀가. 지갑 철벽 방어 성공.', unlocked: hasFreeRider, color: '#38bdf8' },
+      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출 (독박 또는 패배)', comment: '3연속 결제 완료. 모임에서 가장 사랑받는 든든한 존재.', unlocked: hasATM, color: '#f87171' },
+      { id: 'dosirak', title: '도시락', icon: '🍱', condition: '경기 통산 최하위(꼴찌) 10회 기록', comment: '상대팀이 가장 반기는 1순위. 푸근하고 든든한 영양식.', unlocked: hasDosirak, color: '#fb923c' },
+
+      // 4줄: 지출 & 출석 (5개)
+      { id: 'mansour', title: '만수르', icon: '💸', condition: '단일 경기 결제 10만원 이상 쾌척', comment: '오늘 스크린비는 내가 쏜다. 한 판에 10만원 시원하게 쾌척.', unlocked: hasMansour, color: '#ec4899' },
+      { id: 'sponsor', title: '스폰서', icon: '💰', condition: '누적 실질 지출 50만원 돌파', comment: '모임의 든든한 기둥. 스크린 골프장 VVIP 플래티넘 회원.', unlocked: hasSponsor, color: '#eab308' },
+      { id: 'addict', title: '골프중독', icon: '💉', condition: '7일(일주일) 이내 라운드 3회 이상 출전', comment: '일주일에 스크린 세 번. 골프에 단단히 미친 자.', unlocked: hasAddict, color: '#06b6d4' },
+      { id: 'veteran', title: '고인물', icon: '🌪️', condition: '정규 경기 통산 50회 출전 달성', comment: '스크린장 사장님과 형동생 하는 사이. 모임의 산증인.', unlocked: has50Games, color: '#a855f7' },
+      { id: 'legend', title: '레전드', icon: '🏛️', condition: '정규 경기 통산 100회 출전 대기록 달성', comment: '통산 100경기 출전. 명예의 전당에 헌액된 살아있는 전설.', unlocked: has100Games, color: '#ffd700' },
     ];
   })();
 
@@ -559,28 +674,28 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             );
           })()}
 
-          {/* 2. 10 Official Achievements Collection Grid */}
+          {/* 2. 20 Official Achievements Collection Grid (5x4 Layout) */}
           <div style={{
             backgroundColor: 'var(--bg-hover)',
             borderRadius: 'var(--radius-md)',
-            padding: '14px 16px',
+            padding: '14px 14px',
             border: '1px solid var(--border-color)',
             marginBottom: '16px'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h4 style={{ fontSize: '13px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Award size={15} color="#ffd700" /> 명예의 공식 업적 (10선)
+                <Award size={15} color="#ffd700" /> 명예의 공식 업적 (20선)
               </h4>
               <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent)' }}>
-                {unlockedAchievementsCount} / 10개 달성 ({Math.round(unlockedAchievementsCount * 10)}%)
+                {unlockedAchievementsCount} / 20개 달성 ({Math.round((unlockedAchievementsCount / 20) * 100)}%)
               </span>
             </div>
 
-            {/* 10 Achievements Grid (5x2 layout) */}
+            {/* 20 Achievements Grid (5x4 layout) */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(5, 1fr)',
-              gap: '10px'
+              gap: '12px 6px'
             }}>
               {achievements.map((item) => {
                 const isSelected = selectedBadgeId === item.id;
@@ -588,7 +703,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                   <div
                     key={item.id}
                     onClick={() => setSelectedBadgeId(selectedBadgeId === item.id ? null : item.id)}
-                    title={`${item.title}: ${item.desc} (${item.unlocked ? '달성 완료' : '미달성'})`}
+                    title={`${item.title}: ${item.condition} (${item.unlocked ? '달성 완료' : '미달성'})`}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
@@ -661,26 +776,26 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
               })}
             </div>
 
-            {/* Selected Achievement Interactive Mobile Explanation Guide! */}
+            {/* Selected Achievement Interactive Mobile Explanation Guide (2-Tier: Condition + Witty Comment!) */}
             {(() => {
               const selectedBadge = achievements.find((a) => a.id === selectedBadgeId);
               if (selectedBadge) {
                 return (
                   <div style={{
-                    marginTop: '12px',
-                    padding: '10px 14px',
+                    marginTop: '14px',
+                    padding: '12px 14px',
                     borderRadius: '8px',
                     backgroundColor: selectedBadge.unlocked ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.03)',
                     border: selectedBadge.unlocked ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid var(--border-color)',
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     justifyContent: 'space-between',
                     gap: '10px'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '20px' }}>{selectedBadge.icon}</span>
-                      <div>
-                        <div style={{ fontSize: '12px', fontWeight: '800', color: selectedBadge.unlocked ? selectedBadge.color : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1 }}>
+                      <span style={{ fontSize: '24px', lineHeight: 1.2 }}>{selectedBadge.icon}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: selectedBadge.unlocked ? selectedBadge.color : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span>{selectedBadge.title}</span>
                           <span style={{
                             fontSize: '9px',
@@ -690,11 +805,16 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                             color: selectedBadge.unlocked ? '#34d399' : 'var(--text-muted)',
                             fontWeight: '700'
                           }}>
-                            {selectedBadge.unlocked ? '달성 완료' : '미달성'}
+                            {selectedBadge.unlocked ? '달성 완료' : '미달성 🔒'}
                           </span>
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          {selectedBadge.desc}
+                        {/* 1. Official Condition Line (📌) */}
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                          <strong style={{ color: 'var(--accent)', fontWeight: '700' }}>📌 조건:</strong> {selectedBadge.condition}
+                        </div>
+                        {/* 2. Dry Witty Commentary Line (💬) */}
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '1px' }}>
+                          💬 "{selectedBadge.comment}"
                         </div>
                       </div>
                     </div>
@@ -707,7 +827,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                         color: 'var(--text-muted)',
                         fontSize: '13px',
                         cursor: 'pointer',
-                        padding: '4px 6px'
+                        padding: '2px 4px'
                       }}
                     >
                       ✕
@@ -726,7 +846,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                   borderRadius: '6px',
                   border: '1px solid rgba(255, 255, 255, 0.02)'
                 }}>
-                  💡 뱃지를 터치하면 달성 조건과 설명을 확인할 수 있습니다.
+                  💡 뱃지를 터치하면 공식 달성 조건과 코멘트를 확인할 수 있습니다.
                 </div>
               );
             })()}
