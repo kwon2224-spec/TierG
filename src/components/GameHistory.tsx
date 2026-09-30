@@ -21,6 +21,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
   const [editNotes, setEditNotes] = useState<string>('');
   const [editPlayedAt, setEditPlayedAt] = useState<string>('');
   const [editMatchMode, setEditMatchMode] = useState<MatchMode>('handicap');
+  const [editGuillotineHoles, setEditGuillotineHoles] = useState<'9' | '18'>('9'); // Guillotine 9H vs 18H in edit mode!
   const [editRawScores, setEditRawScores] = useState<Record<string, string>>({});
   const [editScoreSelections, setEditScoreSelections] = useState<Record<string, string>>({});
   const [editGuillotineHandicaps, setEditGuillotineHandicaps] = useState<Record<string, string>>({});
@@ -121,10 +122,20 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
   const handleStartEdit = (gameWithRes: GameWithResults) => {
     setEditingGameId(gameWithRes.game.id);
 
+    // Detect Guillotine 9-hole vs 18-hole
+    const notesStr = gameWithRes.game.notes || '';
+    const is9Holes = notesStr.includes('9홀') || !notesStr.includes('18홀');
+    const holes: '9' | '18' = is9Holes ? '9' : '18';
+    setEditGuillotineHoles(holes);
+
     // Strip [스크래치] or [단두대] prefixes from notes input box for clean inline editing
-    let cleanNotes = gameWithRes.game.notes || '';
+    let cleanNotes = notesStr;
     if (cleanNotes.startsWith('[스크래치] ')) {
       cleanNotes = cleanNotes.substring(7);
+    } else if (cleanNotes.startsWith('[단두대 9홀] ')) {
+      cleanNotes = cleanNotes.substring(9);
+    } else if (cleanNotes.startsWith('[단두대 18홀] ')) {
+      cleanNotes = cleanNotes.substring(10);
     } else if (cleanNotes.startsWith('[단두대] ')) {
       cleanNotes = cleanNotes.substring(6);
     }
@@ -154,11 +165,22 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     const costsMap: Record<string, string> = {};
 
     gameWithRes.results.forEach((res) => {
-      const relativeStrokes = res.raw_score - 72;
-      if (relativeStrokes >= -10 && relativeStrokes <= 40) {
-        selectionsMap[res.player_id] = relativeStrokes.toString();
+      const is9H = mode === 'guillotine' && holes === '9';
+      const basePar = is9H ? 36 : 72;
+      const relativeStrokes = res.raw_score - basePar;
+
+      if (is9H) {
+        if (relativeStrokes >= -5 && relativeStrokes <= 25) {
+          selectionsMap[res.player_id] = relativeStrokes.toString();
+        } else {
+          selectionsMap[res.player_id] = 'direct';
+        }
       } else {
-        selectionsMap[res.player_id] = 'direct';
+        if (relativeStrokes >= -10 && relativeStrokes <= 40) {
+          selectionsMap[res.player_id] = relativeStrokes.toString();
+        } else {
+          selectionsMap[res.player_id] = 'direct';
+        }
       }
 
       scoresMap[res.player_id] = res.raw_score.toString();
@@ -185,11 +207,15 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
   };
 
   const getRawScoreForPlayer = (id: string): number => {
-    const selection = editScoreSelections[id] || '18';
+    const is9Hole = editMatchMode === 'guillotine' && editGuillotineHoles === '9';
+    const basePar = is9Hole ? 36 : 72;
+    const defaultOver = is9Hole ? '9' : '18';
+
+    const selection = editScoreSelections[id] || defaultOver;
     if (selection === 'direct') {
-      return parseInt(editRawScores[id], 10) || 72;
+      return parseInt(editRawScores[id], 10) || basePar;
     }
-    return 72 + parseInt(selection, 10);
+    return basePar + parseInt(selection, 10);
   };
 
   const handleUpdateSubmit = async (e: React.FormEvent, gameId: string, results: any[]) => {
@@ -242,7 +268,14 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
       }
 
       const dateStr = new Date(editPlayedAt).toISOString();
-      await tiergService.updateGame(gameId, editNotes.trim(), dateStr, resultsPayload, editMatchMode);
+      let finalNotes = editNotes.trim();
+      if (editMatchMode === 'scratch') {
+        finalNotes = `[스크래치] ${finalNotes}`.trim();
+      } else if (editMatchMode === 'guillotine') {
+        finalNotes = `[단두대 ${editGuillotineHoles}홀] ${finalNotes}`.trim();
+      }
+
+      await tiergService.updateGame(gameId, finalNotes, dateStr, resultsPayload, editMatchMode);
       alert('경기 정보 수정 저장이 완료되었습니다!');
       setEditingGameId(null);
       onGameDeleted(); // Refresh games history and live leaderboard!
@@ -483,6 +516,67 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       </div>
                     </div>
 
+                    {/* Guillotine 9-Hole vs 18-Hole Selector in Edit Mode */}
+                    {editMatchMode === 'guillotine' && (
+                      <div style={{
+                        marginTop: '6px',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '8px'
+                      }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>
+                          단두대 진행 홀 수:
+                        </span>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {[
+                            { id: '9', label: '9홀 단두대' },
+                            { id: '18', label: '18홀 단두대' },
+                          ].map((h) => {
+                            const isActive = editGuillotineHoles === h.id;
+                            return (
+                              <button
+                                key={h.id}
+                                type="button"
+                                onClick={() => {
+                                  const newHoles = h.id as '9' | '18';
+                                  setEditGuillotineHoles(newHoles);
+                                  const newBase = newHoles === '9' ? 36 : 72;
+                                  const newDefault = newHoles === '9' ? '9' : '18';
+                                  const updatedSelections: Record<string, string> = {};
+                                  const updatedRaws: Record<string, string> = {};
+                                  results.forEach((r) => {
+                                    const pId = r.player_id;
+                                    updatedSelections[pId] = newDefault;
+                                    updatedRaws[pId] = (newBase + parseInt(newDefault, 10)).toString();
+                                  });
+                                  setEditScoreSelections(updatedSelections);
+                                  setEditRawScores(updatedRaws);
+                                }}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '4px',
+                                  fontSize: '11px',
+                                  fontWeight: isActive ? '800' : '600',
+                                  border: isActive ? '1px solid #f59e0b' : '1px solid var(--border-color)',
+                                  backgroundColor: isActive ? '#f59e0b' : 'var(--bg-card)',
+                                  color: isActive ? '#000' : 'var(--text-secondary)',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s'
+                                }}
+                              >
+                                {h.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="form-group" style={{ marginBottom: '0' }}>
                       <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>코스명 및 메모</label>
                       <input
@@ -517,21 +611,26 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           <div className="inputs-row" style={{ gridTemplateColumns: editMatchMode === 'guillotine' ? '1.2fr 1fr 0.8fr' : '1fr 1fr', gap: '6px' }}>
                             <select
                               className="form-input"
-                              value={editScoreSelections[pId] || '18'}
+                              value={editScoreSelections[pId] || (editMatchMode === 'guillotine' && editGuillotineHoles === '9' ? '9' : '18')}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 setEditScoreSelections({ ...editScoreSelections, [pId]: val });
                                 if (val !== 'direct') {
-                                  setEditRawScores({ ...editRawScores, [pId]: (72 + parseInt(val, 10)).toString() });
+                                  const base = editMatchMode === 'guillotine' && editGuillotineHoles === '9' ? 36 : 72;
+                                  setEditRawScores({ ...editRawScores, [pId]: (base + parseInt(val, 10)).toString() });
                                 }
                               }}
                               style={{ backgroundColor: 'var(--bg-hover)', fontSize: '12px', padding: '6px' }}
                             >
-                              {Array.from({ length: 51 }, (_, i) => -10 + i).map((v) => {
+                              {(editMatchMode === 'guillotine' && editGuillotineHoles === '9'
+                                ? Array.from({ length: 31 }, (_, i) => -5 + i)
+                                : Array.from({ length: 51 }, (_, i) => -10 + i)
+                              ).map((v) => {
+                                const base = editMatchMode === 'guillotine' && editGuillotineHoles === '9' ? 36 : 72;
                                 let label = '';
-                                if (v < 0) label = `${v} (${72 + v}타)`;
-                                else if (v === 0) label = `이븐 (${72 + v}타)`;
-                                else label = `+${v} (${72 + v}타)`;
+                                if (v < 0) label = `${v} (${base + v}타)`;
+                                else if (v === 0) label = `이븐 (${base + v}타)`;
+                                else label = `+${v} (${base + v}타)`;
                                 return <option key={v} value={v.toString()}>{label}</option>;
                               })}
                               <option value="direct">직접 입력</option>
@@ -572,7 +671,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                               className="form-input"
                               value={editRawScores[pId] || ''}
                               onChange={(e) => setEditRawScores({ ...editRawScores, [pId]: e.target.value })}
-                              placeholder="타수 입력 (예: 85)"
+                              placeholder={editMatchMode === 'guillotine' && editGuillotineHoles === '9' ? "타수 입력 (예: 42)" : "타수 입력 (예: 85)"}
                               min="18"
                               max="180"
                               required
