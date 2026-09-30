@@ -27,6 +27,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   });
   const [notes, setNotes] = useState<string>('');
   const [matchMode, setMatchMode] = useState<MatchMode>('handicap');
+  const [guillotineHoles, setGuillotineHoles] = useState<'9' | '18'>('9'); // Default guillotine is 9-hole!
   const [showMatchModeHelp, setShowMatchModeHelp] = useState<boolean>(false); // Help popover status
 
   // Random Room Allocation State
@@ -98,13 +99,17 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     }
   };
 
-  // Helper to dynamically calculate actual strokes from combo-box or direct inputs
+  // Helper to dynamically calculate actual strokes from combo-box or direct inputs (36 Par for 9H Guillotine vs 72 Par for others!)
   const getRawScoreForPlayer = (id: string): number => {
-    const selection = scoreSelections[id] || '18'; // Default to +18 Over Par (90 strokes)
+    const is9Hole = matchMode === 'guillotine' && guillotineHoles === '9';
+    const basePar = is9Hole ? 36 : 72;
+    const defaultOver = is9Hole ? '9' : '18';
+
+    const selection = scoreSelections[id] || defaultOver;
     if (selection === 'direct') {
-      return parseInt(rawScores[id], 10) || 72;
+      return parseInt(rawScores[id], 10) || basePar;
     }
-    return 72 + parseInt(selection, 10);
+    return basePar + parseInt(selection, 10);
   };
 
   // Helper to retrieve handicap dynamically based on MatchMode
@@ -342,7 +347,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       if (matchMode === 'scratch') {
         finalNotes = `[스크래치] ${finalNotes}`;
       } else if (matchMode === 'guillotine') {
-        finalNotes = `[단두대] ${finalNotes}`;
+        finalNotes = `[단두대 ${guillotineHoles}홀] ${finalNotes}`;
       }
 
       await tiergService.addGame(finalNotes, dateStr, resultsPayload, matchMode);
@@ -495,6 +500,67 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                 );
               })}
             </div>
+
+            {/* Guillotine 9-Hole vs 18-Hole Selector */}
+            {matchMode === 'guillotine' && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>
+                  단두대 진행 홀 수:
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[
+                    { id: '9', label: '9홀 단두대' },
+                    { id: '18', label: '18홀 단두대' },
+                  ].map((h) => {
+                    const isActive = guillotineHoles === h.id;
+                    return (
+                      <button
+                        key={h.id}
+                        type="button"
+                        onClick={() => {
+                          const newHoles = h.id as '9' | '18';
+                          setGuillotineHoles(newHoles);
+                          // Adjust default score selections
+                          const newBase = newHoles === '9' ? 36 : 72;
+                          const newDefault = newHoles === '9' ? '9' : '18';
+                          const updatedSelections: Record<string, string> = {};
+                          const updatedRaws: Record<string, string> = {};
+                          selectedPlayerIds.forEach((pid) => {
+                            updatedSelections[pid] = newDefault;
+                            updatedRaws[pid] = (newBase + parseInt(newDefault, 10)).toString();
+                          });
+                          setScoreSelections(updatedSelections);
+                          setRawScores(updatedRaws);
+                        }}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: isActive ? '800' : '600',
+                          border: isActive ? '1px solid #f59e0b' : '1px solid var(--border-color)',
+                          backgroundColor: isActive ? '#f59e0b' : 'var(--bg-card)',
+                          color: isActive ? '#000' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        {h.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Collapsible Help Popover */}
             {showMatchModeHelp && (
@@ -720,24 +786,31 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
                   <div className="inputs-row" style={{ gridTemplateColumns: matchMode === 'guillotine' ? '1.2fr 1fr 0.8fr' : '1fr 1fr' }}>
                     <div className="form-group" style={{ marginBottom: '0' }}>
-                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>스코어 (언더/오버)</label>
+                      <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>
+                        스코어 {matchMode === 'guillotine' && guillotineHoles === '9' ? '(36파 기준)' : '(72파 기준)'}
+                      </label>
                       <select
                         className="form-input"
-                        value={scoreSelections[pId] || '18'}
+                        value={scoreSelections[pId] || (matchMode === 'guillotine' && guillotineHoles === '9' ? '9' : '18')}
                         onChange={(e) => {
                           const val = e.target.value;
                           setScoreSelections({ ...scoreSelections, [pId]: val });
                           if (val !== 'direct') {
-                            setRawScores({ ...rawScores, [pId]: (72 + parseInt(val, 10)).toString() });
+                            const base = matchMode === 'guillotine' && guillotineHoles === '9' ? 36 : 72;
+                            setRawScores({ ...rawScores, [pId]: (base + parseInt(val, 10)).toString() });
                           }
                         }}
                         style={{ backgroundColor: 'var(--bg-hover)' }}
                       >
-                        {Array.from({ length: 51 }, (_, i) => -10 + i).map((v) => {
+                        {(matchMode === 'guillotine' && guillotineHoles === '9'
+                          ? Array.from({ length: 31 }, (_, i) => -5 + i)
+                          : Array.from({ length: 51 }, (_, i) => -10 + i)
+                        ).map((v) => {
+                          const base = matchMode === 'guillotine' && guillotineHoles === '9' ? 36 : 72;
                           let label = '';
-                          if (v < 0) label = `${v} (${72 + v}타)`;
-                          else if (v === 0) label = `이븐 (${72 + v}타)`;
-                          else label = `+${v} (${72 + v}타)`;
+                          if (v < 0) label = `${v} (${base + v}타)`;
+                          else if (v === 0) label = `이븐 (${base + v}타)`;
+                          else label = `+${v} (${base + v}타)`;
                           return <option key={v} value={v.toString()}>{label}</option>;
                         })}
                         <option value="direct">직접 입력</option>
@@ -787,7 +860,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         className="form-input"
                         value={rawScores[pId] || ''}
                         onChange={(e) => setRawScores({ ...rawScores, [pId]: e.target.value })}
-                        placeholder="실제 친 타수 입력 (예: 85)"
+                        placeholder={matchMode === 'guillotine' && guillotineHoles === '9' ? "실제 친 타수 입력 (예: 42)" : "실제 친 타수 입력 (예: 85)"}
                         min="18"
                         max="180"
                         required

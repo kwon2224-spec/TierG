@@ -59,9 +59,10 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
 
   // Format and share dynamic game results text directly to KakaoTalk or clipboard!
   const handleShareGameResult = (game: any, results: any[]) => {
-    const isGuillotine = results.some((r) => (r.bet_amount || 0) > 0);
+    const isGuillotine = results.some((r) => (r.bet_amount || 0) > 0) || (game.notes || '').includes('[단두대');
     const isScratch = game.notes?.includes('[스크래치]');
-    const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디캡';
+    const is9Holes = (game.notes || '').includes('9홀') || !(game.notes || '').includes('18홀');
+    const modeName = isGuillotine ? `단두대 (${is9Holes ? '9홀' : '18홀'})` : isScratch ? '스크래치' : '핸디캡';
 
     const formattedDate = new Date(game.played_at).toLocaleString('ko-KR', {
       month: 'long',
@@ -76,6 +77,8 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     
     let notesText = game.notes || '';
     if (notesText.startsWith('[스크래치] ')) notesText = notesText.substring(7);
+    else if (notesText.startsWith('[단두대 9홀] ')) notesText = notesText.substring(9);
+    else if (notesText.startsWith('[단두대 18홀] ')) notesText = notesText.substring(10);
     else if (notesText.startsWith('[단두대] ')) notesText = notesText.substring(6);
     if (notesText) {
       shareText += `코스/메모: ${notesText}\n`;
@@ -93,7 +96,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
       // Display both raw score and handicap adjusted score!
       const scoreDisplay = isScratch
         ? `${res.raw_score}타`
-        : `${res.raw_score}타 (핸디 ${res.adjusted_score}타)`;
+        : `${res.raw_score}타 (${isGuillotine ? `${is9Holes ? '9홀' : '18홀'} ` : ''}핸디 ${res.adjusted_score}타)`;
 
       const costDisplay = res.cost_paid > 0 ? ` [${res.cost_paid.toLocaleString()}원 지출]` : '';
 
@@ -325,9 +328,11 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
           const isCurrentlyEditing = editingGameId === game.id;
 
           // Declare match mode variables at the card top-level!
-          const isGuillotine = results.some((r) => (r.bet_amount || 0) > 0);
+          const isGuillotine = results.some((r) => (r.bet_amount || 0) > 0) || (game.notes || '').includes('[단두대');
           const isScratch = game.notes?.startsWith('[스크래치]');
-          const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
+          const is9Holes = (game.notes || '').includes('9홀') || !(game.notes || '').includes('18홀');
+          const guillotineLabel = is9Holes ? '단두대 9홀' : '단두대 18홀';
+          const modeName = isGuillotine ? guillotineLabel : isScratch ? '스크래치' : '핸디';
           const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
           const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
 
@@ -665,7 +670,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span className="history-name">{res.player_name}</span>
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                              {res.raw_score}타 (핸디 {res.adjusted_score}타)
+                              {res.raw_score}타 ({isGuillotine ? `${is9Holes ? '9홀 ' : '18홀 '}` : ''}핸디 {res.adjusted_score}타)
                             </span>
                           </div>
                         </div>
