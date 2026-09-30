@@ -1072,12 +1072,17 @@ class TierGService {
     resultsInput: { player_id: string; raw_score: number; cost_paid: number; custom_handicap?: number }[],
     matchMode: MatchMode = 'handicap'
   ): Promise<void> {
-    // Prefix notes dynamically depending on selected MatchMode to prevent mode erasure!
-    let finalNotes = notes.trim();
+    // Clean and normalize final notes prefix depending on selected MatchMode to prevent duplicate tag accumulation!
+    const holes = notes.includes('18홀') ? '18홀' : '9홀';
+    let finalNotes = notes
+      .replace(/\[단두대(?:\s*(?:9홀|18홀))?\]/g, '')
+      .replace(/\[스크래치\]/g, '')
+      .trim();
+
     if (matchMode === 'scratch') {
-      finalNotes = `[스크래치] ${finalNotes}`;
+      finalNotes = finalNotes ? `[스크래치] ${finalNotes}` : '[스크래치]';
     } else if (matchMode === 'guillotine') {
-      finalNotes = `[단두대] ${finalNotes}`;
+      finalNotes = finalNotes ? `[단두대 ${holes}] ${finalNotes}` : `[단두대 ${holes}]`;
     }
 
     // 1. Fetch current games to locate the target original game

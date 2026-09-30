@@ -396,7 +396,14 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       {modeName}
                     </span>
                   </div>
-                  {game.notes && <div className="game-notes" style={{ marginTop: '2px' }}>{game.notes}</div>}
+                  {(() => {
+                    const cleanNotes = (game.notes || '')
+                      .replace(/\[단두대(?:\s*(?:9홀|18홀))?\]/g, '')
+                      .replace(/\[스크래치\]/g, '')
+                      .trim();
+                    if (!cleanNotes) return null;
+                    return <div className="game-notes" style={{ marginTop: '2px' }}>{cleanNotes}</div>;
+                  })()}
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
