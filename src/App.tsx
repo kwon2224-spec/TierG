@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, PlusCircle, History, Lock, LockOpen, Check, Sun, Moon } from 'lucide-react';
+import { Trophy, PlusCircle, History, Lock, LockOpen, Check, Sun, Moon, ArrowUp } from 'lucide-react';
 import { Leaderboard } from './components/Leaderboard';
 import { AddGame } from './components/AddGame';
 import { GameHistory } from './components/GameHistory';
@@ -26,6 +26,28 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('tierg_theme', theme);
   }, [theme]);
+
+  // Floating Scroll-to-Top FAB State
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 250) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   // Admin Authorization State
   const [players, setPlayers] = useState<Player[]>([]);
@@ -327,6 +349,37 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Floating Scroll-to-Top Button (Toss-style Glass FAB) */}
+      <button
+        type="button"
+        onClick={scrollToTop}
+        aria-label="맨 위로 스크롤"
+        style={{
+          position: 'fixed',
+          right: '20px',
+          bottom: '24px',
+          width: '42px',
+          height: '42px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--bg-card)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-color)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 90,
+          opacity: showScrollTop ? 1 : 0,
+          visibility: showScrollTop ? 'visible' : 'hidden',
+          transform: showScrollTop ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.85)',
+          transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <ArrowUp size={20} strokeWidth={2.5} color="var(--accent)" />
+      </button>
     </div>
   );
 }
