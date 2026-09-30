@@ -128,10 +128,10 @@ export const TIER_THEMES: Record<Tier, TierTheme> = {
   },
   'Semi-Pro': {
     name: '세미프로',
-    gradient: 'linear-gradient(135deg, #f43f5e, #be123c, #fbbf24)',
-    color: '#fb7185',
+    gradient: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 25%, #3b82f6 50%, #06b6d4 75%, #10b981 90%, #fbbf24 100%)',
+    color: '#38bdf8',
     textColor: '#ffffff',
-    shadow: 'rgba(244, 63, 94, 0.8)',
+    shadow: 'rgba(139, 92, 246, 0.7)',
   },
 };
 
