@@ -32,21 +32,38 @@ function App() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 250) {
-        setShowScrollTop(true);
-      } else {
-        setShowScrollTop(false);
+      const winScroll = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      const contentEl = document.querySelector('.app-content');
+      const contentScroll = contentEl ? contentEl.scrollTop : 0;
+      const currentScroll = Math.max(winScroll, contentScroll);
+
+      setShowScrollTop(currentScroll > 120);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Also listen to app-content scroll directly in case browser scrolls inside container!
+    const contentEl = document.querySelector('.app-content');
+    if (contentEl) {
+      contentEl.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (contentEl) {
+        contentEl.removeEventListener('scroll', handleScroll);
       }
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [activeTab]);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+    document.body.scrollTo({ top: 0, behavior: 'smooth' });
+    const contentEl = document.querySelector('.app-content');
+    if (contentEl) {
+      contentEl.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // Admin Authorization State
@@ -357,28 +374,29 @@ function App() {
         aria-label="맨 위로 스크롤"
         style={{
           position: 'fixed',
-          right: '20px',
+          right: 'max(20px, calc(50vw - 280px))',
           bottom: '24px',
-          width: '42px',
-          height: '42px',
+          width: '46px',
+          height: '46px',
           borderRadius: '50%',
           backgroundColor: 'var(--bg-card)',
           color: 'var(--text-primary)',
-          border: '1px solid var(--border-color)',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+          border: '1.5px solid var(--accent)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.3)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          zIndex: 90,
+          zIndex: 99,
           opacity: showScrollTop ? 1 : 0,
           visibility: showScrollTop ? 'visible' : 'hidden',
-          transform: showScrollTop ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.85)',
+          pointerEvents: showScrollTop ? 'auto' : 'none',
+          transform: showScrollTop ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.8)',
           transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(10px)',
         }}
       >
-        <ArrowUp size={20} strokeWidth={2.5} color="var(--accent)" />
+        <ArrowUp size={22} strokeWidth={2.8} color="var(--accent)" />
       </button>
     </div>
   );
