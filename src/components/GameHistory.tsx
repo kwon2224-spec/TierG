@@ -76,11 +76,10 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     shareText += `일시: ${formattedDate}\n`;
     shareText += `모드: ${modeName}\n`;
     
-    let notesText = game.notes || '';
-    if (notesText.startsWith('[스크래치] ')) notesText = notesText.substring(7);
-    else if (notesText.startsWith('[단두대 9홀] ')) notesText = notesText.substring(9);
-    else if (notesText.startsWith('[단두대 18홀] ')) notesText = notesText.substring(10);
-    else if (notesText.startsWith('[단두대] ')) notesText = notesText.substring(6);
+    let notesText = (game.notes || '')
+      .replace(/\[단두대(?:\s*(?:9홀|18홀))?\]/g, '')
+      .replace(/\[스크래치\]/g, '')
+      .trim();
     if (notesText) {
       shareText += `코스/메모: ${notesText}\n`;
     }
@@ -134,17 +133,11 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     const holes: '9' | '18' = is9Holes ? '9' : '18';
     setEditGuillotineHoles(holes);
 
-    // Strip [스크래치] or [단두대] prefixes from notes input box for clean inline editing
-    let cleanNotes = notesStr;
-    if (cleanNotes.startsWith('[스크래치] ')) {
-      cleanNotes = cleanNotes.substring(7);
-    } else if (cleanNotes.startsWith('[단두대 9홀] ')) {
-      cleanNotes = cleanNotes.substring(9);
-    } else if (cleanNotes.startsWith('[단두대 18홀] ')) {
-      cleanNotes = cleanNotes.substring(10);
-    } else if (cleanNotes.startsWith('[단두대] ')) {
-      cleanNotes = cleanNotes.substring(6);
-    }
+    // Strip [스크래치] or [단두대] prefixes cleanly with regex (handles with or without trailing space!)
+    const cleanNotes = notesStr
+      .replace(/\[단두대(?:\s*(?:9홀|18홀))?\]/g, '')
+      .replace(/\[스크래치\]/g, '')
+      .trim();
 
     setEditNotes(cleanNotes);
     
