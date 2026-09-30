@@ -780,8 +780,8 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           
                           {/* Player Name and Bet Amount */}
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                              <span className="history-name">{res.player_name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span className="history-name" style={{ flex: 'none' }}>{res.player_name}</span>
                               {isGuillotine && (res.bet_amount || 0) > 0 && (
                                 <span style={{ fontSize: '10px', color: '#fbbf24', fontWeight: '700' }}>
                                   ({(res.bet_amount || 0).toLocaleString()}원)
