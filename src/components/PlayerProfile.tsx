@@ -223,16 +223,19 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       }
     }
 
-    // 5. 양민학살: 2등과 10타 차 이상 우승
+    // 5. 양민학살: 18홀 정규 리그전에서 2등과 10타 차 이상 압도적 1위 (단두대 및 9홀 경기 완전 제외!)
     const hasYangmin = results.some((r) => {
       if (r.rank !== 1) return false;
+      const isGuillotine = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      const is9Holes = (r.notes || '').includes('9홀') || r.raw_score < 65;
+      if (isGuillotine || is9Holes) return false; // Strictly regular 18-hole league games only!
+
       const g = allGames.find((gm) => gm.game.id === r.game_id);
       if (!g || g.results.length < 2) return false;
       const runnerUp = g.results.find((other) => other.rank === 2);
       if (!runnerUp) return false;
       const diffAdjusted = runnerUp.adjusted_score - r.adjusted_score;
-      const diffRaw = runnerUp.raw_score - r.raw_score;
-      return diffAdjusted >= 10 || diffRaw >= 10;
+      return diffAdjusted >= 10;
     });
 
     // 6. 파죽지세: 3경기 연속 1위 독주
