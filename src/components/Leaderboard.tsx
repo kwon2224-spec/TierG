@@ -366,20 +366,27 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                       <span className="player-tier-name" style={{ color: theme.color }}>
                         {theme.name}
                       </span>
-                      <span style={{ fontSize: '15px', fontWeight: '800', color: player.totalCost > 0 ? '#f87171' : '#34d399' }}>
-                        {player.totalCost > 0 
-                          ? `${player.totalCost.toLocaleString()}원` 
-                          : '0원'}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '15px', fontWeight: '800', color: player.totalCost > 0 ? '#f87171' : '#34d399', lineHeight: 1.1 }}>
+                          {player.totalCost > 0 
+                            ? `${player.totalCost.toLocaleString()}원` 
+                            : '0원'}
+                        </span>
+                        {(player.guillotineSaved || 0) > 0 && (
+                          <span style={{ fontSize: '9px', color: '#10b981', fontWeight: '700', marginTop: '1px', lineHeight: 1 }}>
+                            방어 {player.guillotineSaved!.toLocaleString()}원
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' }}>
-                      {(player.guillotineSaved || 0) > 0 ? (
-                        <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '600', lineHeight: '12px', whiteSpace: 'nowrap' }}>
-                          방어 {player.guillotineSaved!.toLocaleString()}원
+                    <div style={{ height: '12px', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                      {rank === 1 && player.totalCost > 0 ? (
+                        <span style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '700', lineHeight: '12px', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
+                          <Crown size={11} color="#fbbf24" style={{ fill: '#fbbf24' }} /> 모임 공식 후원회장 (총 {player.totalCost.toLocaleString()}원)
                         </span>
                       ) : (
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '12px', whiteSpace: 'nowrap' }}>
-                          경기당 평균 {player.totalGames > 0 ? `${Math.round(player.totalCost / player.totalGames).toLocaleString()}원` : '0원'}
+                          경기당 평균 {player.totalGames > 0 ? `${Math.round(player.totalCost / player.totalGames).toLocaleString()}원` : '0원'} 지출
                         </span>
                       )}
                     </div>
