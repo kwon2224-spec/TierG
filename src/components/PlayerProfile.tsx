@@ -686,75 +686,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             );
           })()}
 
-          {/* Recent Games */}
-          <h4 className="recent-games-title">최근 전적 ({results.length}전)</h4>
-          <div className="profile-history-list" style={{ marginBottom: '16px' }}>
-            {results.length === 0 ? (
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '20px' }}>
-                기록된 게임 전적이 없습니다.
-              </p>
-            ) : (
-              results.map((res) => {
-                const lpDiff = res.points_changed;
-                const isPlus = lpDiff >= 0;
-
-                // Identify MatchMode parameters
-                const isGuillotine = (res.bet_amount || 0) > 0;
-                const isScratch = res.notes?.startsWith('[스크래치]');
-                const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
-                const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
-                const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
-
-                // Binary Win/Loss for Guillotine matches, otherwise normal Rank placing
-                const isGuillotineWin = isGuillotine && res.cost_paid === 0;
-                const rankDisplay = isGuillotine
-                  ? (isGuillotineWin ? '승' : '패')
-                  : `${res.rank}등`;
-
-                return (
-                  <div key={res.id} className="profile-history-item">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span
-                        style={{
-                          fontWeight: '800',
-                          color: isGuillotine 
-                            ? (isGuillotineWin ? '#34d399' : '#f87171') 
-                            : (res.rank === 1 ? '#ffd700' : 'var(--text-secondary)'),
-                          fontSize: '14px',
-                          minWidth: '24px',
-                          textAlign: 'center'
-                        }}
-                      >
-                        {rankDisplay}
-                      </span>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontWeight: '600', fontSize: '13px' }}>{res.raw_score}타 (핸디 {res.adjusted_score}타)</span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold' }}>
-                            {modeName}
-                          </span>
-                          <Calendar size={10} /> {new Date(res.played_at).toLocaleDateString('ko-KR')}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span
-                        className={`history-lp-diff ${isGuillotine ? 'zero' : (isPlus ? 'plus' : 'minus')}`}
-                        style={{ fontWeight: '700', fontSize: '14px', color: isGuillotine ? 'var(--text-muted)' : undefined }}
-                      >
-                        {isGuillotine ? '0 LP' : (isPlus ? `+${lpDiff}` : lpDiff) + ' LP'}
-                      </span>
-                      <div style={{ fontSize: '10px', color: '#f87171' }}>
-                        {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원 지출` : ''}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* 2. 20 Official Achievements Collection Grid (Placed at the bottom!) */}
+          {/* 2. 20 Official Achievements Collection Grid (Placed comfortably ABOVE infinite Recent Games!) */}
           <div style={{
             backgroundColor: 'var(--bg-hover)',
             borderRadius: 'var(--radius-md)',
@@ -930,6 +862,74 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                 </div>
               );
             })()}
+          </div>
+
+          {/* Recent Games */}
+          <h4 className="recent-games-title">최근 전적 ({results.length}전)</h4>
+          <div className="profile-history-list" style={{ marginBottom: '16px' }}>
+            {results.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '20px' }}>
+                기록된 게임 전적이 없습니다.
+              </p>
+            ) : (
+              results.map((res) => {
+                const lpDiff = res.points_changed;
+                const isPlus = lpDiff >= 0;
+
+                // Identify MatchMode parameters
+                const isGuillotine = (res.bet_amount || 0) > 0;
+                const isScratch = res.notes?.startsWith('[스크래치]');
+                const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
+                const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
+                const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
+
+                // Binary Win/Loss for Guillotine matches, otherwise normal Rank placing
+                const isGuillotineWin = isGuillotine && res.cost_paid === 0;
+                const rankDisplay = isGuillotine
+                  ? (isGuillotineWin ? '승' : '패')
+                  : `${res.rank}등`;
+
+                return (
+                  <div key={res.id} className="profile-history-item">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span
+                        style={{
+                          fontWeight: '800',
+                          color: isGuillotine 
+                            ? (isGuillotineWin ? '#34d399' : '#f87171') 
+                            : (res.rank === 1 ? '#ffd700' : 'var(--text-secondary)'),
+                          fontSize: '14px',
+                          minWidth: '24px',
+                          textAlign: 'center'
+                        }}
+                      >
+                        {rankDisplay}
+                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontWeight: '600', fontSize: '13px' }}>{res.raw_score}타 (핸디 {res.adjusted_score}타)</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold' }}>
+                            {modeName}
+                          </span>
+                          <Calendar size={10} /> {new Date(res.played_at).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span
+                        className={`history-lp-diff ${isGuillotine ? 'zero' : (isPlus ? 'plus' : 'minus')}`}
+                        style={{ fontWeight: '700', fontSize: '14px', color: isGuillotine ? 'var(--text-muted)' : undefined }}
+                      >
+                        {isGuillotine ? '0 LP' : (isPlus ? `+${lpDiff}` : lpDiff) + ' LP'}
+                      </span>
+                      <div style={{ fontSize: '10px', color: '#f87171' }}>
+                        {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원 지출` : ''}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           {/* Admin Handicap & Nickname Edit Form (Only visible to logged-in admins!) */}
