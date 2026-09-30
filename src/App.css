@@ -188,6 +188,17 @@ html, body {
   overflow-x: hidden;
   -webkit-text-size-adjust: 100% !important; /* Locks iOS Safari Global Font Scaling to designed 1:1! */
   text-size-adjust: 100% !important;         /* Locks Android Chrome Global Font Scaling to designed 1:1! */
+  touch-action: pan-x pan-y;                 /* Disables double-tap zoom gestures while keeping smooth single-finger scrolling! */
+}
+
+/* Prevent iOS Safari auto-zoom on input focus by guaranteeing at least 16px font-size on mobile screens! */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea,
+  .form-input {
+    font-size: 16px !important;
+  }
 }
 
 /* App Container */
