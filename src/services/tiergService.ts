@@ -99,6 +99,27 @@ export const calculateNewTierAndPoints = (
   return { newTier, newPoints };
 };
 
+// High-Speed In-Memory Cache (Eliminates repeated cellular network roundtrips!)
+let cachedPlayers: Player[] | null = null;
+let lastPlayersTime = 0;
+
+let cachedPlayersWithStats: PlayerWithStats[] | null = null;
+let lastPlayersWithStatsTime = 0;
+
+let cachedGamesWithResults: GameWithResults[] | null = null;
+let lastGamesTime = 0;
+
+const CACHE_TTL_MS = 15000; // 15 seconds cache TTL
+
+export const invalidateTierGCache = () => {
+  cachedPlayers = null;
+  lastPlayersTime = 0;
+  cachedPlayersWithStats = null;
+  lastPlayersWithStatsTime = 0;
+  cachedGamesWithResults = null;
+  lastGamesTime = 0;
+};
+
 // 4. Main Service Implementation
 class TierGService {
   isSupabaseMode(): boolean {
@@ -107,6 +128,10 @@ class TierGService {
 
   // --- Players API ---
   async getPlayers(): Promise<Player[]> {
+    if (cachedPlayers && Date.now() - lastPlayersTime < CACHE_TTL_MS) {
+      return cachedPlayers;
+    }
+
     if (supabase) {
       const { data, error } = await supabase
         .from('players')
@@ -115,7 +140,9 @@ class TierGService {
       if (error) {
         console.error('Supabase getPlayers error, falling back:', error);
       } else if (data) {
-        return data as Player[];
+        cachedPlayers = data as Player[];
+        lastPlayersTime = Date.now();
+        return cachedPlayers;
       }
     }
 
@@ -124,6 +151,10 @@ class TierGService {
   }
 
   async getPlayersWithStats(): Promise<PlayerWithStats[]> {
+    if (cachedPlayersWithStats && Date.now() - lastPlayersWithStatsTime < CACHE_TTL_MS) {
+      return cachedPlayersWithStats;
+    }
+
     const players = await this.getPlayers();
     
     // Fetch all game results in one single high-speed joined query!
@@ -166,7 +197,7 @@ class TierGService {
     });
 
     // Compute stats for each player in-memory (0ms lag!)
-    return players.map((player) => {
+    const formattedPlayers = players.map((player) => {
       const pResults = resultsByPlayer[player.id] || [];
       const totalGames = pResults.length;
 
@@ -238,6 +269,10 @@ class TierGService {
         guillotineSaved,
       };
     });
+
+    cachedPlayersWithStats = formattedPlayers;
+    lastPlayersWithStatsTime = Date.now();
+    return formattedPlayers;
   }
 
   async addPlayer(
@@ -247,6 +282,7 @@ class TierGService {
     points: number = 50,
     nickname: string = ''
   ): Promise<Player> {
+    invalidateTierGCache();
     if (supabase) {
       const { data, error } = await supabase
         .from('players')
@@ -275,6 +311,7 @@ class TierGService {
   }
 
   async updatePlayerHandicap(id: string, newHandicap: number, nickname: string = '', newTier?: Tier, newPoints?: number): Promise<Player> {
+    invalidateTierGCache();
     if (supabase) {
       const updatePayload: any = { base_handicap: newHandicap, nickname };
       if (newTier) {
@@ -312,6 +349,7 @@ class TierGService {
   }
 
   async updatePlayerStatus(id: string, status: PlayerStatus): Promise<Player> {
+    invalidateTierGCache();
     if (supabase) {
       const { data, error } = await supabase
         .from('players')
@@ -334,6 +372,7 @@ class TierGService {
   }
 
   async updatePlayerAdminStatus(id: string, isAdmin: boolean): Promise<Player> {
+    invalidateTierGCache();
     if (supabase) {
       const { data, error } = await supabase
         .from('players')
@@ -356,6 +395,7 @@ class TierGService {
   }
 
   async deletePlayer(id: string): Promise<void> {
+    invalidateTierGCache();
     if (supabase) {
       const { error } = await supabase
         .from('players')
@@ -374,6 +414,10 @@ class TierGService {
 
   // --- Games API ---
   async getGames(): Promise<GameWithResults[]> {
+    if (cachedGamesWithResults && Date.now() - lastGamesTime < CACHE_TTL_MS) {
+      return cachedGamesWithResults;
+    }
+
     if (supabase) {
       try {
         // 1. Fetch all games in one single query
@@ -448,6 +492,8 @@ class TierGService {
           };
         });
 
+        cachedGamesWithResults = gamesWithResults;
+        lastGamesTime = Date.now();
         return gamesWithResults;
       } catch (error) {
         console.error('Supabase getGames error, falling back:', error);

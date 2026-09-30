@@ -37,8 +37,6 @@ export const TierBadge: React.FC<TierBadgeProps> = ({ tier, size = 44 }) => {
         background: isSemiPro
           ? 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 25%, #3b82f6 50%, #06b6d4 75%, #10b981 90%, #fbbf24 100%)'
           : theme.gradient,
-        backgroundSize: isSemiPro ? '250% 250%' : '100% 100%',
-        animation: isSemiPro ? 'proPrismShimmer 5s ease infinite' : undefined,
         boxShadow: isSemiPro
           ? '0 0 16px rgba(139, 92, 246, 0.6), 0 0 8px rgba(6, 182, 212, 0.4), inset 0 0 6px rgba(255, 255, 255, 0.4)'
           : `0 0 12px ${theme.shadow}`,
