@@ -180,4 +180,5 @@ export interface PlayerWithStats extends Player {
   leagueLosses: number;
   winRate: number;
   totalCost: number;
+  guillotineSaved?: number;
 }

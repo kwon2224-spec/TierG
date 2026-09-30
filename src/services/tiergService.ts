@@ -216,6 +216,17 @@ class TierGService {
 
       const winRate = totalGames > 0 ? Math.round((leagueWins / totalGames) * 100) : 0;
 
+      // Money saved by surviving Guillotine
+      const guillotineSaved = pResults.reduce((sum, r) => {
+        const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
+        const bet = r.bet_amount || 0;
+        const paid = r.cost_paid || 0;
+        if (isGuillotine && paid === 0 && bet > 0) {
+          return sum + bet;
+        }
+        return sum;
+      }, 0);
+
       return {
         ...player,
         bestRawScore,
@@ -224,6 +235,7 @@ class TierGService {
         leagueLosses,
         winRate,
         totalCost,
+        guillotineSaved,
       };
     });
   }

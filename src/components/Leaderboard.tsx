@@ -371,7 +371,18 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                           ? `${player.totalCost.toLocaleString()}원` 
                           : player.totalCost < 0
                           ? `+${Math.abs(player.totalCost).toLocaleString()}원 (수익)`
-                          : '0원 지출'}
+                          : '0원'}
+                        {/* Clean minimal micro-badge for Guillotine defense vs Natural 0 spent */}
+                        {player.totalCost === 0 && (player.guillotineSaved || 0) > 0 && (
+                          <span style={{ fontSize: '10px', color: '#10b981', marginLeft: '5px', fontWeight: '700' }}>
+                            (방어 {player.guillotineSaved!.toLocaleString()}원)
+                          </span>
+                        )}
+                        {player.totalCost === 0 && (player.guillotineSaved || 0) === 0 && player.totalGames > 0 && (
+                          <span style={{ fontSize: '10px', color: '#60a5fa', marginLeft: '5px', fontWeight: '600' }}>
+                            (무지출)
+                          </span>
+                        )}
                       </span>
                     </div>
                     <div style={{ height: '12px', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
@@ -381,8 +392,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         </span>
                       ) : (
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '12px', whiteSpace: 'nowrap' }}>
-                          {player.totalCost < 0 
-                            ? '단두대 생존으로 순수 지출 완벽 방어' 
+                          {player.totalCost === 0 && (player.guillotineSaved || 0) > 0
+                            ? `단두대 생존으로 ${player.guillotineSaved!.toLocaleString()}원 방어 성공`
+                            : player.totalCost === 0 && (player.guillotineSaved || 0) === 0 && player.totalGames > 0
+                            ? '출전 전 경기 지출 면제'
                             : `경기당 평균 ${player.totalGames > 0 ? `${Math.round(player.totalCost / player.totalGames).toLocaleString()}원` : '0원'} 지출`}
                         </span>
                       )}
