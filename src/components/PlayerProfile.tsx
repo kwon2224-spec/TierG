@@ -343,32 +343,32 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
     return [
       // 1줄: 스코어 & 타수 (5개)
-      { id: 'underPar', title: '신의영역', icon: '👑', condition: '18홀 정규 71타 이하 (언더파) 기록', comment: '기계 고장 아닙니다. 인간계를 벗어난 꿈의 언더파.', unlocked: hasUnderPar, color: '#ffd700' },
-      { id: 'single', title: '어,싱글이야', icon: '🦅', condition: '18홀 정규 79타 이하 싱글 골퍼 등극', comment: '요새 몇 개 치냐고? ...어, 싱글이야.', unlocked: hasSingle, color: '#f59e0b' },
-      { id: 'breaking90', title: '수도권', icon: '🎯', condition: '18홀 정규 89타 이하 (깨백) 달성', comment: '백돌이 생활 청산하고 당당하게 수도권(80타대) 입성.', unlocked: hasBreaking90, color: '#60a5fa' },
-      { id: 'laBe', title: '라베달성', icon: '📈', condition: '역대 18홀 개인 최저타(라베) 경신', comment: '손맛 제대로 본 날. 내 골프 인생 커리어 하이 경신.', unlocked: hasLaBe, color: '#10b981' },
-      { id: 'massacre', title: '양민학살', icon: '💣', condition: '경기 2위와 10타 차 이상 격차로 압도적 1위', comment: '2등과 10타 차. 변명의 여지가 없는 완벽한 압승.', unlocked: hasYangmin, color: '#ef4444' },
+      { id: 'underPar', title: '신의영역', icon: '🦅', condition: '18홀 정규 71타 이하 (언더파) 기록', comment: '꿈의 71타 언더파 달성.', unlocked: hasUnderPar, color: '#ffd700' },
+      { id: 'single', title: '싱글', icon: '🧍', condition: '18홀 정규 79타 이하 싱글 골퍼 등극', comment: '어, 나 싱글이야.', unlocked: hasSingle, color: '#f59e0b' },
+      { id: 'breaking90', title: '수도권', icon: '🎯', condition: '18홀 정규 89타 이하 (깨백) 달성', comment: '당당하게 80타대 입성.', unlocked: hasBreaking90, color: '#60a5fa' },
+      { id: 'laBe', title: '라베달성', icon: '📈', condition: '역대 18홀 개인 최저타(라베) 경신', comment: '인생 커리어 하이 경신.', unlocked: hasLaBe, color: '#10b981' },
+      { id: 'massacre', title: '양민학살', icon: '💣', condition: '경기 2위와 10타 차 이상 격차로 압도적 1위', comment: '2등과 10타 차 압도적 대승.', unlocked: hasYangmin, color: '#ef4444' },
 
       // 2줄: 승부 & 리그 제패 (5개)
-      { id: 'consecWins', title: '파죽지세', icon: '⚡', condition: '3경기 연속 1위 우승 독주', comment: '물오른 샷감. 3경기 연속 단독 1위 독주.', unlocked: has3ConsecWins, color: '#10b981' },
-      { id: 'emperor', title: '골프황제', icon: '🏆', condition: '정규 리그 통산 10회 우승 달성', comment: '트로피 10개 수집 완료. 이 모임의 공식 최강자.', unlocked: has10Wins, color: '#ffd700' },
-      { id: 'comeback', title: '인간승리', icon: '🦁', condition: '직전 경기 패배 후 바로 다음 경기 1위 탈환', comment: '전 경기 꼴찌에서 다음 경기 바로 1등. 멘탈 인정.', unlocked: hasComeback, color: '#f97316' },
-      { id: 'scratchMaster', title: '승부사', icon: '⚔️', condition: '핸디 없는 스크래치 매치 통산 3회 우승', comment: '핸디캡 핑계는 없다. 날것의 진검승부 3회 제패.', unlocked: hasScratchMaster, color: '#8b5cf6' },
-      { id: 'challenger', title: '천상계', icon: '👑', condition: '최고 등급인 챌린저(Challenger) 티어 도달', comment: 'TierG 최고 존엄 등급 안착. 감히 넘볼 수 없는 천상계.', unlocked: hasChallenger, color: '#ffd700' },
+      { id: 'consecWins', title: '파죽지세', icon: '⚡', condition: '3경기 연속 1위 우승 독주', comment: '3경기 연속 1위 독주.', unlocked: has3ConsecWins, color: '#10b981' },
+      { id: 'emperor', title: '골프황제', icon: '🏆', condition: '정규 리그 통산 10회 우승 달성', comment: '정규 리그 통산 10회 우승.', unlocked: has10Wins, color: '#ffd700' },
+      { id: 'comeback', title: '인간승리', icon: '🦁', condition: '직전 경기 패배 후 바로 다음 경기 1위 탈환', comment: '꼴찌 직후 다음 경기 1등.', unlocked: hasComeback, color: '#f97316' },
+      { id: 'scratchMaster', title: '승부사', icon: '⚔️', condition: '핸디 없는 스크래치 매치 통산 3회 우승', comment: '스크래치 모드 3승 달성.', unlocked: hasScratchMaster, color: '#8b5cf6' },
+      { id: 'challenger', title: '천상계', icon: '👑', condition: '최고 등급인 챌린저(Challenger) 티어 도달', comment: '최고 존엄 챌린저 도달.', unlocked: hasChallenger, color: '#ffd700' },
 
       // 3줄: 단두대 & 서바이벌 (5개)
-      { id: 'phoenix', title: '불사조', icon: '🛡️', condition: '단두대 사투 3회 이상 생존 (게임비 0원 방어)', comment: '끝까지 살아남았다. 단두대 3회 생존 방어 성공.', unlocked: hasPhoenix, color: '#34d399' },
-      { id: 'executioner', title: '집행자', icon: '🔪', condition: '단두대 매치 통산 5회 이상 승리 달성', comment: '단두대 전적 5승. 매치 들어갈 때 상대가 긴장하는 이유.', unlocked: hasExecutioner, color: '#f43f5e' },
-      { id: 'freeRider', title: '무임승차', icon: '🧚', condition: '5경기 연속 본인 지출 0원 달성', comment: '5경기 연속 지갑 안 열고 귀가. 지갑 철벽 방어 성공.', unlocked: hasFreeRider, color: '#38bdf8' },
-      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출 (독박 또는 패배)', comment: '3연속 결제 완료. 모임에서 가장 사랑받는 든든한 존재.', unlocked: hasATM, color: '#f87171' },
-      { id: 'dosirak', title: '도시락', icon: '🍱', condition: '경기 통산 최하위(꼴찌) 10회 기록', comment: '상대팀이 가장 반기는 1순위. 푸근하고 든든한 영양식.', unlocked: hasDosirak, color: '#fb923c' },
+      { id: 'phoenix', title: '불사조', icon: '🛡️', condition: '단두대 사투 3회 이상 생존 (게임비 0원 방어)', comment: '단두대 3회 생존 방어.', unlocked: hasPhoenix, color: '#34d399' },
+      { id: 'executioner', title: '집행자', icon: '🔪', condition: '단두대 매치 통산 5회 이상 승리 달성', comment: '단두대 통산 5회 승리.', unlocked: hasExecutioner, color: '#f43f5e' },
+      { id: 'freeRider', title: '무임승차', icon: '🧚', condition: '5경기 연속 본인 지출 0원 달성', comment: '5경기 연속 0원 귀가.', unlocked: hasFreeRider, color: '#38bdf8' },
+      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출 (독박 또는 패배)', comment: '3연속 결제 완료.', unlocked: hasATM, color: '#f87171' },
+      { id: 'dosirak', title: '도시락', icon: '🍱', condition: '경기 통산 최하위(꼴찌) 10회 기록', comment: '상대팀이 가장 반기는 존재.', unlocked: hasDosirak, color: '#fb923c' },
 
       // 4줄: 지출 & 출석 (5개)
-      { id: 'mansour', title: '만수르', icon: '💸', condition: '단일 경기 결제 10만원 이상 쾌척', comment: '오늘 스크린비는 내가 쏜다. 한 판에 10만원 시원하게 쾌척.', unlocked: hasMansour, color: '#ec4899' },
-      { id: 'sponsor', title: '스폰서', icon: '💰', condition: '누적 실질 지출 50만원 돌파', comment: '모임의 든든한 기둥. 스크린 골프장 VVIP 플래티넘 회원.', unlocked: hasSponsor, color: '#eab308' },
-      { id: 'addict', title: '골프중독', icon: '💉', condition: '7일(일주일) 이내 라운드 3회 이상 출전', comment: '일주일에 스크린 세 번. 골프에 단단히 미친 자.', unlocked: hasAddict, color: '#06b6d4' },
-      { id: 'veteran', title: '고인물', icon: '🌪️', condition: '정규 경기 통산 50회 출전 달성', comment: '스크린장 사장님과 형동생 하는 사이. 모임의 산증인.', unlocked: has50Games, color: '#a855f7' },
-      { id: 'legend', title: '레전드', icon: '🏛️', condition: '정규 경기 통산 100회 출전 대기록 달성', comment: '통산 100경기 출전. 명예의 전당에 헌액된 살아있는 전설.', unlocked: has100Games, color: '#ffd700' },
+      { id: 'mansour', title: '만수르', icon: '💸', condition: '단일 경기 결제 10만원 이상 쾌척', comment: '단일 경기 10만원 결제.', unlocked: hasMansour, color: '#ec4899' },
+      { id: 'sponsor', title: '스폰서', icon: '💰', condition: '누적 실질 지출 50만원 돌파', comment: '누적 지출 50만원 돌파.', unlocked: hasSponsor, color: '#eab308' },
+      { id: 'addict', title: '골프중독', icon: '💉', condition: '7일(일주일) 이내 라운드 3회 이상 출전', comment: '일주일에 스크린 3회 출석.', unlocked: hasAddict, color: '#06b6d4' },
+      { id: 'veteran', title: '고인물', icon: '🌪️', condition: '정규 경기 통산 50회 출전 달성', comment: '모임 통산 50경기 출전.', unlocked: has50Games, color: '#a855f7' },
+      { id: 'legend', title: '레전드', icon: '🏛️', condition: '정규 경기 통산 100회 출전 대기록 달성', comment: '모임 통산 100경기 출전.', unlocked: has100Games, color: '#ffd700' },
     ];
   })();
 
@@ -674,7 +674,75 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             );
           })()}
 
-          {/* 2. 20 Official Achievements Collection Grid (5x4 Layout) */}
+          {/* Recent Games */}
+          <h4 className="recent-games-title">최근 전적 ({results.length}전)</h4>
+          <div className="profile-history-list" style={{ marginBottom: '16px' }}>
+            {results.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '20px' }}>
+                기록된 게임 전적이 없습니다.
+              </p>
+            ) : (
+              results.map((res) => {
+                const lpDiff = res.points_changed;
+                const isPlus = lpDiff >= 0;
+
+                // Identify MatchMode parameters
+                const isGuillotine = (res.bet_amount || 0) > 0;
+                const isScratch = res.notes?.startsWith('[스크래치]');
+                const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
+                const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
+                const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
+
+                // Binary Win/Loss for Guillotine matches, otherwise normal Rank placing
+                const isGuillotineWin = isGuillotine && res.cost_paid === 0;
+                const rankDisplay = isGuillotine
+                  ? (isGuillotineWin ? '승' : '패')
+                  : `${res.rank}등`;
+
+                return (
+                  <div key={res.id} className="profile-history-item">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span
+                        style={{
+                          fontWeight: '800',
+                          color: isGuillotine 
+                            ? (isGuillotineWin ? '#34d399' : '#f87171') 
+                            : (res.rank === 1 ? '#ffd700' : 'var(--text-secondary)'),
+                          fontSize: '14px',
+                          minWidth: '24px',
+                          textAlign: 'center'
+                        }}
+                      >
+                        {rankDisplay}
+                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontWeight: '600', fontSize: '13px' }}>{res.raw_score}타 (핸디 {res.adjusted_score}타)</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold' }}>
+                            {modeName}
+                          </span>
+                          <Calendar size={10} /> {new Date(res.played_at).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span
+                        className={`history-lp-diff ${isGuillotine ? 'zero' : (isPlus ? 'plus' : 'minus')}`}
+                        style={{ fontWeight: '700', fontSize: '14px', color: isGuillotine ? 'var(--text-muted)' : undefined }}
+                      >
+                        {isGuillotine ? '0 LP' : (isPlus ? `+${lpDiff}` : lpDiff) + ' LP'}
+                      </span>
+                      <div style={{ fontSize: '10px', color: '#f87171' }}>
+                        {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원 지출` : ''}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* 2. 20 Official Achievements Collection Grid (Placed at the bottom!) */}
           <div style={{
             backgroundColor: 'var(--bg-hover)',
             borderRadius: 'var(--radius-md)',
@@ -684,7 +752,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h4 style={{ fontSize: '13px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Award size={15} color="#ffd700" /> 명예의 공식 업적 (20선)
+                <Award size={15} color="#ffd700" /> 명예의 공식 업적
               </h4>
               <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent)' }}>
                 {unlockedAchievementsCount} / 20개 달성 ({Math.round((unlockedAchievementsCount / 20) * 100)}%)
@@ -945,74 +1013,6 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
               </div>
             </div>
           )}
-
-          {/* Recent Games */}
-          <h4 className="recent-games-title">최근 전적 ({results.length}전)</h4>
-          <div className="profile-history-list">
-            {results.length === 0 ? (
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '20px' }}>
-                기록된 게임 전적이 없습니다.
-              </p>
-            ) : (
-              results.map((res) => {
-                const lpDiff = res.points_changed;
-                const isPlus = lpDiff >= 0;
-
-                // Identify MatchMode parameters
-                const isGuillotine = (res.bet_amount || 0) > 0;
-                const isScratch = res.notes?.startsWith('[스크래치]');
-                const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
-                const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
-                const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
-
-                // Binary Win/Loss for Guillotine matches, otherwise normal Rank placing
-                const isGuillotineWin = isGuillotine && res.cost_paid === 0;
-                const rankDisplay = isGuillotine
-                  ? (isGuillotineWin ? '승' : '패')
-                  : `${res.rank}등`;
-
-                return (
-                  <div key={res.id} className="profile-history-item">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span
-                        style={{
-                          fontWeight: '800',
-                          color: isGuillotine 
-                            ? (isGuillotineWin ? '#34d399' : '#f87171') 
-                            : (res.rank === 1 ? '#ffd700' : 'var(--text-secondary)'),
-                          fontSize: '14px',
-                          minWidth: '24px',
-                          textAlign: 'center'
-                        }}
-                      >
-                        {rankDisplay}
-                      </span>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontWeight: '600', fontSize: '13px' }}>{res.raw_score}타 (핸디 {res.adjusted_score}타)</span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold' }}>
-                            {modeName}
-                          </span>
-                          <Calendar size={10} /> {new Date(res.played_at).toLocaleDateString('ko-KR')}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span
-                        className={`history-lp-diff ${isGuillotine ? 'zero' : (isPlus ? 'plus' : 'minus')}`}
-                        style={{ fontWeight: '700', fontSize: '14px', color: isGuillotine ? 'var(--text-muted)' : undefined }}
-                      >
-                        {isGuillotine ? '0 LP' : (isPlus ? `+${lpDiff}` : lpDiff) + ' LP'}
-                      </span>
-                      <div style={{ fontSize: '10px', color: '#f87171' }}>
-                        {res.cost_paid > 0 ? `${res.cost_paid.toLocaleString()}원 지출` : ''}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
 
           {/* Admin Player Retirement (Delete) Button - Only visible to logged-in admins! */}
           {isAdmin && (
