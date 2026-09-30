@@ -346,32 +346,32 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
     return [
       // 1줄: 스코어 & 타수 (5개)
-      { id: 'underPar', title: '신의영역', icon: '🦅', condition: '18홀 정규 71타 이하 (언더파) 기록', comment: '꿈의 71타 언더파 달성.', unlocked: hasUnderPar, color: '#ffd700' },
-      { id: 'single', title: '싱글', icon: '🧍', condition: '18홀 정규 79타 이하 싱글 골퍼 등극', comment: '어, 나 싱글이야.', unlocked: hasSingle, color: '#f59e0b' },
-      { id: 'breaking90', title: '수도권', icon: '🎯', condition: '18홀 정규 89타 이하 (깨백) 달성', comment: '당당하게 80타대 입성.', unlocked: hasBreaking90, color: '#60a5fa' },
-      { id: 'laBe', title: '라베달성', icon: '📈', condition: '역대 18홀 개인 최저타(라베) 경신', comment: '인생 커리어 하이 경신.', unlocked: hasLaBe, color: '#10b981' },
-      { id: 'massacre', title: '양민학살', icon: '💣', condition: '경기 2위와 10타 차 이상 격차로 압도적 1위', comment: '2등과 10타 차 압도적 대승.', unlocked: hasYangmin, color: '#ef4444' },
+      { id: 'underPar', title: '신의영역', icon: '🦅', condition: '18홀 71타 이하 (언더파)', comment: '꿈의 71타 언더파 달성.', unlocked: hasUnderPar, color: '#ffd700' },
+      { id: 'single', title: '싱글', icon: '🧍', condition: '18홀 79타 이하 달성', comment: '어, 나 싱글이야.', unlocked: hasSingle, color: '#f59e0b' },
+      { id: 'breaking90', title: '수도권', icon: '🎯', condition: '18홀 89타 이하 (깨백)', comment: '당당하게 80타대 입성.', unlocked: hasBreaking90, color: '#60a5fa' },
+      { id: 'laBe', title: '라베달성', icon: '📈', condition: '개인 최저타(라베) 경신', comment: '인생 커리어 하이 경신.', unlocked: hasLaBe, color: '#10b981' },
+      { id: 'massacre', title: '양민학살', icon: '💣', condition: '2위와 10타 차 이상 우승', comment: '2등과 10타 차 압도적 대승.', unlocked: hasYangmin, color: '#ef4444' },
 
       // 2줄: 승부 & 리그 제패 (5개)
-      { id: 'consecWins', title: '파죽지세', icon: '⚡', condition: '3경기 연속 1위 우승 독주', comment: '3경기 연속 1위 독주.', unlocked: has3ConsecWins, color: '#10b981' },
-      { id: 'emperor', title: '골프황제', icon: '🏆', condition: '정규 리그 통산 10회 우승 달성', comment: '정규 리그 통산 10회 우승.', unlocked: has10Wins, color: '#ffd700' },
-      { id: 'comeback', title: '인간승리', icon: '🦁', condition: '직전 경기 패배 후 바로 다음 경기 1위 탈환', comment: '꼴찌 직후 다음 경기 1등.', unlocked: hasComeback, color: '#f97316' },
-      { id: 'scratchMaster', title: '승부사', icon: '⚔️', condition: '핸디 없는 스크래치 매치 통산 3회 우승', comment: '스크래치 모드 3승 달성.', unlocked: hasScratchMaster, color: '#8b5cf6' },
-      { id: 'challenger', title: '천상계', icon: '👑', condition: '최고 등급인 챌린저(Challenger) 티어 도달', comment: '최고 존엄 챌린저 도달.', unlocked: hasChallenger, color: '#ffd700' },
+      { id: 'consecWins', title: '파죽지세', icon: '⚡', condition: '3경기 연속 1위 우승', comment: '3경기 연속 1위 독주.', unlocked: has3ConsecWins, color: '#10b981' },
+      { id: 'emperor', title: '골프황제', icon: '🏆', condition: '정규 리그 통산 10회 우승', comment: '정규 리그 통산 10회 우승.', unlocked: has10Wins, color: '#ffd700' },
+      { id: 'comeback', title: '인간승리', icon: '🦁', condition: '패배 직후 다음 경기 1위', comment: '꼴찌 직후 다음 경기 1등.', unlocked: hasComeback, color: '#f97316' },
+      { id: 'scratchMaster', title: '승부사', icon: '⚔️', condition: '스크래치 매치 3회 우승', comment: '스크래치 모드 3승 달성.', unlocked: hasScratchMaster, color: '#8b5cf6' },
+      { id: 'challenger', title: '천상계', icon: '👑', condition: '챌린저 티어 도달', comment: '최고 존엄 챌린저 도달.', unlocked: hasChallenger, color: '#ffd700' },
 
       // 3줄: 단두대 & 서바이벌 (5개)
-      { id: 'phoenix', title: '불사조', icon: '🛡️', condition: '단두대 사투 3회 이상 생존 (게임비 0원 방어)', comment: '단두대 3회 생존 방어.', unlocked: hasPhoenix, color: '#34d399' },
-      { id: 'executioner', title: '집행자', icon: '🔪', condition: '단두대 매치 통산 5회 이상 승리 달성', comment: '단두대 통산 5회 승리.', unlocked: hasExecutioner, color: '#f43f5e' },
-      { id: 'freeRider', title: '무임승차', icon: '🧚', condition: '5경기 연속 본인 지출 0원 달성', comment: '5경기 연속 0원 귀가.', unlocked: hasFreeRider, color: '#38bdf8' },
-      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출 (독박 또는 패배)', comment: '3연속 결제 완료.', unlocked: hasATM, color: '#f87171' },
-      { id: 'dosirak', title: '도시락', icon: '🍱', condition: '경기 통산 최하위(꼴찌) 10회 기록', comment: '상대팀이 가장 반기는 존재.', unlocked: hasDosirak, color: '#fb923c' },
+      { id: 'phoenix', title: '불사조', icon: '🛡️', condition: '단두대 3회 생존 방어', comment: '단두대 3회 생존 방어.', unlocked: hasPhoenix, color: '#34d399' },
+      { id: 'executioner', title: '집행자', icon: '🔪', condition: '단두대 통산 5회 승리', comment: '단두대 통산 5회 승리.', unlocked: hasExecutioner, color: '#f43f5e' },
+      { id: 'freeRider', title: '무임승차', icon: '🧚', condition: '5경기 연속 지출 0원', comment: '5경기 연속 0원 귀가.', unlocked: hasFreeRider, color: '#38bdf8' },
+      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출', comment: '3연속 결제 완료.', unlocked: hasATM, color: '#f87171' },
+      { id: 'dosirak', title: '도시락', icon: '🍱', condition: '통산 최하위(꼴찌) 10회', comment: '상대팀이 가장 반기는 존재.', unlocked: hasDosirak, color: '#fb923c' },
 
       // 4줄: 지출 & 출석 (5개)
-      { id: 'mansour', title: '만수르', icon: '💸', condition: '단일 경기 결제 10만원 이상 쾌척', comment: '단일 경기 10만원 결제.', unlocked: hasMansour, color: '#ec4899' },
-      { id: 'sponsor', title: '스폰서', icon: '💰', condition: '누적 실질 지출 50만원 돌파', comment: '누적 지출 50만원 돌파.', unlocked: hasSponsor, color: '#eab308' },
-      { id: 'addict', title: '골프중독', icon: '💉', condition: '7일(일주일) 이내 라운드 3회 이상 출전', comment: '일주일에 스크린 3회 출석.', unlocked: hasAddict, color: '#06b6d4' },
-      { id: 'veteran', title: '고인물', icon: '🌪️', condition: '정규 경기 통산 50회 출전 달성', comment: '모임 통산 50경기 출전.', unlocked: has50Games, color: '#a855f7' },
-      { id: 'legend', title: '레전드', icon: '🏛️', condition: '정규 경기 통산 100회 출전 대기록 달성', comment: '모임 통산 100경기 출전.', unlocked: has100Games, color: '#ffd700' },
+      { id: 'mansour', title: '만수르', icon: '💸', condition: '단일 경기 10만원 결제', comment: '단일 경기 10만원 결제.', unlocked: hasMansour, color: '#ec4899' },
+      { id: 'sponsor', title: '스폰서', icon: '💰', condition: '누적 지출 50만원 돌파', comment: '누적 지출 50만원 돌파.', unlocked: hasSponsor, color: '#eab308' },
+      { id: 'addict', title: '골프중독', icon: '💉', condition: '일주일 내 3회 이상 출전', comment: '일주일에 스크린 3회 출석.', unlocked: hasAddict, color: '#06b6d4' },
+      { id: 'veteran', title: '고인물', icon: '🌪️', condition: '정규 경기 50회 출전', comment: '모임 통산 50경기 출전.', unlocked: has50Games, color: '#a855f7' },
+      { id: 'legend', title: '레전드', icon: '🏛️', condition: '정규 경기 100회 출전', comment: '모임 통산 100경기 출전.', unlocked: has100Games, color: '#ffd700' },
     ];
   })();
 
