@@ -58,6 +58,15 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
     loadPlayerDetails();
   }, [playerId]);
 
+  // Lock background window scroll when PlayerProfile modal is open!
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   const loadPlayerDetails = async () => {
     setLoading(true);
     try {

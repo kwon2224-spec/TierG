@@ -101,7 +101,8 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
 
       let costDisplay = '';
       if (isGuillotine) {
-        costDisplay = res.cost_paid > 0 ? ` [${res.cost_paid.toLocaleString()}원 독박]` : '';
+        const betText = (res.bet_amount || 0) > 0 ? ` (베팅: ${(res.bet_amount || 0).toLocaleString()}원)` : '';
+        costDisplay = res.cost_paid > 0 ? ` [${res.cost_paid.toLocaleString()}원 독박]${betText}` : betText;
       } else {
         costDisplay = res.cost_paid > 0 ? ` [${res.cost_paid.toLocaleString()}원 지출]` : '';
       }
@@ -770,9 +771,16 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                             {rankDisplay}
                           </span>
                           
-                          {/* Player Name and Cost */}
+                          {/* Player Name and Bet Amount */}
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span className="history-name">{res.player_name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <span className="history-name">{res.player_name}</span>
+                              {isGuillotine && (res.bet_amount || 0) > 0 && (
+                                <span style={{ fontSize: '10px', color: '#fbbf24', fontWeight: '700' }}>
+                                  ({(res.bet_amount || 0).toLocaleString()}원)
+                                </span>
+                              )}
+                            </div>
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                               {res.raw_score}타 ({isGuillotine ? `${is9Holes ? '9홀 ' : '18홀 '}` : ''}핸디 {res.adjusted_score}타)
                             </span>
