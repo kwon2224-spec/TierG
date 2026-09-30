@@ -78,7 +78,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     if (notesText.startsWith('[스크래치] ')) notesText = notesText.substring(7);
     else if (notesText.startsWith('[단두대] ')) notesText = notesText.substring(6);
     if (notesText) {
-      shareText += `코스: ${notesText}\n`;
+      shareText += `코스/메모: ${notesText}\n`;
     }
     shareText += `\n■ 경기 결과 현황\n`;
 
@@ -90,9 +90,14 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
       const lpSign = res.points_changed > 0 ? `+${res.points_changed}` : `${res.points_changed}`;
       const lpDisplay = (isScratch || isGuillotine) ? `0 LP` : `${lpSign} LP`;
 
+      // Display both raw score and handicap adjusted score!
+      const scoreDisplay = isScratch
+        ? `${res.raw_score}타`
+        : `${res.raw_score}타 (핸디 ${res.adjusted_score}타)`;
+
       const costDisplay = res.cost_paid > 0 ? ` [${res.cost_paid.toLocaleString()}원 지출]` : '';
 
-      shareText += `${rankLabel}. ${res.player_name}: ${res.raw_score}타 (${lpDisplay})${costDisplay}\n`;
+      shareText += `${rankLabel}. ${res.player_name}: ${scoreDisplay} | ${lpDisplay}${costDisplay}\n`;
     });
 
     shareText += `\n지금 리더보드를 확인해 보세요! 🏌️‍♂️`;
