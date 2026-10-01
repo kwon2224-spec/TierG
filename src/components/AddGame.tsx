@@ -83,12 +83,14 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     }
   ];
 
+  // Circular Wheel Rotation State (in degrees)
+  const [wheelRotation, setWheelRotation] = useState<number>(0);
+
   // Exclusive slots that cannot be duplicated among multiple Semi-Pros!
   const EXCLUSIVE_SLOTS = ['map', 'rooms'];
 
   // Semi-Pro Boss Roulette State
   const [rouletteSpinning, setRouletteSpinning] = useState(false);
-  const [rouletteIndex, setRouletteIndex] = useState<number>(0);
   const [activeSemiProId, setActiveSemiProId] = useState<string | null>(null);
 
   // Results map per player: { [playerId]: slotId }
@@ -150,37 +152,32 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     const wonSlotId = availableSlotIds[Math.floor(Math.random() * availableSlotIds.length)];
     const targetIndex = ROULETTE_SLOTS.findIndex((s) => s.id === wonSlotId);
 
-    let currentIndex = rouletteIndex;
-    let speed = 60;
-    let rounds = 0;
-    const totalSteps = 24 + targetIndex;
+    // Compute target rotation angle:
+    // Slot 0 is centered at 0° (top), Slot 1 at 90° (right), Slot 2 at 180° (bottom), Slot 3 at 270° (left).
+    // To bring slot `targetIndex` to top (0°), the wheel must end at: (360 - targetIndex * 90) % 360.
+    const targetSliceAngle = (360 - targetIndex * 90) % 360;
+    
+    // Add 5 full rotations (1800 deg) + offset to ensure forward clockwise spin:
+    const currentMod = wheelRotation % 360;
+    let angleDiff = targetSliceAngle - currentMod;
+    if (angleDiff <= 0) angleDiff += 360;
+    const finalAngle = wheelRotation + 1800 + angleDiff;
 
-    const step = () => {
-      currentIndex = (currentIndex + 1) % ROULETTE_SLOTS.length;
-      setRouletteIndex(currentIndex);
-      rounds++;
+    setWheelRotation(finalAngle);
 
-      if (rounds < totalSteps) {
-        if (rounds > totalSteps - 8) {
-          speed += 45;
-        }
-        setTimeout(step, speed);
-      } else {
-        setRouletteSpinning(false);
-        const wonSlot = ROULETTE_SLOTS[targetIndex];
-        
-        // Update results map for this player
-        const updated = { ...semiProResults, [currentSemiPro.id]: wonSlot.id };
-        setSemiProResults(updated);
-        syncSemiProNotes(updated);
+    // After 3.2 seconds of cubic-bezier spin deceleration, finalize:
+    setTimeout(() => {
+      setRouletteSpinning(false);
+      const wonSlot = ROULETTE_SLOTS[targetIndex];
 
-        if (wonSlot.id === 'rooms') {
-          setShowRoomAssigner(true);
-        }
+      const updated = { ...semiProResults, [currentSemiPro.id]: wonSlot.id };
+      setSemiProResults(updated);
+      syncSemiProNotes(updated);
+
+      if (wonSlot.id === 'rooms') {
+        setShowRoomAssigner(true);
       }
-    };
-
-    setTimeout(step, speed);
+    }, 3200);
   };
 
   const handleShareRoulette = () => {
@@ -925,63 +922,139 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               </div>
             )}
 
-            {/* 4 Slots Grid (2x2) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
-              {ROULETTE_SLOTS.map((slot, idx) => {
-                const isCurrent = rouletteIndex === idx;
-                const isWon = semiProResults[currentSemiPro.id] === slot.id;
-                const claimedBy = claimedSlotsByOthers[slot.id];
+            {/* Circular Roulette Wheel (진짜 돌아가는 원형 회전판!) */}
+            <div style={{
+              position: 'relative',
+              width: '210px',
+              height: '210px',
+              margin: '8px auto 14px',
+            }}>
+              {/* Top Pointer Needle (12시 방향 네온 인디케이터 바늘) */}
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 10,
+                filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.6))'
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24">
+                  <polygon points="12,22 3,2 21,2" fill="#ef4444" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
+                </svg>
+              </div>
 
-                return (
-                  <div
-                    key={slot.id}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      backgroundColor: isWon
-                        ? slot.bg
-                        : claimedBy
-                        ? 'rgba(0, 0, 0, 0.15)'
-                        : isCurrent && rouletteSpinning
-                        ? 'rgba(255, 255, 255, 0.08)'
-                        : 'var(--bg-hover)',
-                      border: isWon
-                        ? `2px solid ${slot.color}`
-                        : claimedBy
-                        ? '1px dashed var(--border-color)'
-                        : isCurrent && rouletteSpinning
-                        ? `2px solid ${slot.color}`
-                        : '1px solid var(--border-color)',
-                      boxShadow: isWon ? `0 0 14px ${slot.color}40` : 'none',
-                      transform: isWon || (isCurrent && rouletteSpinning) ? 'scale(1.02)' : 'none',
-                      opacity: claimedBy ? 0.45 : 1,
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', fontWeight: '800', color: claimedBy ? 'var(--text-muted)' : slot.color }}>
-                        {claimedBy ? `🚫 소진됨` : slot.badge}
-                      </span>
-                      {isWon && <span style={{ fontSize: '11px', fontWeight: '900', color: slot.color }}>★ 당첨!</span>}
-                      {claimedBy && (
-                        <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)' }}>
-                          {claimedBy} 선점
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: '800', color: isWon ? slot.color : claimedBy ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                      {slot.title}
-                    </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: '1.3' }}>
-                      {claimedBy ? `${claimedBy} 선수가 이미 선점하여 획득할 수 없습니다.` : slot.description}
-                    </div>
-                  </div>
-                );
-              })}
+              {/* Rotating Wheel Disc */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  boxShadow: '0 0 24px rgba(168, 85, 247, 0.25), inset 0 0 12px rgba(0,0,0,0.4)',
+                  transform: `rotate(${wheelRotation}deg)`,
+                  transition: rouletteSpinning ? 'transform 3.2s cubic-bezier(0.12, 0.85, 0.15, 1)' : 'none'
+                }}
+              >
+                <svg viewBox="0 0 200 200" width="100%" height="100%" style={{ overflow: 'visible' }}>
+                  {/* Outer Rim */}
+                  <circle cx="100" cy="100" r="98" fill="#111827" stroke="rgba(168, 85, 247, 0.6)" strokeWidth="3" />
+
+                  {/* 4 Pie Slices */}
+                  {/* Slice 0: 코스 선택권 (Top: -45° to 45°) */}
+                  <path
+                    d="M 100 100 L 32.12 32.12 A 96 96 0 0 1 167.88 32.12 Z"
+                    fill={claimedSlotsByOthers['map'] ? '#1f2937' : '#78350f'}
+                    stroke={claimedSlotsByOthers['map'] ? '#374151' : '#fbbf24'}
+                    strokeWidth="1.5"
+                    opacity={claimedSlotsByOthers['map'] ? 0.35 : 1}
+                  />
+
+                  {/* Slice 1: 방 배정권 (Right: 45° to 135°) */}
+                  <path
+                    d="M 100 100 L 167.88 32.12 A 96 96 0 0 1 167.88 167.88 Z"
+                    fill={claimedSlotsByOthers['rooms'] ? '#1f2937' : '#1e3a8a'}
+                    stroke={claimedSlotsByOthers['rooms'] ? '#374151' : '#60a5fa'}
+                    strokeWidth="1.5"
+                    opacity={claimedSlotsByOthers['rooms'] ? 0.35 : 1}
+                  />
+
+                  {/* Slice 2: 핸디 0 & 멀리건 -1 (Bottom: 135° to 225°) */}
+                  <path
+                    d="M 100 100 L 167.88 167.88 A 96 96 0 0 1 32.12 167.88 Z"
+                    fill="#7f1d1d"
+                    stroke="#f87171"
+                    strokeWidth="1.5"
+                  />
+
+                  {/* Slice 3: 기존 유지 (Left: 225° to 315°) */}
+                  <path
+                    d="M 100 100 L 32.12 167.88 A 96 96 0 0 1 32.12 32.12 Z"
+                    fill="#064e3b"
+                    stroke="#34d399"
+                    strokeWidth="1.5"
+                  />
+
+                  {/* Slice Labels (Rotated inward facing the hub) */}
+                  {/* Slice 0 Label (Top) */}
+                  <g transform="rotate(0, 100, 100)">
+                    <text x="100" y="48" textAnchor="middle" fill="#ffd700" fontSize="10" fontWeight="900">👑 맵선택</text>
+                    {claimedSlotsByOthers['map'] && (
+                      <text x="100" y="62" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
+                    )}
+                  </g>
+
+                  {/* Slice 1 Label (Right) */}
+                  <g transform="rotate(90, 100, 100)">
+                    <text x="100" y="48" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="900">👑 방배정</text>
+                    {claimedSlotsByOthers['rooms'] && (
+                      <text x="100" y="62" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
+                    )}
+                  </g>
+
+                  {/* Slice 2 Label (Bottom) */}
+                  <g transform="rotate(180, 100, 100)">
+                    <text x="100" y="48" textAnchor="middle" fill="#f87171" fontSize="9.5" fontWeight="900">⚖️ 핸디0</text>
+                    <text x="100" y="60" textAnchor="middle" fill="#fca5a5" fontSize="7.5" fontWeight="700">멀리건-1</text>
+                  </g>
+
+                  {/* Slice 3 Label (Left) */}
+                  <g transform="rotate(270, 100, 100)">
+                    <text x="100" y="48" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="900">🛡️ 유지</text>
+                    <text x="100" y="60" textAnchor="middle" fill="#a7f3d0" fontSize="7.5" fontWeight="700">핸디 -3</text>
+                  </g>
+
+                  {/* Center Hub Metallic Cap */}
+                  <circle cx="100" cy="100" r="24" fill="#0f172a" stroke="#a855f7" strokeWidth="2.5" />
+                  <circle cx="100" cy="100" r="21" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                  <text x="100" y="104" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="900" letterSpacing="0.5">PRO</text>
+                </svg>
+              </div>
             </div>
+
+            {/* Winner Result Banner (당첨 결과 배너) */}
+            {(() => {
+              const wonSlotId = semiProResults[currentSemiPro.id];
+              const wonSlot = ROULETTE_SLOTS.find((s) => s.id === wonSlotId);
+              if (!wonSlot || rouletteSpinning) return null;
+
+              return (
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  backgroundColor: wonSlot.bg,
+                  border: `1.5px solid ${wonSlot.color}`,
+                  marginBottom: '12px',
+                  textAlign: 'center',
+                  boxShadow: `0 0 14px ${wonSlot.color}30`
+                }}>
+                  <div style={{ fontSize: '13px', fontWeight: '900', color: wonSlot.color }}>
+                    ★ {wonSlot.badge} [{wonSlot.title}] 당첨!
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+                    {wonSlot.description}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Spin / Status Action Button */}
             <button
@@ -1009,10 +1082,10 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               }}
             >
               {rouletteSpinning
-                ? `🎲 ${currentSemiPro.name} 룰렛 돌아가는 중...`
+                ? '🎲 룰렛 돌아가는 중...'
                 : semiProResults[currentSemiPro.id]
-                ? `🔄 ${currentSemiPro.name} 룰렛 다시 돌리기`
-                : `🎰 [${currentSemiPro.name}] 찬스 룰렛 돌리기!`}
+                ? '🔄 룰렛 다시 돌리기'
+                : '🎰 룰렛 돌리기!'}
             </button>
           </div>
         )}
