@@ -730,8 +730,8 @@ html, body {
   justify-content: center;
   z-index: 100;
   padding: 20px;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
+  overscroll-behavior: none !important;
+  touch-action: none !important; /* 100% blocks background scroll gestures on the backdrop! */
 }
 
 .modal-content {
@@ -742,7 +742,8 @@ html, body {
   max-width: 500px;
   max-height: 85vh;
   overflow-y: auto;
-  overscroll-behavior-y: contain; /* Prevents downward rubber-banding pull motion on mobile! */
+  touch-action: pan-y !important; /* Allows vertical scrolling inside modal content only! */
+  overscroll-behavior-y: contain !important; /* Prevents downward rubber-banding pull motion on mobile! */
   -webkit-overflow-scrolling: touch;
   position: relative;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);

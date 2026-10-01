@@ -54,6 +54,25 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const [updatingAdminStatus, setUpdatingAdminStatus] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
+  const overlayRef = React.useRef<HTMLDivElement>(null);
+
+  // Hard physical prevention of background scroll on mobile overlay
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+
+    const blockTouch = (e: TouchEvent) => {
+      if (e.target === el) {
+        e.preventDefault();
+      }
+    };
+
+    el.addEventListener('touchmove', blockTouch, { passive: false });
+    return () => {
+      el.removeEventListener('touchmove', blockTouch);
+    };
+  }, [loading, data]);
+
   useEffect(() => {
     loadPlayerDetails();
   }, [playerId]);
@@ -199,7 +218,15 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
   if (loading || !data) {
     return (
-      <div className="modal-overlay" onClick={onClose}>
+      <div
+        ref={overlayRef}
+        className="modal-overlay"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+      >
         <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ padding: '40px', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-secondary)' }}>선수 데이터를 불러오는 중...</p>
         </div>
@@ -398,7 +425,15 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const unlockedAchievementsCount = achievements.filter((a) => a.unlocked).length;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      ref={overlayRef}
+      className="modal-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
