@@ -359,32 +359,32 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
     return [
       // 1줄: 스코어 & 타수 (5개)
-      { id: 'underPar', title: '신의영역', icon: '🦅', condition: '18홀 71타 이하 (언더파)', comment: '스크린 센서 오류가 의심되는 아마추어의 기적', unlocked: hasUnderPar, color: '#ffd700' },
-      { id: 'single', title: '싱글', icon: '🧍', condition: '18홀 79타 이하 달성', comment: '어디 가서 골프 친다고 당당히 말할 수 있는 자격증', unlocked: hasSingle, color: '#f59e0b' },
-      { id: 'breaking90', title: '수도권', icon: '🎯', condition: '18홀 89타 이하 (깨백)', comment: '세 자리 타수 탈출! 골프가 재미있어지는 구간', unlocked: hasBreaking90, color: '#60a5fa' },
-      { id: 'laBe', title: '라베달성', icon: '📈', condition: '개인 최저타(라베) 경신', comment: '오늘 손맛 평생 기억하기 (다음 판엔 귀신같이 원복)', unlocked: hasLaBe, color: '#10b981' },
-      { id: 'massacre', title: '양민학살', icon: '💣', condition: '2위와 10타 차 이상 우승', comment: '경쟁이 아니라 일방적인 독주였습니다', unlocked: hasYangmin, color: '#ef4444' },
+      { id: 'underPar', title: '신의영역', icon: '🦅', condition: '18홀 71타 이하 (언더파)', comment: '기계 오류가 의심되는 기적의 스코어', unlocked: hasUnderPar, color: '#ffd700' },
+      { id: 'single', title: '싱글', icon: '🏌️‍♂️', condition: '18홀 79타 이하 달성', comment: '어디 가서 골프 친다고 말할 자격증', unlocked: hasSingle, color: '#f59e0b' },
+      { id: 'breaking90', title: '수도권', icon: '🎯', condition: '18홀 89타 이하 (깨백)', comment: '골프가 진짜 재밌어지는 80타대 입성', unlocked: hasBreaking90, color: '#60a5fa' },
+      { id: 'laBe', title: '라베달성', icon: '📈', condition: '개인 최저타(라베) 경신', comment: '오늘 손맛 기억하기 (내일이면 원복)', unlocked: hasLaBe, color: '#10b981' },
+      { id: 'massacre', title: '양민학살', icon: '💣', condition: '2위와 10타 차 이상 우승', comment: '경쟁 없는 압도적인 단독 쇼타임', unlocked: hasYangmin, color: '#ef4444' },
 
       // 2줄: 승부 & 리그 제패 (5개)
-      { id: 'consecWins', title: '파죽지세', icon: '⚡', condition: '3경기 연속 1위 우승', comment: '요즘 샷감에 제대로 물오른 리그 독점자', unlocked: has3ConsecWins, color: '#10b981' },
-      { id: 'emperor', title: '골프황제', icon: '🏆', condition: '정규 리그 통산 10회 우승', comment: '우승 트로피 수집이 취미가 된 절대 강자', unlocked: has10Wins, color: '#ffd700' },
-      { id: 'comeback', title: '인간승리', icon: '🥊', condition: '패배 직후 다음 경기 1위', comment: '처참한 패배를 딛고 하루 만에 뒤집은 짜릿한 복수극', unlocked: hasComeback, color: '#f97316' },
-      { id: 'scratchMaster', title: '승부사', icon: '⚔️', condition: '스크래치 매치 3회 우승', comment: '핸디캡 뒤에 숨지 않는 날것의 샷 메이커', unlocked: hasScratchMaster, color: '#8b5cf6' },
-      { id: 'challenger', title: '천상계', icon: '👑', condition: '챌린저 이상 티어 달성', comment: '평민들은 범접할 수 없는 구름 위의 영역', unlocked: hasChallenger, color: '#ffd700' },
+      { id: 'consecWins', title: '파죽지세', icon: '⚡', condition: '3경기 연속 1위 우승', comment: '요즘 샷감 제대로 물오른 리그 독점자', unlocked: has3ConsecWins, color: '#10b981' },
+      { id: 'emperor', title: '골프황제', icon: '🏆', condition: '정규 리그 통산 10회 우승', comment: '우승 트로피 수집이 취미인 절대 강자', unlocked: has10Wins, color: '#ffd700' },
+      { id: 'comeback', title: '인간승리', icon: '🥊', condition: '패배 직후 다음 경기 1위', comment: '처참한 패배를 하루 만에 뒤집은 복수', unlocked: hasComeback, color: '#f97316' },
+      { id: 'scratchMaster', title: '승부사', icon: '⚔️', condition: '스크래치 매치 3회 우승', comment: '핸디캡 뒤에 숨지 않는 날것의 실력', unlocked: hasScratchMaster, color: '#8b5cf6' },
+      { id: 'challenger', title: '천상계', icon: '👑', condition: '챌린저 이상 티어 달성', comment: '평민은 범접할 수 없는 구름 위 영역', unlocked: hasChallenger, color: '#ffd700' },
 
       // 3줄: 단두대 & 서바이벌 (5개)
-      { id: 'phoenix', title: '불사조', icon: '🛡️', condition: '단두대 3회 생존 방어', comment: '단두대 칼날이 목을 스쳐도 살아남는 기적의 생존력', unlocked: hasPhoenix, color: '#34d399' },
-      { id: 'executioner', title: '집행자', icon: '🔪', condition: '단두대 통산 5회 승리', comment: '단두대 열리는 날만 손꼽아 기다리는 무자비한 사냥꾼', unlocked: hasExecutioner, color: '#f43f5e' },
-      { id: 'freeRider', title: '무임승차', icon: '🎫', condition: '5경기 연속 지출 0원', comment: '지갑은 집에 두고 골프채만 들고 다니는 알뜰살뜰러', unlocked: hasFreeRider, color: '#38bdf8' },
-      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출', comment: '늘 감사한 마음으로 치고 있습니다 (오늘도 인출 완료)', unlocked: hasATM, color: '#f87171' },
-      { id: 'dosirak', title: '도시락', icon: '🍱', condition: '통산 최하위(꼴찌) 10회', comment: '언제나 동반자들에게 든든한 웃음과 점수를 주는 존재', unlocked: hasDosirak, color: '#fb923c' },
+      { id: 'phoenix', title: '불사조', icon: '🔥', condition: '단두대 3회 생존 방어', comment: '칼날이 목을 스쳐도 살아남는 생존력', unlocked: hasPhoenix, color: '#34d399' },
+      { id: 'executioner', title: '집행자', icon: '🪓', condition: '단두대 통산 5회 승리', comment: '단두대 날만 기다리는 무자비한 사냥꾼', unlocked: hasExecutioner, color: '#f43f5e' },
+      { id: 'freeRider', title: '무임승차', icon: '🎫', condition: '5경기 연속 지출 0원', comment: '지갑은 집에 두고 골프채만 챙긴 분', unlocked: hasFreeRider, color: '#38bdf8' },
+      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출', comment: '늘 감사히 치고 있습니다 (인출 완료)', unlocked: hasATM, color: '#f87171' },
+      { id: 'dosirak', title: '도시락', icon: '🍱', condition: '통산 최하위(꼴찌) 10회', comment: '동반자에게 큰 웃음을 선물하는 분', unlocked: hasDosirak, color: '#fb923c' },
 
       // 4줄: 지출 & 출석 (5개)
-      { id: 'mansour', title: '만수르', icon: '💸', condition: '단일 경기 10만원 결제', comment: '오늘 게임비 시원하게 쐈습니다! 형님 소리 듣는 날', unlocked: hasMansour, color: '#ec4899' },
-      { id: 'sponsor', title: '스폰서', icon: '💰', condition: '누적 지출 50만원 돌파', comment: '이 모임 스크린골프장 지분 10%는 제가 만들었습니다', unlocked: hasSponsor, color: '#eab308' },
-      { id: 'addict', title: '골프중독', icon: '💉', condition: '일주일 내 3회 이상 출전', comment: '집-회사-스크린 무한 루프, 이 정도면 스크린 방 하나 파야 함', unlocked: hasAddict, color: '#06b6d4' },
-      { id: 'veteran', title: '고인물', icon: '🗿', condition: '정규 경기 50회 출전', comment: '골프장 매트 냄새만 맡아도 바람 세기 맞히는 터줏대감', unlocked: has50Games, color: '#a855f7' },
-      { id: 'legend', title: '레전드', icon: '🏛️', condition: '정규 경기 100회 출전', comment: 'TierGolf의 역사와 전통을 함께 써내려간 살아있는 전설', unlocked: has100Games, color: '#ffd700' },
+      { id: 'mansour', title: '만수르', icon: '💸', condition: '단일 경기 10만원 결제', comment: '오늘 게임비 시원하게 쐈습니다!', unlocked: hasMansour, color: '#ec4899' },
+      { id: 'sponsor', title: '스폰서', icon: '💰', condition: '누적 지출 50만원 돌파', comment: '스크린골프장 지분 10%는 제 겁니다', unlocked: hasSponsor, color: '#eab308' },
+      { id: 'addict', title: '골프중독', icon: '💉', condition: '일주일 내 3회 이상 출전', comment: '이 정도면 스크린 방 하나 파야 함', unlocked: hasAddict, color: '#06b6d4' },
+      { id: 'veteran', title: '고인물', icon: '🗿', condition: '정규 경기 50회 출전', comment: '매트 냄새만 맡아도 바람을 아는 분', unlocked: has50Games, color: '#a855f7' },
+      { id: 'legend', title: '레전드', icon: '🏛️', condition: '정규 경기 100회 출전', comment: '모임의 역사와 함께한 살아있는 전설', unlocked: has100Games, color: '#ffd700' },
     ];
   })();
 
