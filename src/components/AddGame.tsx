@@ -85,6 +85,14 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
   // Circular Wheel Rotation State (in degrees)
   const [wheelRotation, setWheelRotation] = useState<number>(0);
+  const [showRoulette, setShowRoulette] = useState<boolean>(false); // Collapsible status (Tidy & Non-chaotic!)
+  const spinTimerRef = React.useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+    };
+  }, []);
 
   // Exclusive slots that cannot be duplicated among multiple Semi-Pros!
   const EXCLUSIVE_SLOTS = ['map', 'rooms'];
@@ -829,264 +837,288 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           })()}
         </div>
 
-        {/* Semi-Pro Boss Roulette Card (👑 세미프로 찬스 룰렛 - 다수 세미프로 선착순 소진제 지원!) */}
+        {/* Semi-Pro Boss Roulette Card (👑 세미프로 찬스 룰렛 - Collapsible 접이식 단정화) */}
         {selectedSemiPros.length > 0 && currentSemiPro && (
           <div
             className="game-setup-card"
             style={{
-              padding: '16px',
-              border: '1.5px solid rgba(168, 85, 247, 0.4)',
-              boxShadow: '0 0 20px rgba(168, 85, 247, 0.12)',
-              position: 'relative',
-              overflow: 'hidden'
+              padding: '0',
+              overflow: 'hidden',
+              borderColor: 'rgba(168, 85, 247, 0.35)',
+              boxShadow: '0 0 16px rgba(168, 85, 247, 0.08)'
             }}
           >
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>👑 세미프로 찬스 룰렛</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                    ({currentSemiPro.name})
-                  </span>
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  최상위 끝판왕에게 주어지는 특권 & 트레이드오프 룰렛!
-                </div>
-              </div>
-
-              {Object.keys(semiProResults).length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleShareRoulette}
-                  style={{
-                    background: 'none',
-                    border: '1px solid rgba(192, 132, 252, 0.4)',
-                    color: '#c084fc',
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: '700',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  결과 카톡 공유
-                </button>
-              )}
-            </div>
-
-            {/* Multiple Semi-Pros Player Switcher Chips (선착순 소진제 탭) */}
-            {selectedSemiPros.length > 1 && (
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                {selectedSemiPros.map((sp) => {
-                  const isCurrent = sp.id === currentSemiPro.id;
-                  const resSlotId = semiProResults[sp.id];
-                  const wonSlot = ROULETTE_SLOTS.find((s) => s.id === resSlotId);
-
-                  return (
-                    <button
-                      key={sp.id}
-                      type="button"
-                      onClick={() => {
-                        if (!rouletteSpinning) setActiveSemiProId(sp.id);
-                      }}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: isCurrent ? '800' : '600',
-                        border: isCurrent ? '1.5px solid #a855f7' : '1px solid var(--border-color)',
-                        backgroundColor: isCurrent ? 'rgba(168, 85, 247, 0.2)' : 'var(--bg-hover)',
-                        color: isCurrent ? '#c084fc' : 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <span>{sp.name}</span>
-                      {wonSlot ? (
-                        <span style={{ fontSize: '10px', color: wonSlot.color, fontWeight: '700' }}>
-                          ✓ {wonSlot.title}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '10px', color: '#fbbf24' }}>
-                          [돌리기 대기]
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Circular Roulette Wheel (진짜 돌아가는 원형 회전판!) */}
-            <div style={{
-              position: 'relative',
-              width: '210px',
-              height: '210px',
-              margin: '8px auto 14px',
-            }}>
-              {/* Top Pointer Needle (12시 방향 네온 인디케이터 바늘) */}
-              <div style={{
-                position: 'absolute',
-                top: '-8px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 10,
-                filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.6))'
-              }}>
-                <svg width="22" height="22" viewBox="0 0 24 24">
-                  <polygon points="12,22 3,2 21,2" fill="#ef4444" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
-                </svg>
-              </div>
-
-              {/* Rotating Wheel Disc */}
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  boxShadow: '0 0 24px rgba(168, 85, 247, 0.25), inset 0 0 12px rgba(0,0,0,0.4)',
-                  transform: `rotate(${wheelRotation}deg)`,
-                  transition: rouletteSpinning ? 'transform 3.2s cubic-bezier(0.12, 0.85, 0.15, 1)' : 'none'
-                }}
-              >
-                <svg viewBox="0 0 200 200" width="100%" height="100%" style={{ overflow: 'visible' }}>
-                  {/* Outer Rim */}
-                  <circle cx="100" cy="100" r="98" fill="#111827" stroke="rgba(168, 85, 247, 0.6)" strokeWidth="3" />
-
-                  {/* 4 Pie Slices */}
-                  {/* Slice 0: 코스 선택권 (Top: -45° to 45°) */}
-                  <path
-                    d="M 100 100 L 32.12 32.12 A 96 96 0 0 1 167.88 32.12 Z"
-                    fill={claimedSlotsByOthers['map'] ? '#1f2937' : '#78350f'}
-                    stroke={claimedSlotsByOthers['map'] ? '#374151' : '#fbbf24'}
-                    strokeWidth="1.5"
-                    opacity={claimedSlotsByOthers['map'] ? 0.35 : 1}
-                  />
-
-                  {/* Slice 1: 방 배정권 (Right: 45° to 135°) */}
-                  <path
-                    d="M 100 100 L 167.88 32.12 A 96 96 0 0 1 167.88 167.88 Z"
-                    fill={claimedSlotsByOthers['rooms'] ? '#1f2937' : '#1e3a8a'}
-                    stroke={claimedSlotsByOthers['rooms'] ? '#374151' : '#60a5fa'}
-                    strokeWidth="1.5"
-                    opacity={claimedSlotsByOthers['rooms'] ? 0.35 : 1}
-                  />
-
-                  {/* Slice 2: 핸디 0 & 멀리건 -1 (Bottom: 135° to 225°) */}
-                  <path
-                    d="M 100 100 L 167.88 167.88 A 96 96 0 0 1 32.12 167.88 Z"
-                    fill="#7f1d1d"
-                    stroke="#f87171"
-                    strokeWidth="1.5"
-                  />
-
-                  {/* Slice 3: 기존 유지 (Left: 225° to 315°) */}
-                  <path
-                    d="M 100 100 L 32.12 167.88 A 96 96 0 0 1 32.12 32.12 Z"
-                    fill="#064e3b"
-                    stroke="#34d399"
-                    strokeWidth="1.5"
-                  />
-
-                  {/* Slice Labels (Rotated inward facing the hub) */}
-                  {/* Slice 0 Label (Top) */}
-                  <g transform="rotate(0, 100, 100)">
-                    <text x="100" y="48" textAnchor="middle" fill="#ffd700" fontSize="10" fontWeight="900">👑 맵선택</text>
-                    {claimedSlotsByOthers['map'] && (
-                      <text x="100" y="62" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
-                    )}
-                  </g>
-
-                  {/* Slice 1 Label (Right) */}
-                  <g transform="rotate(90, 100, 100)">
-                    <text x="100" y="48" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="900">👑 방배정</text>
-                    {claimedSlotsByOthers['rooms'] && (
-                      <text x="100" y="62" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
-                    )}
-                  </g>
-
-                  {/* Slice 2 Label (Bottom) */}
-                  <g transform="rotate(180, 100, 100)">
-                    <text x="100" y="48" textAnchor="middle" fill="#f87171" fontSize="9.5" fontWeight="900">⚖️ 핸디0</text>
-                    <text x="100" y="60" textAnchor="middle" fill="#fca5a5" fontSize="7.5" fontWeight="700">멀리건-1</text>
-                  </g>
-
-                  {/* Slice 3 Label (Left) */}
-                  <g transform="rotate(270, 100, 100)">
-                    <text x="100" y="48" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="900">🛡️ 유지</text>
-                    <text x="100" y="60" textAnchor="middle" fill="#a7f3d0" fontSize="7.5" fontWeight="700">핸디 -3</text>
-                  </g>
-
-                  {/* Center Hub Metallic Cap */}
-                  <circle cx="100" cy="100" r="24" fill="#0f172a" stroke="#a855f7" strokeWidth="2.5" />
-                  <circle cx="100" cy="100" r="21" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                  <text x="100" y="104" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="900" letterSpacing="0.5">PRO</text>
-                </svg>
-              </div>
-            </div>
-
-            {/* Winner Result Banner (당첨 결과 배너) */}
-            {(() => {
-              const wonSlotId = semiProResults[currentSemiPro.id];
-              const wonSlot = ROULETTE_SLOTS.find((s) => s.id === wonSlotId);
-              if (!wonSlot || rouletteSpinning) return null;
-
-              return (
-                <div style={{
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  backgroundColor: wonSlot.bg,
-                  border: `1.5px solid ${wonSlot.color}`,
-                  marginBottom: '12px',
-                  textAlign: 'center',
-                  boxShadow: `0 0 14px ${wonSlot.color}30`
-                }}>
-                  <div style={{ fontSize: '13px', fontWeight: '900', color: wonSlot.color }}>
-                    ★ {wonSlot.badge} [{wonSlot.title}] 당첨!
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                    {wonSlot.description}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Spin / Status Action Button */}
-            <button
-              type="button"
-              onClick={handleSpinRoulette}
-              disabled={rouletteSpinning}
+            {/* Clickable Header Bar to Toggle Folding */}
+            <div
+              onClick={() => setShowRoulette(!showRoulette)}
               style={{
-                width: '100%',
-                padding: '11px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: rouletteSpinning ? 'not-allowed' : 'pointer',
-                background: semiProResults[currentSemiPro.id]
-                  ? 'linear-gradient(135deg, #a855f7, #6366f1)'
-                  : 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)',
-                color: '#ffffff',
-                border: 'none',
-                boxShadow: '0 4px 15px rgba(168, 85, 247, 0.3)',
                 display: 'flex',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.2s'
+                padding: '12px 16px',
+                cursor: 'pointer',
+                backgroundColor: showRoulette ? 'rgba(168, 85, 247, 0.08)' : 'transparent',
+                transition: 'background-color 0.2s',
+                userSelect: 'none'
               }}
             >
-              {rouletteSpinning
-                ? '🎲 룰렛 돌아가는 중...'
-                : semiProResults[currentSemiPro.id]
-                ? '🔄 룰렛 다시 돌리기'
-                : '🎰 룰렛 돌리기!'}
-            </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: '800', fontSize: '14px', color: '#c084fc' }}>
+                  👑 세미프로 찬스 룰렛
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  ({currentSemiPro.name})
+                </span>
+                {semiProResults[currentSemiPro.id] && !showRoulette && (
+                  <span style={{ fontSize: '10px', color: '#fbbf24', fontWeight: '800', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+                    당첨 완료 ✓
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {showRoulette ? '▲ 접기' : '▼ 터치하여 열기'}
+                </span>
+              </div>
+            </div>
+
+            {/* Collapsible Content */}
+            {showRoulette && (
+              <div style={{ padding: '16px', borderTop: '1px solid var(--border-color)' }}>
+                {/* Header Subtitle & Share Button */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    최상위 끝판왕에게 주어지는 특권 & 트레이드오프 룰렛!
+                  </div>
+
+                  {Object.keys(semiProResults).length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleShareRoulette}
+                      style={{
+                        background: 'none',
+                        border: '1px solid rgba(192, 132, 252, 0.4)',
+                        color: '#c084fc',
+                        fontSize: '11px',
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        transition: 'all 0.2s',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      결과 카톡 공유
+                    </button>
+                  )}
+                </div>
+
+                {/* Multiple Semi-Pros Player Switcher Chips (선착순 소진제 탭) */}
+                {selectedSemiPros.length > 1 && (
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    {selectedSemiPros.map((sp) => {
+                      const isCurrent = sp.id === currentSemiPro.id;
+                      const resSlotId = semiProResults[sp.id];
+                      const wonSlot = ROULETTE_SLOTS.find((s) => s.id === resSlotId);
+
+                      return (
+                        <button
+                          key={sp.id}
+                          type="button"
+                          onClick={() => {
+                            if (!rouletteSpinning) setActiveSemiProId(sp.id);
+                          }}
+                          style={{
+                            padding: '5px 12px',
+                            borderRadius: '20px',
+                            fontSize: '12px',
+                            fontWeight: isCurrent ? '800' : '600',
+                            border: isCurrent ? '1.5px solid #a855f7' : '1px solid var(--border-color)',
+                            backgroundColor: isCurrent ? 'rgba(168, 85, 247, 0.2)' : 'var(--bg-hover)',
+                            color: isCurrent ? '#c084fc' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <span>{sp.name}</span>
+                          {wonSlot ? (
+                            <span style={{ fontSize: '10px', color: wonSlot.color, fontWeight: '700' }}>
+                              ✓ {wonSlot.title}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '10px', color: '#fbbf24' }}>
+                              [돌리기 대기]
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Circular Roulette Wheel (정돈된 180px 규격 회전판) */}
+                <div style={{
+                  position: 'relative',
+                  width: '180px',
+                  height: '180px',
+                  margin: '8px auto 14px',
+                }}>
+                  {/* Top Pointer Needle (12시 방향 네온 인디케이터 바늘) */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-7px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 10,
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                      <polygon points="12,22 3,2 21,2" fill="#ef4444" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+
+                  {/* Rotating Wheel Disc */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      boxShadow: '0 0 18px rgba(168, 85, 247, 0.2), inset 0 0 10px rgba(0,0,0,0.35)',
+                      transform: `rotate(${wheelRotation}deg)`,
+                      transition: rouletteSpinning ? 'transform 3.2s cubic-bezier(0.12, 0.85, 0.15, 1)' : 'none'
+                    }}
+                  >
+                    <svg viewBox="0 0 200 200" width="100%" height="100%" style={{ overflow: 'visible' }}>
+                      <circle cx="100" cy="100" r="98" fill="#111827" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="3" />
+
+                      {/* Slice 0: 코스 선택권 (Top: -45° to 45°) */}
+                      <path
+                        d="M 100 100 L 32.12 32.12 A 96 96 0 0 1 167.88 32.12 Z"
+                        fill={claimedSlotsByOthers['map'] ? '#1f2937' : '#78350f'}
+                        stroke={claimedSlotsByOthers['map'] ? '#374151' : '#fbbf24'}
+                        strokeWidth="1.5"
+                        opacity={claimedSlotsByOthers['map'] ? 0.35 : 1}
+                      />
+
+                      {/* Slice 1: 방 배정권 (Right: 45° to 135°) */}
+                      <path
+                        d="M 100 100 L 167.88 32.12 A 96 96 0 0 1 167.88 167.88 Z"
+                        fill={claimedSlotsByOthers['rooms'] ? '#1f2937' : '#1e3a8a'}
+                        stroke={claimedSlotsByOthers['rooms'] ? '#374151' : '#60a5fa'}
+                        strokeWidth="1.5"
+                        opacity={claimedSlotsByOthers['rooms'] ? 0.35 : 1}
+                      />
+
+                      {/* Slice 2: 핸디 0 & 멀리건 -1 (Bottom: 135° to 225°) */}
+                      <path
+                        d="M 100 100 L 167.88 167.88 A 96 96 0 0 1 32.12 167.88 Z"
+                        fill="#7f1d1d"
+                        stroke="#f87171"
+                        strokeWidth="1.5"
+                      />
+
+                      {/* Slice 3: 기존 유지 (Left: 225° to 315°) */}
+                      <path
+                        d="M 100 100 L 32.12 167.88 A 96 96 0 0 1 32.12 32.12 Z"
+                        fill="#064e3b"
+                        stroke="#34d399"
+                        strokeWidth="1.5"
+                      />
+
+                      {/* Slice Labels */}
+                      <g transform="rotate(0, 100, 100)">
+                        <text x="100" y="48" textAnchor="middle" fill="#ffd700" fontSize="10" fontWeight="900">👑 맵선택</text>
+                        {claimedSlotsByOthers['map'] && (
+                          <text x="100" y="62" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
+                        )}
+                      </g>
+
+                      <g transform="rotate(90, 100, 100)">
+                        <text x="100" y="48" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="900">👑 방배정</text>
+                        {claimedSlotsByOthers['rooms'] && (
+                          <text x="100" y="62" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
+                        )}
+                      </g>
+
+                      <g transform="rotate(180, 100, 100)">
+                        <text x="100" y="48" textAnchor="middle" fill="#f87171" fontSize="9.5" fontWeight="900">⚖️ 핸디0</text>
+                        <text x="100" y="60" textAnchor="middle" fill="#fca5a5" fontSize="7.5" fontWeight="700">멀리건-1</text>
+                      </g>
+
+                      <g transform="rotate(270, 100, 100)">
+                        <text x="100" y="48" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="900">🛡️ 유지</text>
+                        <text x="100" y="60" textAnchor="middle" fill="#a7f3d0" fontSize="7.5" fontWeight="700">핸디 -3</text>
+                      </g>
+
+                      {/* Center Hub Metallic Cap */}
+                      <circle cx="100" cy="100" r="23" fill="#0f172a" stroke="#a855f7" strokeWidth="2.5" />
+                      <circle cx="100" cy="100" r="20" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                      <text x="100" y="104" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="900" letterSpacing="0.5">PRO</text>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Winner Result Banner */}
+                {(() => {
+                  const wonSlotId = semiProResults[currentSemiPro.id];
+                  const wonSlot = ROULETTE_SLOTS.find((s) => s.id === wonSlotId);
+                  if (!wonSlot || rouletteSpinning) return null;
+
+                  return (
+                    <div style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      backgroundColor: wonSlot.bg,
+                      border: `1.5px solid ${wonSlot.color}`,
+                      marginBottom: '12px',
+                      textAlign: 'center',
+                    }}>
+                      <div style={{ fontSize: '13px', fontWeight: '900', color: wonSlot.color }}>
+                        ★ {wonSlot.badge} [{wonSlot.title}] 당첨!
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+                        {wonSlot.description}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Spin Action Button (Sleek, refined, non-flashy styling!) */}
+                <button
+                  type="button"
+                  onClick={handleSpinRoulette}
+                  disabled={rouletteSpinning}
+                  style={{
+                    width: '100%',
+                    padding: '11px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '800',
+                    cursor: rouletteSpinning ? 'not-allowed' : 'pointer',
+                    background: semiProResults[currentSemiPro.id]
+                      ? 'linear-gradient(135deg, #7c3aed, #4f46e5)'
+                      : 'linear-gradient(135deg, #a855f7, #6366f1)',
+                    color: '#ffffff',
+                    border: 'none',
+                    boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {rouletteSpinning
+                    ? '🎲 룰렛 돌아가는 중...'
+                    : semiProResults[currentSemiPro.id]
+                    ? '🔄 룰렛 다시 돌리기'
+                    : '🎰 룰렛 돌리기!'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
