@@ -39,6 +39,133 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   // Selected player IDs
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
 
+  // Semi-Pro Boss Roulette Slots Constant
+  const ROULETTE_SLOTS = [
+    {
+      id: 'map',
+      type: 'perk',
+      badge: '👑 특권',
+      title: '코스(맵) 선택권',
+      description: '세미프로가 오늘 라운드할 스크린 맵을 직접 고릅니다!',
+      color: '#ffd700',
+      bg: 'rgba(255, 215, 0, 0.1)',
+      border: 'rgba(255, 215, 0, 0.4)'
+    },
+    {
+      id: 'rooms',
+      type: 'perk',
+      badge: '👑 특권',
+      title: '동반자 방 배정권',
+      description: '세미프로가 동반자들의 방과 조 편성을 직접 지정합니다!',
+      color: '#60a5fa',
+      bg: 'rgba(96, 165, 250, 0.1)',
+      border: 'rgba(96, 165, 250, 0.4)'
+    },
+    {
+      id: 'penalty',
+      type: 'penalty',
+      badge: '⚖️ 패널티',
+      title: '핸디 0 & 멀리건 -1',
+      description: '끝판왕의 패널티! 이번 경기 핸디캡 0 및 멀리건 1회 감소!',
+      color: '#f87171',
+      bg: 'rgba(248, 113, 113, 0.1)',
+      border: 'rgba(248, 113, 113, 0.4)'
+    },
+    {
+      id: 'keep',
+      type: 'normal',
+      badge: '🛡️ 유지',
+      title: '기존 핸디(-3) 유지',
+      description: '패널티를 모면했습니다. 세미프로 기본 핸디(-3)로 출전!',
+      color: '#34d399',
+      bg: 'rgba(52, 211, 153, 0.1)',
+      border: 'rgba(52, 211, 153, 0.4)'
+    }
+  ];
+
+  // Semi-Pro Boss Roulette State
+  const [rouletteSpinning, setRouletteSpinning] = useState(false);
+  const [rouletteResult, setRouletteResult] = useState<string | null>(null);
+  const [rouletteIndex, setRouletteIndex] = useState<number>(0);
+  const [semiProHandicapZero, setSemiProHandicapZero] = useState(false);
+
+  // Helper to detect if any selected player is Semi-Pro
+  const selectedSemiPro = players.find(
+    (p) => selectedPlayerIds.includes(p.id) && p.tier === 'Semi-Pro'
+  );
+
+  const handleSpinRoulette = () => {
+    if (rouletteSpinning) return;
+    setRouletteSpinning(true);
+    setRouletteResult(null);
+
+    const targetIndex = Math.floor(Math.random() * ROULETTE_SLOTS.length);
+    let currentIndex = rouletteIndex;
+    let speed = 60;
+    let rounds = 0;
+    const totalSteps = 24 + targetIndex;
+
+    const step = () => {
+      currentIndex = (currentIndex + 1) % ROULETTE_SLOTS.length;
+      setRouletteIndex(currentIndex);
+      rounds++;
+
+      if (rounds < totalSteps) {
+        if (rounds > totalSteps - 8) {
+          speed += 45;
+        }
+        setTimeout(step, speed);
+      } else {
+        setRouletteSpinning(false);
+        const wonSlot = ROULETTE_SLOTS[targetIndex];
+        setRouletteResult(wonSlot.id);
+
+        if (wonSlot.id === 'map') {
+          setNotes((prev) => {
+            const stripped = prev.replace(/\[세미프로[^\]]*\]/g, '').trim();
+            return stripped ? `[세미프로 맵선택] ${stripped}` : '[세미프로 맵선택] ';
+          });
+        } else if (wonSlot.id === 'penalty') {
+          setSemiProHandicapZero(true);
+          setNotes((prev) => {
+            const stripped = prev.replace(/\[세미프로[^\]]*\]/g, '').trim();
+            return stripped ? `[세미프로 핸디0/멀리건-1] ${stripped}` : '[세미프로 핸디0/멀리건-1] ';
+          });
+        } else if (wonSlot.id === 'keep') {
+          setSemiProHandicapZero(false);
+          setNotes((prev) => prev.replace(/\[세미프로[^\]]*\]/g, '').trim());
+        } else if (wonSlot.id === 'rooms') {
+          setShowRoomAssigner(true);
+        }
+      }
+    };
+
+    setTimeout(step, speed);
+  };
+
+  const handleShareRoulette = () => {
+    if (!selectedSemiPro || !rouletteResult) return;
+    const wonSlot = ROULETTE_SLOTS.find((s) => s.id === rouletteResult);
+    if (!wonSlot) return;
+
+    let shareText = `👑 [TierGolf] 세미프로 찬스 룰렛 결과 보고\n\n`;
+    shareText += `선수: ${selectedSemiPro.name} (Semi-Pro)\n`;
+    shareText += `결과: ${wonSlot.badge} [${wonSlot.title}]\n`;
+    shareText += `내용: ${wonSlot.description}\n\n`;
+    shareText += `모두 규칙을 준수하여 즐거운 라운드 되세요! 🏌️‍♂️🔥`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'TierGolf 세미프로 룰렛 결과',
+        text: shareText,
+      }).catch((err) => console.log('Share canceled:', err));
+    } else {
+      navigator.clipboard.writeText(shareText)
+        .then(() => alert('룰렛 결과가 복사되었습니다! 카톡방에 붙여넣기 하세요.'))
+        .catch(() => alert('복사에 실패했습니다.'));
+    }
+  };
+
   // Scores and Costs inputs mapping playerId -> string
   const [rawScores, setRawScores] = useState<Record<string, string>>({});
   const [scoreSelections, setScoreSelections] = useState<Record<string, string>>({});
@@ -143,7 +270,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     if (!player) return;
 
     if (selectedPlayerIds.includes(id)) {
-      setSelectedPlayerIds(selectedPlayerIds.filter((pId) => pId !== id));
+      const remainingIds = selectedPlayerIds.filter((pId) => pId !== id);
+      setSelectedPlayerIds(remainingIds);
       // Clean up score, handicap, and cost input
       const newScores = { ...rawScores };
       const newSelections = { ...scoreSelections };
@@ -157,6 +285,13 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setScoreSelections(newSelections);
       setGuillotineHandicaps(newGuillotineHandicaps);
       setCostsPaid(newCosts);
+
+      // If no Semi-Pro player remains selected, reset roulette status
+      const hasSemiProRemaining = players.some((p) => remainingIds.includes(p.id) && p.tier === 'Semi-Pro');
+      if (!hasSemiProRemaining) {
+        setRouletteResult(null);
+        setSemiProHandicapZero(false);
+      }
     } else {
       if (selectedPlayerIds.length >= activePlayersCount) {
         alert(`최대 ${activePlayersCount}명까지만 경기에 참여할 수 있습니다.`);
@@ -181,11 +316,17 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       const rawScore = getRawScoreForPlayer(id);
       const costPaid = parseInt(costsPaid[id], 10) || 0;
       
+      // Calculate effective handicap: if player is Semi-Pro and roulette penalty hit, override to 0!
+      let playerHandicap = getHandicapForPlayer(id, player.base_handicap);
+      if (player.tier === 'Semi-Pro' && semiProHandicapZero) {
+        playerHandicap = 0;
+      }
+
       // If 'scratch' mode, no handicap is subtracted in preview ranking!
       // Otherwise, fetch base or custom temporary handicap dynamically
       const adjustedScore = matchMode === 'scratch' 
         ? rawScore 
-        : rawScore - getHandicapForPlayer(id, player.base_handicap);
+        : rawScore - playerHandicap;
 
       return {
         player,
@@ -328,6 +469,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           return;
         }
         customH = hVal;
+      } else if (players.find((p) => p.id === id)?.tier === 'Semi-Pro' && semiProHandicapZero) {
+        customH = 0; // Explicitly record 0 so it stays 0 in DB and history!
       }
 
       resultsPayload.push({
@@ -357,6 +500,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setNotes('');
       setMatchMode('handicap'); // reset back to default
       setRoomResults([]); // clear room assignment roulette
+      setRouletteResult(null);
+      setSemiProHandicapZero(false);
       onGameAdded();
       alert('경기 등록이 완료되었습니다!');
     } catch (error) {
@@ -645,6 +790,123 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           })()}
         </div>
 
+        {/* Semi-Pro Boss Roulette Card (👑 세미프로 찬스 룰렛) */}
+        {selectedSemiPro && (
+          <div
+            className="game-setup-card"
+            style={{
+              padding: '16px',
+              border: '1.5px solid rgba(168, 85, 247, 0.4)',
+              boxShadow: '0 0 20px rgba(168, 85, 247, 0.12)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>👑 세미프로 찬스 룰렛</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                    ({selectedSemiPro.name})
+                  </span>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  최상위 끝판왕에게 주어지는 특권이자 패널티 룰렛!
+                </div>
+              </div>
+
+              {rouletteResult && (
+                <button
+                  type="button"
+                  onClick={handleShareRoulette}
+                  style={{
+                    background: 'none',
+                    border: '1px solid rgba(192, 132, 252, 0.4)',
+                    color: '#c084fc',
+                    fontSize: '11px',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: '700',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  결과 카톡 공유
+                </button>
+              )}
+            </div>
+
+            {/* 4 Slots Grid (2x2) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+              {ROULETTE_SLOTS.map((slot, idx) => {
+                const isCurrent = rouletteIndex === idx;
+                const isWon = rouletteResult === slot.id;
+
+                return (
+                  <div
+                    key={slot.id}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: isWon ? slot.bg : isCurrent && rouletteSpinning ? 'rgba(255, 255, 255, 0.08)' : 'var(--bg-hover)',
+                      border: isWon ? `2px solid ${slot.color}` : isCurrent && rouletteSpinning ? `2px solid ${slot.color}` : '1px solid var(--border-color)',
+                      boxShadow: isWon ? `0 0 14px ${slot.color}40` : 'none',
+                      transform: isWon || (isCurrent && rouletteSpinning) ? 'scale(1.02)' : 'none',
+                      transition: 'all 0.15s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', fontWeight: '800', color: slot.color }}>
+                        {slot.badge}
+                      </span>
+                      {isWon && <span style={{ fontSize: '11px', fontWeight: '900', color: slot.color }}>★ 당첨!</span>}
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: isWon ? slot.color : 'var(--text-primary)' }}>
+                      {slot.title}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: '1.3' }}>
+                      {slot.description}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Spin / Status Action Button */}
+            <button
+              type="button"
+              onClick={handleSpinRoulette}
+              disabled={rouletteSpinning}
+              style={{
+                width: '100%',
+                padding: '11px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: '800',
+                cursor: rouletteSpinning ? 'not-allowed' : 'pointer',
+                background: rouletteResult
+                  ? 'linear-gradient(135deg, #a855f7, #6366f1)'
+                  : 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)',
+                color: '#ffffff',
+                border: 'none',
+                boxShadow: '0 4px 15px rgba(168, 85, 247, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'all 0.2s'
+              }}
+            >
+              {rouletteSpinning ? '🎲 룰렛 돌아가는 중...' : rouletteResult ? '🔄 룰렛 다시 돌리기' : '🎰 세미프로 찬스 룰렛 돌리기!'}
+            </button>
+          </div>
+        )}
+
         {/* Random Room Assigner Card (방 랜덤 배정 - Collapsible) */}
         {selectedPlayerIds.length >= 2 && (
           <div className="game-setup-card" style={{ padding: '0', overflow: 'hidden', borderColor: 'rgba(245, 158, 11, 0.25)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.05)' }}>
@@ -781,7 +1043,12 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         {theme.name} (현재 {player.points}LP)
                       </span>
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>핸디캡: -{player.base_handicap}개</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      핸디캡: -{player.tier === 'Semi-Pro' && semiProHandicapZero ? 0 : player.base_handicap}개
+                      {player.tier === 'Semi-Pro' && semiProHandicapZero && (
+                        <span style={{ color: '#f87171', fontWeight: '800', marginLeft: '4px' }}>(룰렛 패널티: 핸디 0)</span>
+                      )}
+                    </span>
                   </div>
 
                   <div className="inputs-row" style={{ gridTemplateColumns: matchMode === 'guillotine' ? '1.2fr 1fr 0.8fr' : '1fr 1fr' }}>
