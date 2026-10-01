@@ -824,7 +824,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ fontWeight: '700', fontSize: '14px' }}>{player.name}</span>
                           <span style={{ fontSize: '11px', color: theme.color, fontWeight: '600' }}>
-                            {theme.name} (H:{player.base_handicap})
+                            {theme.name} (H:{player.base_handicap > 0 ? player.base_handicap : player.base_handicap < 0 ? `+${Math.abs(player.base_handicap)}` : 0})
                           </span>
                         </div>
                         <div className="select-player-badge" />
@@ -1258,12 +1258,18 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                         {theme.name} (현재 {player.points}LP)
                       </span>
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      핸디캡: -{player.tier === 'Semi-Pro' && semiProResults[pId] === 'penalty' ? 0 : player.base_handicap}개
-                      {player.tier === 'Semi-Pro' && semiProResults[pId] === 'penalty' && (
-                        <span style={{ color: '#f87171', fontWeight: '800', marginLeft: '4px' }}>(룰렛 변경: 핸디 0)</span>
-                      )}
-                    </span>
+                    {(() => {
+                      const effectiveH = player.tier === 'Semi-Pro' && semiProResults[pId] === 'penalty' ? 0 : player.base_handicap;
+                      const hFormatted = effectiveH > 0 ? `-${effectiveH}개` : effectiveH < 0 ? `+${Math.abs(effectiveH)}개` : '0개';
+                      return (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          핸디캡: {hFormatted}
+                          {player.tier === 'Semi-Pro' && semiProResults[pId] === 'penalty' && (
+                            <span style={{ color: '#f87171', fontWeight: '800', marginLeft: '4px' }}>(룰렛 변경: 0개)</span>
+                          )}
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   <div className="inputs-row" style={{ gridTemplateColumns: matchMode === 'guillotine' ? '1.2fr 1fr 0.8fr' : '1fr 1fr' }}>

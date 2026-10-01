@@ -252,7 +252,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                     {player.nickname && <span style={{ fontSize: '11px', color: '#fbbf24', marginLeft: '3px', fontWeight: '600' }}>{player.nickname}</span>}
                     {isDormant && <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '3px', fontWeight: 'normal' }}>(휴면)</span>}
                   </span>
-                  <span className="player-handicap-badge">핸디: {player.base_handicap}개</span>
+                  <span className="player-handicap-badge">핸디: {player.base_handicap > 0 ? player.base_handicap : player.base_handicap < 0 ? `+${Math.abs(player.base_handicap)}` : 0}개</span>
                 </div>
 
                 {/* 1. TIER RANKING MODE */}

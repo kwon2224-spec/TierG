@@ -460,7 +460,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
             <div className="profile-tier" style={{ color: theme.color }}>
               {theme.name} (LP {player.points})
             </div>
-            <div className="profile-lp">기본 핸디캡: {player.base_handicap}개</div>
+            <div className="profile-lp">기본 핸디캡: {player.base_handicap > 0 ? player.base_handicap : player.base_handicap < 0 ? `+${Math.abs(player.base_handicap)}` : 0}개</div>
 
             {/* Admin Checkbox to delegate/revoke Admin Rights (Premium iOS-Style Toggle Switch!) */}
             {isAdmin && currentAdminId !== player.id && (
