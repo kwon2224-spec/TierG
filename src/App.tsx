@@ -20,20 +20,12 @@ function App() {
 
   // Device-isolated Theme State (Saved strictly to each user's phone localStorage!)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    try {
-      return (localStorage.getItem('tierg_theme') as 'dark' | 'light') || 'dark';
-    } catch {
-      return 'dark';
-    }
+    return (localStorage.getItem('tierg_theme') as 'dark' | 'light') || 'dark';
   });
 
   useEffect(() => {
-    try {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('tierg_theme', theme);
-    } catch (e) {
-      console.warn('Storage access restricted:', e);
-    }
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('tierg_theme', theme);
   }, [theme]);
 
   // Floating Scroll-to-Top FAB State with RAF throttling (60fps smooth, zero CPU overhead!)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserPlus, HelpCircle, Crown, Trophy, Target, TrendingUp, Coins } from 'lucide-react';
 import { type PlayerWithStats, type RankingCategory, type Tier, TIERS_ORDER, TIER_THEMES, TIER_WEIGHTS, TIER_HANDICAPS } from '../types';
 import { tiergService } from '../services/tiergService';
@@ -79,49 +79,44 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>랭킹 정보를 불러오는 중...</div>;
   }
 
-  // Dynamically sort players based on selected ranking category with 100% defensive null-checks
+  // Dynamically sort players based on selected ranking category
   const getSortedPlayers = () => {
     const list = [...players];
     if (rankingCategory === 'tier') {
       return list.sort((a, b) => {
-        const weightA = (TIER_WEIGHTS[a.tier] || 0) + (a.points || 0);
-        const weightB = (TIER_WEIGHTS[b.tier] || 0) + (b.points || 0);
+        const weightA = TIER_WEIGHTS[a.tier] + a.points;
+        const weightB = TIER_WEIGHTS[b.tier] + b.points;
         if (weightB !== weightA) return weightB - weightA;
-        return (a.name || '').localeCompare(b.name || '', 'ko-KR');
+        return a.name.localeCompare(b.name, 'ko-KR');
       });
     }
     if (rankingCategory === 'bestScore') {
       return list.sort((a, b) => {
-        const scoreA = a.bestRawScore || 0;
-        const scoreB = b.bestRawScore || 0;
-        if (scoreA > 0 && scoreB === 0) return -1;
-        if (scoreA === 0 && scoreB > 0) return 1;
-        if (scoreA !== scoreB) return scoreA - scoreB; // Lower is better!
-        return (a.name || '').localeCompare(b.name || '', 'ko-KR');
+        // Players with recorded 18-hole best score come first
+        if (a.bestRawScore > 0 && b.bestRawScore === 0) return -1;
+        if (a.bestRawScore === 0 && b.bestRawScore > 0) return 1;
+        if (a.bestRawScore !== b.bestRawScore) return a.bestRawScore - b.bestRawScore; // Lower is better!
+        return a.name.localeCompare(b.name, 'ko-KR');
       });
     }
     if (rankingCategory === 'winRate') {
       return list.sort((a, b) => {
-        const rateA = a.winRate || 0;
-        const rateB = b.winRate || 0;
-        if (rateB !== rateA) return rateB - rateA; // Higher win rate first!
-        if ((b.totalGames || 0) !== (a.totalGames || 0)) return (b.totalGames || 0) - (a.totalGames || 0);
-        return (a.name || '').localeCompare(b.name || '', 'ko-KR');
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate; // Higher win rate first!
+        if (b.totalGames !== a.totalGames) return b.totalGames - a.totalGames;
+        return a.name.localeCompare(b.name, 'ko-KR');
       });
     }
     if (rankingCategory === 'cost') {
       return list.sort((a, b) => {
-        const costA = a.totalCost || 0;
-        const costB = b.totalCost || 0;
-        if (costB !== costA) return costB - costA; // Highest spent first!
-        if ((b.totalGames || 0) !== (a.totalGames || 0)) return (b.totalGames || 0) - (a.totalGames || 0);
-        return (a.name || '').localeCompare(b.name || '', 'ko-KR');
+        if (b.totalCost !== a.totalCost) return b.totalCost - a.totalCost; // Highest spent first!
+        if (b.totalGames !== a.totalGames) return b.totalGames - a.totalGames;
+        return a.name.localeCompare(b.name, 'ko-KR');
       });
     }
     return list;
   };
 
-  const sortedPlayers = useMemo(() => getSortedPlayers(), [players, rankingCategory]);
+  const sortedPlayers = getSortedPlayers();
 
   const categoryTitles: Record<RankingCategory, string> = {
     tier: '실시간 티어 랭킹',
