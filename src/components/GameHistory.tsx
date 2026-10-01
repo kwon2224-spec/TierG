@@ -316,7 +316,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
   return (
     <div>
       <div className="page-title">
-        <History color="var(--accent)" /> 경기 히스토리
+        경기 히스토리
       </div>
 
       {/* Match Mode Capsule Filters */}
@@ -395,7 +395,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                       .replace(/\[스크래치\]/g, '')
                       .trim();
                     if (!cleanNotes) return null;
-                    return <div className="game-notes" style={{ marginTop: '2px' }}>{cleanNotes}</div>;
+                    return <div className="game-notes" style={{ marginTop: '7px' }}>{cleanNotes}</div>;
                   })()}
                 </div>
                 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, FileText, AlertTriangle, Trophy, Shuffle, Zap } from 'lucide-react';
+import { Calendar, FileText, AlertTriangle, Trophy, Shuffle, Zap } from 'lucide-react';
 import { type Player, type MatchMode, TIER_THEMES, TIER_WEIGHTS } from '../types';
 import { tiergService, calculateNewTierAndPoints } from '../services/tiergService';
 
@@ -376,7 +376,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   return (
     <div className="add-game-container">
       <div className="page-title">
-        <Sparkles color="var(--accent)" /> 경기 결과 기록실
+        경기 결과 기록실
       </div>
 
       <form onSubmit={handleSaveGame} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -612,7 +612,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
             return (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '15px' }}>⛳ 참가 선수 선택 (2~{activePlayers.length}명)</span>
+                  <span style={{ fontWeight: '700', fontSize: '15px' }}>참가 선수 선택 (2~{activePlayers.length}명)</span>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     {selectedPlayerIds.length}명 선택함
                   </span>

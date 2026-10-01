@@ -842,14 +842,14 @@ html, body {
   box-shadow: 0 4px 20px rgba(16, 185, 129, 0.5);
 }
 
-/* Add Game Page */
+/* Add Game & History Page Titles (Unified 18px Clean Minimal Typography!) */
 .page-title {
-  font-size: 20px;
-  font-weight: 800;
-  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .add-game-container {
@@ -1296,10 +1296,7 @@ input[type="datetime-local"].form-input {
   min-width: 0 !important;
   margin: 0 !important;
   height: 48px !important;
-  padding-top: 13px !important; /* +2px compensates for WebKit's native upward baseline bias */
-  padding-bottom: 9px !important;
-  padding-left: 14px !important;
-  padding-right: 14px !important;
+  padding: 11px 14px !important;
   font-size: 15px !important;
   appearance: none !important;
   -webkit-appearance: none !important;
@@ -1312,5 +1309,5 @@ input[type="datetime-local"]::-webkit-datetime-edit {
   align-items: center !important;
   padding: 0 !important;
   height: 100% !important;
-  line-height: 1 !important;
+  line-height: normal !important;
 }
