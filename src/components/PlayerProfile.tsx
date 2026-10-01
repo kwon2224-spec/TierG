@@ -58,13 +58,20 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
     loadPlayerDetails();
   }, [playerId]);
 
-  // Safe Mobile Background Scroll Lock without WebKit layout deadlock!
+  // Safe Mobile Background Scroll & Overscroll Lock without WebKit layout deadlock!
   useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyOverscroll = document.body.style.overscrollBehavior;
+    const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+
     document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+    document.documentElement.style.overscrollBehavior = 'none';
 
     return () => {
-      document.body.style.overflow = originalOverflow;
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.overscrollBehavior = originalBodyOverscroll;
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
     };
   }, []);
 
