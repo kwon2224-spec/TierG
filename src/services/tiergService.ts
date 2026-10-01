@@ -109,6 +109,11 @@ let lastPlayersWithStatsTime = 0;
 let cachedGamesWithResults: GameWithResults[] | null = null;
 let lastGamesTime = 0;
 
+// In-Flight Promise De-duplication (Prevents parallel duplicate network queries!)
+let inFlightPlayersPromise: Promise<Player[]> | null = null;
+let inFlightPlayersWithStatsPromise: Promise<PlayerWithStats[]> | null = null;
+let inFlightGamesPromise: Promise<GameWithResults[]> | null = null;
+
 const CACHE_TTL_MS = 15000; // 15 seconds cache TTL
 
 export const invalidateTierGCache = () => {
@@ -132,22 +137,34 @@ class TierGService {
       return cachedPlayers;
     }
 
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .order('created_at', { ascending: true });
-      if (error) {
-        console.error('Supabase getPlayers error, falling back:', error);
-      } else if (data) {
-        cachedPlayers = data as Player[];
-        lastPlayersTime = Date.now();
-        return cachedPlayers;
-      }
+    if (inFlightPlayersPromise) {
+      return inFlightPlayersPromise;
     }
 
-    // Local Storage fallback
-    return getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+    inFlightPlayersPromise = (async () => {
+      try {
+        if (supabase) {
+          const { data, error } = await supabase
+            .from('players')
+            .select('*')
+            .order('created_at', { ascending: true });
+          if (error) {
+            console.error('Supabase getPlayers error, falling back:', error);
+          } else if (data) {
+            cachedPlayers = data as Player[];
+            lastPlayersTime = Date.now();
+            return cachedPlayers;
+          }
+        }
+
+        // Local Storage fallback
+        return getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+      } finally {
+        inFlightPlayersPromise = null;
+      }
+    })();
+
+    return inFlightPlayersPromise;
   }
 
   async getPlayersWithStats(): Promise<PlayerWithStats[]> {
@@ -155,124 +172,136 @@ class TierGService {
       return cachedPlayersWithStats;
     }
 
-    const players = await this.getPlayers();
-    
-    // Fetch all game results in one single high-speed joined query!
-    let allResults: any[] = [];
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('game_results')
-          .select(`
-            player_id,
-            raw_score,
-            cost_paid,
-            points_changed,
-            rank,
-            bet_amount,
-            games ( notes )
-          `);
-        if (!error && data) {
-          allResults = data;
-        }
-      } catch (err) {
-        console.error('Failed to fetch game_results for stats:', err);
-      }
-    } else {
-      const localResults = getLocalData<any[]>('tierg_results', []);
-      const localGames = getLocalData<any[]>('tierg_games', []);
-      allResults = localResults.map((r) => ({
-        ...r,
-        games: localGames.find((g) => g.id === r.game_id),
-      }));
+    if (inFlightPlayersWithStatsPromise) {
+      return inFlightPlayersWithStatsPromise;
     }
 
-    // Group results by player_id
-    const resultsByPlayer: Record<string, any[]> = {};
-    allResults.forEach((r) => {
-      if (!resultsByPlayer[r.player_id]) {
-        resultsByPlayer[r.player_id] = [];
-      }
-      resultsByPlayer[r.player_id].push(r);
-    });
-
-    // Compute stats for each player in-memory (0ms lag!)
-    const formattedPlayers = players.map((player) => {
-      const pResults = resultsByPlayer[player.id] || [];
-      const totalGames = pResults.length;
-
-      // 18-hole non-guillotine matches for Best Raw Score (라베)
-      // Excludes both bet_amount > 0 and games with [단두대] notes, as well as 9-hole games!
-      const nonGuillotine = pResults.filter((r) => {
-        const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
-        const is9Holes = (r.games?.notes || '').includes('9홀') || r.raw_score < 65;
-        return !isGuillotine && !is9Holes;
-      });
-      const bestRawScore = nonGuillotine.length > 0
-        ? Math.min(...nonGuillotine.map((r) => r.raw_score))
-        : 0;
-
-      // Net Real Out-of-Pocket Cash: Normal matches & Guillotine loser bills MINUS money saved by Guillotine survivors!
-      const totalCost = pResults.reduce((sum, r) => {
-        const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
-        const bet = r.bet_amount || 0;
-        const paid = r.cost_paid || 0;
-
-        if (isGuillotine && paid === 0 && bet > 0) {
-          // Survived Guillotine: saved stake, so deduct from net expenditure!
-          return sum - bet;
-        }
-        return sum + paid;
-      }, 0);
-
-      // Unified League Win/Loss calculation
-      let leagueWins = 0;
-      let leagueLosses = 0;
-
-      pResults.forEach((r) => {
-        const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
-        const isScratch = r.games?.notes?.includes('[스크래치]');
-
-        if (isGuillotine) {
-          if (r.cost_paid === 0) leagueWins++;
-          else leagueLosses++;
-        } else if (isScratch) {
-          if (r.rank <= 2) leagueWins++;
-          else leagueLosses++;
+    inFlightPlayersWithStatsPromise = (async () => {
+      try {
+        const players = await this.getPlayers();
+        
+        // Fetch all game results in one single high-speed joined query!
+        let allResults: any[] = [];
+        if (supabase) {
+          try {
+            const { data, error } = await supabase
+              .from('game_results')
+              .select(`
+                player_id,
+                raw_score,
+                cost_paid,
+                points_changed,
+                rank,
+                bet_amount,
+                games ( notes )
+              `);
+            if (!error && data) {
+              allResults = data;
+            }
+          } catch (err) {
+            console.error('Failed to fetch game_results for stats:', err);
+          }
         } else {
-          if (r.points_changed >= 0) leagueWins++;
-          else leagueLosses++;
+          const localResults = getLocalData<any[]>('tierg_results', []);
+          const localGames = getLocalData<any[]>('tierg_games', []);
+          allResults = localResults.map((r) => ({
+            ...r,
+            games: localGames.find((g) => g.id === r.game_id),
+          }));
         }
-      });
 
-      const winRate = totalGames > 0 ? Math.round((leagueWins / totalGames) * 100) : 0;
+        // Group results by player_id
+        const resultsByPlayer: Record<string, any[]> = {};
+        allResults.forEach((r) => {
+          if (!resultsByPlayer[r.player_id]) {
+            resultsByPlayer[r.player_id] = [];
+          }
+          resultsByPlayer[r.player_id].push(r);
+        });
 
-      // Money saved by surviving Guillotine
-      const guillotineSaved = pResults.reduce((sum, r) => {
-        const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
-        const bet = r.bet_amount || 0;
-        const paid = r.cost_paid || 0;
-        if (isGuillotine && paid === 0 && bet > 0) {
-          return sum + bet;
-        }
-        return sum;
-      }, 0);
+        // Compute stats for each player in-memory (0ms lag!)
+        const formattedPlayers = players.map((player) => {
+          const pResults = resultsByPlayer[player.id] || [];
+          const totalGames = pResults.length;
 
-      return {
-        ...player,
-        bestRawScore,
-        totalGames,
-        leagueWins,
-        leagueLosses,
-        winRate,
-        totalCost,
-        guillotineSaved,
-      };
-    });
+          // 18-hole non-guillotine matches for Best Raw Score (라베)
+          // Excludes both bet_amount > 0 and games with [단두대] notes, as well as 9-hole games!
+          const nonGuillotine = pResults.filter((r) => {
+            const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
+            const is9Holes = (r.games?.notes || '').includes('9홀') || r.raw_score < 65;
+            return !isGuillotine && !is9Holes;
+          });
+          const bestRawScore = nonGuillotine.length > 0
+            ? Math.min(...nonGuillotine.map((r) => r.raw_score))
+            : 0;
 
-    cachedPlayersWithStats = formattedPlayers;
-    lastPlayersWithStatsTime = Date.now();
-    return formattedPlayers;
+          // Net Real Out-of-Pocket Cash: Normal matches & Guillotine loser bills MINUS money saved by Guillotine survivors!
+          const totalCost = pResults.reduce((sum, r) => {
+            const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
+            const bet = r.bet_amount || 0;
+            const paid = r.cost_paid || 0;
+
+            if (isGuillotine && paid === 0 && bet > 0) {
+              // Survived Guillotine: saved stake, so deduct from net expenditure!
+              return sum - bet;
+            }
+            return sum + paid;
+          }, 0);
+
+          // Unified League Win/Loss calculation
+          let leagueWins = 0;
+          let leagueLosses = 0;
+
+          pResults.forEach((r) => {
+            const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
+            const isScratch = r.games?.notes?.includes('[스크래치]');
+
+            if (isGuillotine) {
+              if (r.cost_paid === 0) leagueWins++;
+              else leagueLosses++;
+            } else if (isScratch) {
+              if (r.rank <= 2) leagueWins++;
+              else leagueLosses++;
+            } else {
+              if (r.points_changed >= 0) leagueWins++;
+              else leagueLosses++;
+            }
+          });
+
+          const winRate = totalGames > 0 ? Math.round((leagueWins / totalGames) * 100) : 0;
+
+          // Money saved by surviving Guillotine
+          const guillotineSaved = pResults.reduce((sum, r) => {
+            const isGuillotine = (r.bet_amount || 0) > 0 || (r.games?.notes || '').includes('[단두대]');
+            const bet = r.bet_amount || 0;
+            const paid = r.cost_paid || 0;
+            if (isGuillotine && paid === 0 && bet > 0) {
+              return sum + bet;
+            }
+            return sum;
+          }, 0);
+
+          return {
+            ...player,
+            bestRawScore,
+            totalGames,
+            leagueWins,
+            leagueLosses,
+            winRate,
+            totalCost,
+            guillotineSaved,
+          };
+        });
+
+        cachedPlayersWithStats = formattedPlayers;
+        lastPlayersWithStatsTime = Date.now();
+        return formattedPlayers;
+      } finally {
+        inFlightPlayersWithStatsPromise = null;
+      }
+    })();
+
+    return inFlightPlayersWithStatsPromise;
   }
 
   async addPlayer(
@@ -418,111 +447,123 @@ class TierGService {
       return cachedGamesWithResults;
     }
 
-    if (supabase) {
-      try {
-        // 1. Fetch all games in one single query
-        const { data: gamesData, error: gamesError } = await supabase
-          .from('games')
-          .select('*')
-          .order('played_at', { ascending: false });
-
-        if (gamesError) throw gamesError;
-
-        if (!gamesData || gamesData.length === 0) return [];
-
-        // 2. Fetch ALL results for ALL games in one single query (Resolves N+1 query bottleneck!)
-        const { data: resultsData, error: resultsError } = await supabase
-          .from('game_results')
-          .select(`
-            *,
-            players (
-              name,
-              tier,
-              points
-            )
-          `);
-
-        if (resultsError) throw resultsError;
-
-        // 3. Map and group results by game_id in-memory (Incredibly fast!)
-        const resultsByGameId: Record<string, any[]> = {};
-        (resultsData || []).forEach((r: any) => {
-          if (!resultsByGameId[r.game_id]) {
-            resultsByGameId[r.game_id] = [];
-          }
-
-          // Accurately reconstruct the true tier before this game using inverse math!
-          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-            r.tier_after as Tier,
-            r.points_after,
-            -r.points_changed
-          );
-
-          resultsByGameId[r.game_id].push({
-            id: r.id,
-            game_id: r.game_id,
-            player_id: r.player_id,
-            raw_score: r.raw_score,
-            adjusted_score: r.adjusted_score,
-            rank: r.rank,
-            points_changed: r.points_changed,
-            tier_after: r.tier_after as Tier,
-            points_after: r.points_after,
-            cost_paid: r.cost_paid,
-            bet_amount: r.bet_amount || 0,
-            player_name: r.players?.name || 'Unknown',
-            player_tier_before: tierBefore,
-            player_points_before: pointsBefore,
-          });
-        });
-
-        // 4. Assemble the final GamesWithResults list
-        const gamesWithResults = gamesData.map((game) => {
-          const formattedResults = resultsByGameId[game.id] || [];
-          // Sort results by rank ascending
-          formattedResults.sort((a, b) => a.rank - b.rank);
-          
-          return {
-            game: {
-              id: game.id,
-              played_at: game.played_at,
-              notes: game.notes,
-            },
-            results: formattedResults,
-          };
-        });
-
-        cachedGamesWithResults = gamesWithResults;
-        lastGamesTime = Date.now();
-        return gamesWithResults;
-      } catch (error) {
-        console.error('Supabase getGames error, falling back:', error);
-      }
+    if (inFlightGamesPromise) {
+      return inFlightGamesPromise;
     }
 
-    // Local Storage fallback
-    const games = getLocalData<Game[]>('tierg_games', []);
-    const results = getLocalData<GameResult[]>('tierg_results', []);
-    const players = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+    inFlightGamesPromise = (async () => {
+      try {
+        if (supabase) {
+          try {
+            // 1. Fetch all games in one single query
+            const { data: gamesData, error: gamesError } = await supabase
+              .from('games')
+              .select('*')
+              .order('played_at', { ascending: false });
 
-    return games
-      .map((game) => {
-        const gameResults = results
-          .filter((r) => r.game_id === game.id)
-          .map((r) => {
-            const player = players.find((p) => p.id === r.player_id);
-            return {
-              ...r,
-              player_name: player?.name || 'Unknown',
-              player_tier_before: player?.tier || 'Iron', // Approximate
-              player_points_before: player?.points || 0,
-            };
+            if (gamesError) throw gamesError;
+
+            if (!gamesData || gamesData.length === 0) return [];
+
+            // 2. Fetch ALL results for ALL games in one single query (Resolves N+1 query bottleneck!)
+            const { data: resultsData, error: resultsError } = await supabase
+              .from('game_results')
+              .select(`
+                *,
+                players (
+                  name,
+                  tier,
+                  points
+                )
+              `);
+
+            if (resultsError) throw resultsError;
+
+            // 3. Map and group results by game_id in-memory (Incredibly fast!)
+            const resultsByGameId: Record<string, any[]> = {};
+            (resultsData || []).forEach((r: any) => {
+              if (!resultsByGameId[r.game_id]) {
+                resultsByGameId[r.game_id] = [];
+              }
+
+              // Accurately reconstruct the true tier before this game using inverse math!
+              const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
+                r.tier_after as Tier,
+                r.points_after,
+                -r.points_changed
+              );
+
+              resultsByGameId[r.game_id].push({
+                id: r.id,
+                game_id: r.game_id,
+                player_id: r.player_id,
+                raw_score: r.raw_score,
+                adjusted_score: r.adjusted_score,
+                rank: r.rank,
+                points_changed: r.points_changed,
+                tier_after: r.tier_after as Tier,
+                points_after: r.points_after,
+                cost_paid: r.cost_paid,
+                bet_amount: r.bet_amount || 0,
+                player_name: r.players?.name || 'Unknown',
+                player_tier_before: tierBefore,
+                player_points_before: pointsBefore,
+              });
+            });
+
+            // 4. Assemble the final GamesWithResults list
+            const gamesWithResults = gamesData.map((game) => {
+              const formattedResults = resultsByGameId[game.id] || [];
+              // Sort results by rank ascending
+              formattedResults.sort((a, b) => a.rank - b.rank);
+              
+              return {
+                game: {
+                  id: game.id,
+                  played_at: game.played_at,
+                  notes: game.notes,
+                },
+                results: formattedResults,
+              };
+            });
+
+            cachedGamesWithResults = gamesWithResults;
+            lastGamesTime = Date.now();
+            return gamesWithResults;
+          } catch (error) {
+            console.error('Supabase getGames error, falling back:', error);
+          }
+        }
+
+        // Local Storage fallback
+        const games = getLocalData<Game[]>('tierg_games', []);
+        const results = getLocalData<GameResult[]>('tierg_results', []);
+        const players = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+
+        return games
+          .map((game) => {
+            const gameResults = results
+              .filter((r) => r.game_id === game.id)
+              .map((r) => {
+                const player = players.find((p) => p.id === r.player_id);
+                return {
+                  ...r,
+                  player_name: player?.name || 'Unknown',
+                  player_tier_before: player?.tier || 'Iron', // Approximate
+                  player_points_before: player?.points || 0,
+                };
+              })
+              .sort((a, b) => a.rank - b.rank);
+
+            return { game, results: gameResults };
           })
-          .sort((a, b) => a.rank - b.rank);
+          .sort((a, b) => new Date(b.game.played_at).getTime() - new Date(a.game.played_at).getTime());
+      } finally {
+        inFlightGamesPromise = null;
+      }
+    })();
 
-        return { game, results: gameResults };
-      })
-      .sort((a, b) => new Date(b.game.played_at).getTime() - new Date(a.game.played_at).getTime());
+    return inFlightGamesPromise;
   }
 
   async addGame(

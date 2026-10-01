@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { History, Calendar, ArrowUpRight, ArrowDownRight, Trash2, Edit2, Sparkles } from 'lucide-react';
 import { type GameWithResults, type MatchMode, TIER_THEMES, TIER_WEIGHTS } from '../types';
 import { tiergService } from '../services/tiergService';
@@ -294,10 +294,12 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
     return 'handicap';
   };
 
-  const filteredGames = games.filter((g) => {
-    if (selectedFilter === 'all') return true;
-    return getGameMode(g) === selectedFilter;
-  });
+  const filteredGames = useMemo(() => {
+    return games.filter((g) => {
+      if (selectedFilter === 'all') return true;
+      return getGameMode(g) === selectedFilter;
+    });
+  }, [games, selectedFilter]);
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>이전 경기 이력을 가져오는 중...</div>;
