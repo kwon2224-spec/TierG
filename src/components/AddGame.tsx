@@ -136,6 +136,12 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     if (rouletteSpinning || !currentSemiPro) return;
     setRouletteSpinning(true);
 
+    // Immediately clear previous win status so the board resets to clean neutral state during spin!
+    const clearing = { ...semiProResults };
+    delete clearing[currentSemiPro.id];
+    setSemiProResults(clearing);
+    syncSemiProNotes(clearing);
+
     // Available slots for current player (excluding exclusive slots claimed by other Semi-Pros!)
     const availableSlotIds = ROULETTE_SLOTS
       .map((s) => s.id)
