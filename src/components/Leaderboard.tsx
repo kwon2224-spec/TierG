@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { UserPlus, HelpCircle, Crown, Trophy, Target, TrendingUp, Coins } from 'lucide-react';
 import { type PlayerWithStats, type RankingCategory, type Tier, TIERS_ORDER, TIER_THEMES, TIER_WEIGHTS, TIER_HANDICAPS } from '../types';
 import { tiergService } from '../services/tiergService';
@@ -116,7 +116,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     return list;
   };
 
-  const sortedPlayers = getSortedPlayers();
+  const sortedPlayers = useMemo(() => getSortedPlayers(), [players, rankingCategory]);
 
   const categoryTitles: Record<RankingCategory, string> = {
     tier: '실시간 티어 랭킹',

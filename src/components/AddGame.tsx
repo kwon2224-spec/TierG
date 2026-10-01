@@ -85,6 +85,13 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
   // Circular Wheel Rotation State (in degrees)
   const [wheelRotation, setWheelRotation] = useState<number>(0);
+  const spinTimerRef = React.useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+    };
+  }, []);
 
   // Exclusive slots that cannot be duplicated among multiple Semi-Pros!
   const EXCLUSIVE_SLOTS = ['map', 'rooms'];
@@ -166,7 +173,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     setWheelRotation(finalAngle);
 
     // After 3.2 seconds of cubic-bezier spin deceleration, finalize:
-    setTimeout(() => {
+    if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+    spinTimerRef.current = window.setTimeout(() => {
       setRouletteSpinning(false);
       const wonSlot = ROULETTE_SLOTS[targetIndex];
 

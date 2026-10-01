@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { Trophy, PlusCircle, History, Lock, LockOpen, Check, Sun, Moon, ArrowUp } from 'lucide-react';
 import { Leaderboard } from './components/Leaderboard';
-import { AddGame } from './components/AddGame';
-import { GameHistory } from './components/GameHistory';
-import { PlayerProfile } from './components/PlayerProfile';
 import { tiergService } from './services/tiergService';
 import { type Player } from './types';
 import './App.css';
+
+// Code-split heavy components for ultra-fast initial mobile bundle loading!
+const AddGame = lazy(() => import('./components/AddGame').then((m) => ({ default: m.AddGame })));
+const GameHistory = lazy(() => import('./components/GameHistory').then((m) => ({ default: m.GameHistory })));
+const PlayerProfile = lazy(() => import('./components/PlayerProfile').then((m) => ({ default: m.PlayerProfile })));
 
 type Tab = 'leaderboard' | 'add-game' | 'history';
 
@@ -258,52 +260,56 @@ function App() {
 
       {/* Main Content Area */}
       <main className="app-content">
-        {activeTab === 'leaderboard' && (
-          <div>
-            <Leaderboard
-              onSelectPlayer={(id) => setSelectedPlayerId(id)}
-              refreshTrigger={refreshTrigger}
-              isAdmin={!!currentAdmin}
+        <Suspense fallback={<div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontSize: '13px' }}>화면을 준비하는 중...</div>}>
+          {activeTab === 'leaderboard' && (
+            <div>
+              <Leaderboard
+                onSelectPlayer={(id) => setSelectedPlayerId(id)}
+                refreshTrigger={refreshTrigger}
+                isAdmin={!!currentAdmin}
+              />
+
+              {/* Reset Database Button (Only visible in Demo Mode for admins/users testing) */}
+              {!isSupabase && (
+                <div className="admin-actions">
+                  <button className="reset-db-btn" onClick={handleResetDemoData}>
+                    데모 데이터 초기화
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'add-game' && (
+            <AddGame
+              onGameAdded={() => {
+                setActiveTab('leaderboard'); // Direct user back to rankings on success
+                handleRefresh();
+              }}
             />
+          )}
 
-            {/* Reset Database Button (Only visible in Demo Mode for admins/users testing) */}
-            {!isSupabase && (
-              <div className="admin-actions">
-                <button className="reset-db-btn" onClick={handleResetDemoData}>
-                  데모 데이터 초기화
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'add-game' && (
-          <AddGame
-            onGameAdded={() => {
-              setActiveTab('leaderboard'); // Direct user back to rankings on success
-              handleRefresh();
-            }}
-          />
-        )}
-
-        {activeTab === 'history' && (
-          <GameHistory
-            refreshTrigger={refreshTrigger}
-            onGameDeleted={handleRefresh}
-            isAdmin={currentAdmin !== null}
-          />
-        )}
+          {activeTab === 'history' && (
+            <GameHistory
+              refreshTrigger={refreshTrigger}
+              onGameDeleted={handleRefresh}
+              isAdmin={currentAdmin !== null}
+            />
+          )}
+        </Suspense>
       </main>
 
       {/* Floating Detailed Player Profile Modal */}
       {selectedPlayerId && (
-        <PlayerProfile
-          playerId={selectedPlayerId}
-          onClose={() => setSelectedPlayerId(null)}
-          onHandicapUpdated={handleRefresh}
-          isAdmin={currentAdmin !== null}
-          currentAdminId={currentAdmin?.id}
-        />
+        <Suspense fallback={null}>
+          <PlayerProfile
+            playerId={selectedPlayerId}
+            onClose={() => setSelectedPlayerId(null)}
+            onHandicapUpdated={handleRefresh}
+            isAdmin={currentAdmin !== null}
+            currentAdminId={currentAdmin?.id}
+          />
+        </Suspense>
       )}
 
       {/* Admin Login Password Modal */}
