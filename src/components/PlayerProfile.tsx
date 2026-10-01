@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Calendar, Sparkles, Check, UserCheck, UserMinus, Award, TrendingUp, Lock } from 'lucide-react';
 import { type Player, type PlayerStatus, TIER_THEMES, type GameResult, type Tier, TIERS_ORDER, type GameWithResults } from '../types';
 import { tiergService } from '../services/tiergService';
@@ -238,7 +238,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
 
   // 20 Official Achievements Calculation Engine (5x4 = 20선 명예의 전당)
-  const achievements = useMemo(() => {
+  const achievements = (() => {
     const chronological = [...results].reverse();
 
     // 1. 신의영역: 18홀 정규 71타 이하 (언더파)
@@ -420,7 +420,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       { id: 'veteran', title: '고인물', icon: '🗿', condition: '정규 경기 50회 출전', comment: '매트 냄새만 맡아도 바람을 아는 분', unlocked: has50Games, color: '#a855f7' },
       { id: 'legend', title: '레전드', icon: '🏛️', condition: '정규 경기 100회 출전', comment: '모임의 역사와 함께한 살아있는 전설', unlocked: has100Games, color: '#ffd700' },
     ];
-  }, [results, stats, allGames, player.tier]);
+  })();
 
   const unlockedAchievementsCount = achievements.filter((a) => a.unlocked).length;
 
