@@ -83,23 +83,67 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
     }
   ];
 
+  // Exclusive slots that cannot be duplicated among multiple Semi-Pros!
+  const EXCLUSIVE_SLOTS = ['map', 'rooms'];
+
   // Semi-Pro Boss Roulette State
   const [rouletteSpinning, setRouletteSpinning] = useState(false);
-  const [rouletteResult, setRouletteResult] = useState<string | null>(null);
   const [rouletteIndex, setRouletteIndex] = useState<number>(0);
-  const [semiProHandicapZero, setSemiProHandicapZero] = useState(false);
+  const [activeSemiProId, setActiveSemiProId] = useState<string | null>(null);
 
-  // Helper to detect if any selected player is Semi-Pro
-  const selectedSemiPro = players.find(
+  // Results map per player: { [playerId]: slotId }
+  const [semiProResults, setSemiProResults] = useState<Record<string, string>>({});
+
+  // Helper to detect ALL selected players who are Semi-Pro
+  const selectedSemiPros = players.filter(
     (p) => selectedPlayerIds.includes(p.id) && p.tier === 'Semi-Pro'
   );
 
-  const handleSpinRoulette = () => {
-    if (rouletteSpinning) return;
-    setRouletteSpinning(true);
-    setRouletteResult(null);
+  // Active Semi-Pro player currently shown in roulette
+  const currentSemiPro = (activeSemiProId && selectedSemiPros.find((p) => p.id === activeSemiProId)) || selectedSemiPros[0] || null;
 
-    const targetIndex = Math.floor(Math.random() * ROULETTE_SLOTS.length);
+  // Claimed exclusive slots by other players: { [slotId]: playerName }
+  const claimedSlotsByOthers: Record<string, string> = {};
+  if (currentSemiPro) {
+    Object.entries(semiProResults).forEach(([pid, slotId]) => {
+      if (pid !== currentSemiPro.id && EXCLUSIVE_SLOTS.includes(slotId)) {
+        const claimant = players.find((p) => p.id === pid)?.name || '다른 선수';
+        claimedSlotsByOthers[slotId] = claimant;
+      }
+    });
+  }
+
+  // Sync notes dynamically based on all semi-pros results
+  const syncSemiProNotes = (resultsMap: Record<string, string>) => {
+    setNotes((prev) => {
+      let clean = prev.replace(/\[세미프로[^\]]*\]/g, '').trim();
+      const tags: string[] = [];
+
+      Object.entries(resultsMap).forEach(([pid, slotId]) => {
+        const pName = players.find((p) => p.id === pid)?.name || '';
+        if (slotId === 'map') tags.push(`[세미프로(${pName}) 맵선택]`);
+        else if (slotId === 'penalty') tags.push(`[세미프로(${pName}) 핸디0/멀리건-1]`);
+      });
+
+      if (tags.length > 0) {
+        return clean ? `${tags.join(' ')} ${clean}` : `${tags.join(' ')} `;
+      }
+      return clean;
+    });
+  };
+
+  const handleSpinRoulette = () => {
+    if (rouletteSpinning || !currentSemiPro) return;
+    setRouletteSpinning(true);
+
+    // Available slots for current player (excluding exclusive slots claimed by other Semi-Pros!)
+    const availableSlotIds = ROULETTE_SLOTS
+      .map((s) => s.id)
+      .filter((slotId) => !claimedSlotsByOthers[slotId]);
+
+    const wonSlotId = availableSlotIds[Math.floor(Math.random() * availableSlotIds.length)];
+    const targetIndex = ROULETTE_SLOTS.findIndex((s) => s.id === wonSlotId);
+
     let currentIndex = rouletteIndex;
     let speed = 60;
     let rounds = 0;
@@ -118,23 +162,13 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       } else {
         setRouletteSpinning(false);
         const wonSlot = ROULETTE_SLOTS[targetIndex];
-        setRouletteResult(wonSlot.id);
+        
+        // Update results map for this player
+        const updated = { ...semiProResults, [currentSemiPro.id]: wonSlot.id };
+        setSemiProResults(updated);
+        syncSemiProNotes(updated);
 
-        if (wonSlot.id === 'map') {
-          setNotes((prev) => {
-            const stripped = prev.replace(/\[세미프로[^\]]*\]/g, '').trim();
-            return stripped ? `[세미프로 맵선택] ${stripped}` : '[세미프로 맵선택] ';
-          });
-        } else if (wonSlot.id === 'penalty') {
-          setSemiProHandicapZero(true);
-          setNotes((prev) => {
-            const stripped = prev.replace(/\[세미프로[^\]]*\]/g, '').trim();
-            return stripped ? `[세미프로 핸디0/멀리건-1] ${stripped}` : '[세미프로 핸디0/멀리건-1] ';
-          });
-        } else if (wonSlot.id === 'keep') {
-          setSemiProHandicapZero(false);
-          setNotes((prev) => prev.replace(/\[세미프로[^\]]*\]/g, '').trim());
-        } else if (wonSlot.id === 'rooms') {
+        if (wonSlot.id === 'rooms') {
           setShowRoomAssigner(true);
         }
       }
@@ -144,14 +178,18 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
   };
 
   const handleShareRoulette = () => {
-    if (!selectedSemiPro || !rouletteResult) return;
-    const wonSlot = ROULETTE_SLOTS.find((s) => s.id === rouletteResult);
-    if (!wonSlot) return;
+    if (selectedSemiPros.length === 0) return;
 
     let shareText = `👑 [TierGolf] 세미프로 찬스 룰렛 결과 보고\n\n`;
-    shareText += `선수: ${selectedSemiPro.name} (Semi-Pro)\n`;
-    shareText += `결과: ${wonSlot.badge} [${wonSlot.title}]\n`;
-    shareText += `내용: ${wonSlot.description}\n\n`;
+    selectedSemiPros.forEach((sp) => {
+      const slotId = semiProResults[sp.id];
+      const slot = ROULETTE_SLOTS.find((s) => s.id === slotId);
+      if (slot) {
+        shareText += `■ ${sp.name}: ${slot.badge} [${slot.title}]\n  : ${slot.description}\n\n`;
+      } else {
+        shareText += `■ ${sp.name}: 🎲 룰렛 대기 중\n\n`;
+      }
+    });
     shareText += `모두 규칙을 준수하여 즐거운 라운드 되세요! 🏌️‍♂️🔥`;
 
     if (navigator.share) {
@@ -286,12 +324,11 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setGuillotineHandicaps(newGuillotineHandicaps);
       setCostsPaid(newCosts);
 
-      // If no Semi-Pro player remains selected, reset roulette status
-      const hasSemiProRemaining = players.some((p) => remainingIds.includes(p.id) && p.tier === 'Semi-Pro');
-      if (!hasSemiProRemaining) {
-        setRouletteResult(null);
-        setSemiProHandicapZero(false);
-      }
+      // Clean up semiProResults for unselected player
+      const updatedSemiProResults = { ...semiProResults };
+      delete updatedSemiProResults[id];
+      setSemiProResults(updatedSemiProResults);
+      syncSemiProNotes(updatedSemiProResults);
     } else {
       if (selectedPlayerIds.length >= activePlayersCount) {
         alert(`최대 ${activePlayersCount}명까지만 경기에 참여할 수 있습니다.`);
@@ -318,7 +355,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       
       // Calculate effective handicap: if player is Semi-Pro and roulette penalty hit, override to 0!
       let playerHandicap = getHandicapForPlayer(id, player.base_handicap);
-      if (player.tier === 'Semi-Pro' && semiProHandicapZero) {
+      if (player.tier === 'Semi-Pro' && semiProResults[id] === 'penalty') {
         playerHandicap = 0;
       }
 
@@ -469,7 +506,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           return;
         }
         customH = hVal;
-      } else if (players.find((p) => p.id === id)?.tier === 'Semi-Pro' && semiProHandicapZero) {
+      } else if (players.find((p) => p.id === id)?.tier === 'Semi-Pro' && semiProResults[id] === 'penalty') {
         customH = 0; // Explicitly record 0 so it stays 0 in DB and history!
       }
 
@@ -500,8 +537,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
       setNotes('');
       setMatchMode('handicap'); // reset back to default
       setRoomResults([]); // clear room assignment roulette
-      setRouletteResult(null);
-      setSemiProHandicapZero(false);
+      setSemiProResults({});
       onGameAdded();
       alert('경기 등록이 완료되었습니다!');
     } catch (error) {
@@ -790,8 +826,8 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
           })()}
         </div>
 
-        {/* Semi-Pro Boss Roulette Card (👑 세미프로 찬스 룰렛) */}
-        {selectedSemiPro && (
+        {/* Semi-Pro Boss Roulette Card (👑 세미프로 찬스 룰렛 - 다수 세미프로 선착순 소진제 지원!) */}
+        {selectedSemiPros.length > 0 && currentSemiPro && (
           <div
             className="game-setup-card"
             style={{
@@ -808,15 +844,15 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                 <div style={{ fontSize: '14px', fontWeight: '800', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span>👑 세미프로 찬스 룰렛</span>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                    ({selectedSemiPro.name})
+                    ({currentSemiPro.name})
                   </span>
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  최상위 끝판왕에게 주어지는 특권이자 패널티 룰렛!
+                  최상위 끝판왕에게 주어지는 특권 & 트레이드오프 룰렛!
                 </div>
               </div>
 
-              {rouletteResult && (
+              {Object.keys(semiProResults).length > 0 && (
                 <button
                   type="button"
                   onClick={handleShareRoulette}
@@ -838,11 +874,57 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
               )}
             </div>
 
+            {/* Multiple Semi-Pros Player Switcher Chips (선착순 소진제 탭) */}
+            {selectedSemiPros.length > 1 && (
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                {selectedSemiPros.map((sp) => {
+                  const isCurrent = sp.id === currentSemiPro.id;
+                  const resSlotId = semiProResults[sp.id];
+                  const wonSlot = ROULETTE_SLOTS.find((s) => s.id === resSlotId);
+
+                  return (
+                    <button
+                      key={sp.id}
+                      type="button"
+                      onClick={() => {
+                        if (!rouletteSpinning) setActiveSemiProId(sp.id);
+                      }}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: isCurrent ? '800' : '600',
+                        border: isCurrent ? '1.5px solid #a855f7' : '1px solid var(--border-color)',
+                        backgroundColor: isCurrent ? 'rgba(168, 85, 247, 0.2)' : 'var(--bg-hover)',
+                        color: isCurrent ? '#c084fc' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>{sp.name}</span>
+                      {wonSlot ? (
+                        <span style={{ fontSize: '10px', color: wonSlot.color, fontWeight: '700' }}>
+                          ✓ {wonSlot.title}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '10px', color: '#fbbf24' }}>
+                          [돌리기 대기]
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* 4 Slots Grid (2x2) */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
               {ROULETTE_SLOTS.map((slot, idx) => {
                 const isCurrent = rouletteIndex === idx;
-                const isWon = rouletteResult === slot.id;
+                const isWon = semiProResults[currentSemiPro.id] === slot.id;
+                const claimedBy = claimedSlotsByOthers[slot.id];
 
                 return (
                   <div
@@ -850,10 +932,23 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                     style={{
                       padding: '10px 12px',
                       borderRadius: '8px',
-                      backgroundColor: isWon ? slot.bg : isCurrent && rouletteSpinning ? 'rgba(255, 255, 255, 0.08)' : 'var(--bg-hover)',
-                      border: isWon ? `2px solid ${slot.color}` : isCurrent && rouletteSpinning ? `2px solid ${slot.color}` : '1px solid var(--border-color)',
+                      backgroundColor: isWon
+                        ? slot.bg
+                        : claimedBy
+                        ? 'rgba(0, 0, 0, 0.15)'
+                        : isCurrent && rouletteSpinning
+                        ? 'rgba(255, 255, 255, 0.08)'
+                        : 'var(--bg-hover)',
+                      border: isWon
+                        ? `2px solid ${slot.color}`
+                        : claimedBy
+                        ? '1px dashed var(--border-color)'
+                        : isCurrent && rouletteSpinning
+                        ? `2px solid ${slot.color}`
+                        : '1px solid var(--border-color)',
                       boxShadow: isWon ? `0 0 14px ${slot.color}40` : 'none',
                       transform: isWon || (isCurrent && rouletteSpinning) ? 'scale(1.02)' : 'none',
+                      opacity: claimedBy ? 0.45 : 1,
                       transition: 'all 0.15s ease',
                       display: 'flex',
                       flexDirection: 'column',
@@ -861,16 +956,21 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', fontWeight: '800', color: slot.color }}>
-                        {slot.badge}
+                      <span style={{ fontSize: '10px', fontWeight: '800', color: claimedBy ? 'var(--text-muted)' : slot.color }}>
+                        {claimedBy ? `🚫 소진됨` : slot.badge}
                       </span>
                       {isWon && <span style={{ fontSize: '11px', fontWeight: '900', color: slot.color }}>★ 당첨!</span>}
+                      {claimedBy && (
+                        <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)' }}>
+                          {claimedBy} 선점
+                        </span>
+                      )}
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: '800', color: isWon ? slot.color : 'var(--text-primary)' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: isWon ? slot.color : claimedBy ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                       {slot.title}
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: '1.3' }}>
-                      {slot.description}
+                      {claimedBy ? `${claimedBy} 선수가 이미 선점하여 획득할 수 없습니다.` : slot.description}
                     </div>
                   </div>
                 );
@@ -889,7 +989,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                 fontSize: '13px',
                 fontWeight: '800',
                 cursor: rouletteSpinning ? 'not-allowed' : 'pointer',
-                background: rouletteResult
+                background: semiProResults[currentSemiPro.id]
                   ? 'linear-gradient(135deg, #a855f7, #6366f1)'
                   : 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)',
                 color: '#ffffff',
@@ -902,7 +1002,11 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                 transition: 'all 0.2s'
               }}
             >
-              {rouletteSpinning ? '🎲 룰렛 돌아가는 중...' : rouletteResult ? '🔄 룰렛 다시 돌리기' : '🎰 세미프로 찬스 룰렛 돌리기!'}
+              {rouletteSpinning
+                ? `🎲 ${currentSemiPro.name} 룰렛 돌아가는 중...`
+                : semiProResults[currentSemiPro.id]
+                ? `🔄 ${currentSemiPro.name} 룰렛 다시 돌리기`
+                : `🎰 [${currentSemiPro.name}] 찬스 룰렛 돌리기!`}
             </button>
           </div>
         )}
@@ -1044,9 +1148,9 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                       </span>
                     </span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      핸디캡: -{player.tier === 'Semi-Pro' && semiProHandicapZero ? 0 : player.base_handicap}개
-                      {player.tier === 'Semi-Pro' && semiProHandicapZero && (
-                        <span style={{ color: '#f87171', fontWeight: '800', marginLeft: '4px' }}>(룰렛 패널티: 핸디 0)</span>
+                      핸디캡: -{player.tier === 'Semi-Pro' && semiProResults[pId] === 'penalty' ? 0 : player.base_handicap}개
+                      {player.tier === 'Semi-Pro' && semiProResults[pId] === 'penalty' && (
+                        <span style={{ color: '#f87171', fontWeight: '800', marginLeft: '4px' }}>(룰렛 변경: 핸디 0)</span>
                       )}
                     </span>
                   </div>
