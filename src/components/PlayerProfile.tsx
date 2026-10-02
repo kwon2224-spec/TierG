@@ -298,14 +298,18 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
     // 7. 골프황제: 정규 리그 통산 10회 우승
     const has10Wins = (stats.wins || 0) >= 10;
 
-    // 8. 인간승리: 직전 경기 패배 후 바로 다음 경기 1위 탈환
+    // 8. 인간승리: 정규 18홀 리그전에서 직전 경기 패배 후 바로 다음 정규전 1위 우승 탈환! (단두대 및 9홀 경기 완전 배제!)
+    const regular18HChronological = chronological.filter((r) => {
+      const isG = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      const is9H = (r.notes || '').includes('9홀') || r.raw_score < 65;
+      return !isG && !is9H;
+    });
+
     let hasComeback = false;
-    for (let i = 0; i < chronological.length - 1; i++) {
-      const prevGame = chronological[i];
-      const nextGame = chronological[i + 1];
-      const isPrevGuillotine = (prevGame.bet_amount || 0) > 0 || (prevGame.notes || '').includes('[단두대]');
-      const isPrevLoss = isPrevGuillotine ? prevGame.cost_paid > 0 : prevGame.points_changed < 0;
-      if (isPrevLoss && nextGame.rank === 1) {
+    for (let i = 0; i < regular18HChronological.length - 1; i++) {
+      const prevGame = regular18HChronological[i];
+      const nextGame = regular18HChronological[i + 1];
+      if (prevGame.points_changed < 0 && nextGame.rank === 1) {
         hasComeback = true;
         break;
       }

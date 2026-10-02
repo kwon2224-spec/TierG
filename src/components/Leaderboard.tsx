@@ -15,8 +15,25 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   refreshTrigger,
   isAdmin = false,
 }) => {
-  const [players, setPlayers] = useState<PlayerWithStats[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Instant First-Paint via persistent localStorage cache (0ms instant display!)
+  const [players, setPlayers] = useState<PlayerWithStats[]>(() => {
+    try {
+      const cached = localStorage.getItem('tierg_cached_players_stats');
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.warn('Failed to parse cached players:', e);
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    try {
+      return !localStorage.getItem('tierg_cached_players_stats');
+    } catch {
+      return true;
+    }
+  });
   const [rankingCategory, setRankingCategory] = useState<RankingCategory>('tier');
   const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
 
@@ -32,10 +49,17 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   }, [refreshTrigger]);
 
   const loadPlayers = async () => {
-    setLoading(true);
+    if (players.length === 0) {
+      setLoading(true);
+    }
     try {
       const fetchedPlayers = await tiergService.getPlayersWithStats();
       setPlayers(fetchedPlayers);
+      try {
+        localStorage.setItem('tierg_cached_players_stats', JSON.stringify(fetchedPlayers));
+      } catch (e) {
+        // storage quota safe
+      }
     } catch (error) {
       console.error('Failed to load players:', error);
     } finally {
