@@ -298,11 +298,12 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
     // 7. 골프황제: 정규 리그 통산 10회 우승
     const has10Wins = (stats.wins || 0) >= 10;
 
-    // 8. 인간승리: 정규 18홀 리그전에서 직전 경기 패배 후 바로 다음 정규전 1위 우승 탈환! (단두대 및 9홀 경기 완전 배제!)
+    // 8. 인간승리: 정규 18홀 핸디캡 리그전에서 직전 경기 패배 후 바로 다음 정규전 1위 우승 탈환! (단두대, 스크래치, 9홀 경기 완전 배제!)
     const regular18HChronological = chronological.filter((r) => {
       const isG = (r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]');
+      const isScratch = (r.notes || '').includes('[스크래치]');
       const is9H = (r.notes || '').includes('9홀') || r.raw_score < 65;
-      return !isG && !is9H;
+      return !isG && !isScratch && !is9H;
     });
 
     let hasComeback = false;
