@@ -605,19 +605,22 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                   const localISOTime = new Date(nowLocal.getTime() - tzOffset).toISOString().substring(0, 16);
                   setPlayedAt(localISOTime);
                 }}
-                className="submit-btn"
                 style={{
-                  width: 'auto',
-                  whiteSpace: 'nowrap',
-                  padding: '11px 16px',
+                  height: '48px',
+                  padding: '0 16px',
                   fontSize: '13px',
-                  background: 'none', // Premium Glass Ghost Button
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: 'var(--text-primary)', // Bright and fully clickable!
-                  fontWeight: '700',
-                  display: 'flex',
+                  fontWeight: '600',
+                  backgroundColor: 'var(--bg-hover)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-secondary)',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                  boxShadow: 'none'
                 }}
               >
                 지금
@@ -986,77 +989,85 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                       width: '100%',
                       height: '100%',
                       borderRadius: '50%',
-                      boxShadow: '0 0 18px rgba(168, 85, 247, 0.2), inset 0 0 10px rgba(0,0,0,0.35)',
+                      boxShadow: '0 2px 14px rgba(0, 0, 0, 0.12), inset 0 0 8px rgba(0,0,0,0.2)',
                       transform: `rotate(${wheelRotation}deg)`,
                       transition: rouletteSpinning ? 'transform 3.2s cubic-bezier(0.12, 0.85, 0.15, 1)' : 'none'
                     }}
                   >
                     <svg viewBox="0 0 200 200" width="100%" height="100%" style={{ overflow: 'visible' }}>
-                      <circle cx="100" cy="100" r="98" fill="#111827" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="3" />
+                      {/* Outer Rim */}
+                      <circle cx="100" cy="100" r="98" fill="var(--bg-hover)" stroke="var(--border-color)" strokeWidth="2.5" />
 
+                      {/* 4 Pie Slices */}
                       {/* Slice 0: 코스 선택권 (Top: -45° to 45°) */}
                       <path
                         d="M 100 100 L 32.12 32.12 A 96 96 0 0 1 167.88 32.12 Z"
-                        fill={claimedSlotsByOthers['map'] ? '#1f2937' : '#78350f'}
-                        stroke={claimedSlotsByOthers['map'] ? '#374151' : '#fbbf24'}
-                        strokeWidth="1.5"
-                        opacity={claimedSlotsByOthers['map'] ? 0.35 : 1}
+                        fill={claimedSlotsByOthers['map'] ? '#6b7280' : '#f59e0b'}
+                        fillOpacity={claimedSlotsByOthers['map'] ? 0.25 : 0.9}
+                        stroke="var(--border-color)"
+                        strokeWidth="1"
                       />
 
                       {/* Slice 1: 방 배정권 (Right: 45° to 135°) */}
                       <path
                         d="M 100 100 L 167.88 32.12 A 96 96 0 0 1 167.88 167.88 Z"
-                        fill={claimedSlotsByOthers['rooms'] ? '#1f2937' : '#1e3a8a'}
-                        stroke={claimedSlotsByOthers['rooms'] ? '#374151' : '#60a5fa'}
-                        strokeWidth="1.5"
-                        opacity={claimedSlotsByOthers['rooms'] ? 0.35 : 1}
+                        fill={claimedSlotsByOthers['rooms'] ? '#6b7280' : '#3b82f6'}
+                        fillOpacity={claimedSlotsByOthers['rooms'] ? 0.25 : 0.9}
+                        stroke="var(--border-color)"
+                        strokeWidth="1"
                       />
 
                       {/* Slice 2: 핸디 0 & 멀리건 -1 (Bottom: 135° to 225°) */}
                       <path
                         d="M 100 100 L 167.88 167.88 A 96 96 0 0 1 32.12 167.88 Z"
-                        fill="#7f1d1d"
-                        stroke="#f87171"
-                        strokeWidth="1.5"
+                        fill="#ef4444"
+                        fillOpacity="0.9"
+                        stroke="var(--border-color)"
+                        strokeWidth="1"
                       />
 
                       {/* Slice 3: 기존 유지 (Left: 225° to 315°) */}
                       <path
                         d="M 100 100 L 32.12 167.88 A 96 96 0 0 1 32.12 32.12 Z"
-                        fill="#064e3b"
-                        stroke="#34d399"
-                        strokeWidth="1.5"
+                        fill="#10b981"
+                        fillOpacity="0.9"
+                        stroke="var(--border-color)"
+                        strokeWidth="1"
                       />
 
-                      {/* Slice Labels */}
+                      {/* Slice Labels with High-Contrast White Text & Crisp Shadow */}
+                      {/* Slice 0 Label (Top) */}
                       <g transform="rotate(0, 100, 100)">
-                        <text x="100" y="48" textAnchor="middle" fill="#ffd700" fontSize="10" fontWeight="900">👑 맵선택</text>
+                        <text x="100" y="50" textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="900" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.6))">👑 맵선택</text>
                         {claimedSlotsByOthers['map'] && (
-                          <text x="100" y="62" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
+                          <text x="100" y="64" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
                         )}
                       </g>
 
+                      {/* Slice 1 Label (Right) */}
                       <g transform="rotate(90, 100, 100)">
-                        <text x="100" y="48" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="900">👑 방배정</text>
+                        <text x="100" y="50" textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="900" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.6))">👑 방배정</text>
                         {claimedSlotsByOthers['rooms'] && (
-                          <text x="100" y="62" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
+                          <text x="100" y="64" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="800">[소진]</text>
                         )}
                       </g>
 
+                      {/* Slice 2 Label (Bottom) */}
                       <g transform="rotate(180, 100, 100)">
-                        <text x="100" y="48" textAnchor="middle" fill="#f87171" fontSize="9.5" fontWeight="900">⚖️ 핸디0</text>
-                        <text x="100" y="60" textAnchor="middle" fill="#fca5a5" fontSize="7.5" fontWeight="700">멀리건-1</text>
+                        <text x="100" y="47" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="900" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.6))">⚖️ 핸디0</text>
+                        <text x="100" y="59" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="700" opacity="0.9" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.6))">멀리건-1</text>
                       </g>
 
+                      {/* Slice 3 Label (Left) */}
                       <g transform="rotate(270, 100, 100)">
-                        <text x="100" y="48" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="900">🛡️ 유지</text>
-                        <text x="100" y="60" textAnchor="middle" fill="#a7f3d0" fontSize="7.5" fontWeight="700">핸디 -3</text>
+                        <text x="100" y="47" textAnchor="middle" fill="#ffffff" fontSize="10.5" fontWeight="900" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.6))">🛡️ 유지</text>
+                        <text x="100" y="59" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="700" opacity="0.9" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.6))">핸디 -3</text>
                       </g>
 
                       {/* Center Hub Metallic Cap */}
-                      <circle cx="100" cy="100" r="23" fill="#0f172a" stroke="#a855f7" strokeWidth="2.5" />
-                      <circle cx="100" cy="100" r="20" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                      <text x="100" y="104" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="900" letterSpacing="0.5">PRO</text>
+                      <circle cx="100" cy="100" r="23" fill="var(--bg-card)" stroke="var(--border-color)" strokeWidth="2" />
+                      <circle cx="100" cy="100" r="20" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                      <text x="100" y="104" textAnchor="middle" fill="var(--text-primary)" fontSize="9" fontWeight="900" letterSpacing="0.5">PRO</text>
                     </svg>
                   </div>
                 </div>
@@ -1070,23 +1081,24 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                   return (
                     <div style={{
                       padding: '10px 14px',
-                      borderRadius: '8px',
-                      backgroundColor: wonSlot.bg,
-                      border: `1.5px solid ${wonSlot.color}`,
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'var(--bg-hover)',
+                      border: '1px solid var(--border-color)',
                       marginBottom: '12px',
                       textAlign: 'center',
                     }}>
-                      <div style={{ fontSize: '13px', fontWeight: '900', color: wonSlot.color }}>
-                        ★ {wonSlot.badge} [{wonSlot.title}] 당첨!
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <span>★ {wonSlot.badge} [{wonSlot.title}]</span>
+                        <span style={{ fontSize: '10px', color: '#10b981', fontWeight: '800' }}>당첨</span>
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         {wonSlot.description}
                       </div>
                     </div>
                   );
                 })()}
 
-                {/* Spin Action Button (Sleek, refined, non-flashy styling!) */}
+                {/* Spin Action Button (Clean, unified emerald styling!) */}
                 <button
                   type="button"
                   onClick={handleSpinRoulette}
@@ -1094,21 +1106,19 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                   style={{
                     width: '100%',
                     padding: '11px',
-                    borderRadius: '8px',
+                    borderRadius: 'var(--radius-sm)',
                     fontSize: '13px',
-                    fontWeight: '800',
+                    fontWeight: '700',
                     cursor: rouletteSpinning ? 'not-allowed' : 'pointer',
-                    background: semiProResults[currentSemiPro.id]
-                      ? 'linear-gradient(135deg, #7c3aed, #4f46e5)'
-                      : 'linear-gradient(135deg, #a855f7, #6366f1)',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
                     color: '#ffffff',
                     border: 'none',
-                    boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)',
+                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '6px',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.15s'
                   }}
                 >
                   {rouletteSpinning
@@ -1124,7 +1134,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
         {/* Random Room Assigner Card (방 랜덤 배정 - Collapsible) */}
         {selectedPlayerIds.length >= 2 && (
-          <div className="game-setup-card" style={{ padding: '0', overflow: 'hidden', borderColor: 'rgba(245, 158, 11, 0.25)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.05)' }}>
+          <div className="game-setup-card" style={{ padding: '0', overflow: 'hidden', borderColor: 'var(--border-color)', boxShadow: 'none' }}>
             {/* Clickable Header Bar to Toggle folding */}
             <div
               onClick={() => setShowRoomAssigner(!showRoomAssigner)}
@@ -1134,13 +1144,13 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                 alignItems: 'center',
                 padding: '12px 16px',
                 cursor: 'pointer',
-                backgroundColor: showRoomAssigner ? 'rgba(245, 158, 11, 0.05)' : 'transparent',
+                backgroundColor: showRoomAssigner ? 'var(--bg-hover)' : 'transparent',
                 transition: 'background-color 0.2s',
                 userSelect: 'none'
               }}
             >
-              <span style={{ fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24' }}>
-                <Shuffle size={15} /> 방 랜덤 배정 {showRoomAssigner ? '닫기' : '하기'}
+              <span style={{ fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+                <Shuffle size={15} color="var(--accent)" /> 방 랜덤 배정 {showRoomAssigner ? '닫기' : '하기'}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {showRoomAssigner ? '▲ 접기' : '▼ 터치하여 열기'}
@@ -1149,7 +1159,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
             {/* Collapsible Content */}
             {showRoomAssigner && (
-              <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+              <div style={{ padding: '16px', borderTop: '1px solid var(--border-color)' }}>
                 {/* 1. Label placed cleanly on its own full-width row */}
                 <label className="form-label" style={{ fontSize: '11px', marginBottom: '6px', display: 'block' }}>방 개수 선택</label>
                 
@@ -1171,18 +1181,22 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                   <button
                     type="button"
                     onClick={handleRandomAssign}
-                    className="submit-btn"
                     style={{
                       width: 'auto',
-                      height: '40px', // Exact 40px match!
-                      padding: '0 20px',
+                      height: '40px',
+                      padding: '0 18px',
                       fontSize: '13px',
-                      background: 'linear-gradient(135deg, #f59e0b, #b45309)',
-                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)',
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontWeight: '700'
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
                     }}
                   >
                     조편성 시작
@@ -1191,16 +1205,16 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
 
                 {/* Render assignments results */}
                 {roomResults.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'var(--bg-hover)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24', margin: 0 }}>랜덤 조편성 결과</h4>
+                      <h4 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>랜덤 조편성 결과</h4>
                       <button
                         type="button"
                         onClick={handleShareRooms}
                         style={{
                           background: 'none',
-                          border: '1px solid rgba(245, 158, 11, 0.4)',
-                          color: '#fbbf24',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-secondary)',
                           fontSize: '11px',
                           padding: '3px 8px',
                           borderRadius: '4px',
@@ -1216,15 +1230,15 @@ export const AddGame: React.FC<AddGameProps> = ({ onGameAdded }) => {
                       {roomResults.map((room, roomIdx) => {
                         if (room.length === 0) return null;
                         return (
-                          <div key={roomIdx} style={{ flex: '1 1 120px', backgroundColor: 'var(--bg-hover)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-                            <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent)', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
+                          <div key={roomIdx} style={{ flex: '1 1 120px', backgroundColor: 'var(--bg-card)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent)', marginBottom: '6px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
                               Room {String.fromCharCode(65 + roomIdx)} ({room.length}명)
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                               {room.map((pId) => {
                                 const pName = players.find(p => p.id === pId)?.name || 'Unknown';
                                 return (
-                                  <span key={pId} style={{ fontSize: '13px', fontWeight: '600' }}>
+                                  <span key={pId} style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
                                     {pName}
                                   </span>
                                 );
