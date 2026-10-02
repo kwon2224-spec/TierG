@@ -139,21 +139,34 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Navigation Buttons */
+/* Navigation Buttons in Light Mode (Clean Underline Indicator - No Chunky Boxes!) */
 [data-theme="light"] .nav-btn:not(.active) {
-  color: #4E5968 !important;
+  color: #8B95A1 !important;
   background-color: transparent !important;
 }
 
 [data-theme="light"] .nav-btn:not(.active):hover {
-  background-color: #E5E8EB !important;
+  background-color: transparent !important;
   color: #191F28 !important;
 }
 
 [data-theme="light"] .nav-btn.active {
-  background: linear-gradient(135deg, #00C471, #059669) !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 12px rgba(0, 196, 113, 0.25) !important;
+  background: transparent !important;
+  color: #191F28 !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 15%;
+  right: 15%;
+  height: 3px;
+  background-color: #00C471 !important;
+  border-radius: 3px 3px 0 0;
+  box-shadow: none !important;
 }
 
 /* Modal and Overlays */
