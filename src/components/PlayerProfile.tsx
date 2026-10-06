@@ -415,7 +415,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       { id: 'phoenix', title: '불사조', icon: '🔥', condition: '단두대 3회 생존 방어', comment: '칼날이 목을 스쳐도 살아남는 생존력', unlocked: hasPhoenix, color: '#34d399' },
       { id: 'executioner', title: '집행자', icon: '🪓', condition: '단두대 통산 5회 승리', comment: '단두대 날만 기다리는 무자비한 사냥꾼', unlocked: hasExecutioner, color: '#f43f5e' },
       { id: 'freeRider', title: '무임승차', icon: '🎫', condition: '5경기 연속 지출 0원', comment: '지갑은 집에 두고 골프채만 챙긴 분', unlocked: hasFreeRider, color: '#38bdf8' },
-      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출', comment: '늘 감사히 치고 있습니다 (인출 완료)', unlocked: hasATM, color: '#f87171' },
+      { id: 'atm', title: 'ATM', icon: '🏧', condition: '3경기 연속 비용 지출', comment: '강인이 따라 ATM 주전 이적!', unlocked: hasATM, color: '#f87171' },
       { id: 'dosirak', title: '도시락', icon: '🍱', condition: '통산 최하위(꼴찌) 10회', comment: '동반자에게 큰 웃음을 선물하는 분', unlocked: hasDosirak, color: '#fb923c' },
 
       // 4줄: 지출 & 출석 (5개)
