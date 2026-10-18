@@ -237,9 +237,14 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   const { player, results, stats } = data;
   const theme = TIER_THEMES[player.tier] || TIER_THEMES.Iron;
 
+  // Strictly sort by actual match played_at date descending (newest first, oldest last!)
+  const sortedResults = [...results].sort(
+    (a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()
+  );
+
   // 20 Official Achievements Calculation Engine (5x4 = 20선 명예의 전당)
   const achievements = (() => {
-    const chronological = [...results].reverse();
+    const chronological = [...sortedResults].reverse();
 
     // 1. 신의영역: 18홀 정규 71타 이하 (언더파)
     const hasUnderPar = stats.bestRawScore > 0 && stats.bestRawScore <= 71;
@@ -641,7 +646,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
 
           {/* 1. Recent 5 Games Stroke Trend Chart (Pure SVG Lightweight Neon Line Chart!) */}
           {(() => {
-            const trendMatches = results
+            const trendMatches = sortedResults
               .filter(r => !((r.bet_amount || 0) > 0 || (r.notes || '').includes('[단두대]') || (r.notes || '').includes('9홀') || r.raw_score < 65))
               .slice(0, 5)
               .reverse();
@@ -916,14 +921,14 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
           </div>
 
           {/* Recent Games */}
-          <h4 className="recent-games-title">최근 전적 ({results.length}전)</h4>
+          <h4 className="recent-games-title">최근 전적 ({sortedResults.length}전)</h4>
           <div className="profile-history-list" style={{ marginBottom: '16px' }}>
-            {results.length === 0 ? (
+            {sortedResults.length === 0 ? (
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '20px' }}>
                 기록된 게임 전적이 없습니다.
               </p>
             ) : (
-              results.map((res) => {
+              sortedResults.map((res) => {
                 const lpDiff = res.points_changed;
                 const isPlus = lpDiff >= 0;
 

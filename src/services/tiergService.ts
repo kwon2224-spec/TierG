@@ -876,8 +876,7 @@ class TierGService {
                 notes
               )
             `)
-            .eq('player_id', playerId)
-            .order('created_at', { ascending: false }),
+            .eq('player_id', playerId),
         ]);
 
         if (playerRes.error) throw playerRes.error;
@@ -899,6 +898,10 @@ class TierGService {
           played_at: r.games?.played_at || '',
           notes: r.games?.notes || '',
         }));
+
+        // CRUCIAL: Sort strictly by the actual match played_at descending!
+        // Never rely on created_at because editing/updating an older game updates created_at!
+        history.sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime());
       } catch (error) {
         console.error('Supabase getPlayerHistory failed, falling back:', error);
       }
