@@ -115,6 +115,7 @@ let inFlightPlayersWithStatsPromise: Promise<PlayerWithStats[]> | null = null;
 let inFlightGamesPromise: Promise<GameWithResults[]> | null = null;
 
 const CACHE_TTL_MS = 15000; // 15 seconds cache TTL
+const playerHistoryCache = new Map<string, { data: any; time: number }>();
 
 export const invalidateTierGCache = () => {
   cachedPlayers = null;
@@ -123,12 +124,21 @@ export const invalidateTierGCache = () => {
   lastPlayersWithStatsTime = 0;
   cachedGamesWithResults = null;
   lastGamesTime = 0;
+  playerHistoryCache.clear();
 };
 
 // 4. Main Service Implementation
 class TierGService {
   isSupabaseMode(): boolean {
     return supabase !== null;
+  }
+
+  getCachedPlayerHistory(playerId: string): any | null {
+    const entry = playerHistoryCache.get(playerId);
+    if (entry && Date.now() - entry.time < CACHE_TTL_MS) {
+      return entry.data;
+    }
+    return null;
   }
 
   // --- Players API ---
@@ -859,6 +869,11 @@ class TierGService {
       leagueLosses: number;    // Unified losses across all match types!
     };
   }> {
+    const cachedEntry = playerHistoryCache.get(playerId);
+    if (cachedEntry && Date.now() - cachedEntry.time < CACHE_TTL_MS) {
+      return cachedEntry.data;
+    }
+
     let player: Player | null = null;
     let history: (GameResult & { played_at: string; notes?: string })[] = [];
 
@@ -1025,7 +1040,7 @@ class TierGService {
       }
     });
 
-    return {
+    const resultPayload = {
       player,
       results: history,
       stats: {
@@ -1045,6 +1060,9 @@ class TierGService {
         leagueLosses,
       },
     };
+
+    playerHistoryCache.set(playerId, { data: resultPayload, time: Date.now() });
+    return resultPayload;
   }
 
   // --- Delete Game & Rollback LP/Tier API ---

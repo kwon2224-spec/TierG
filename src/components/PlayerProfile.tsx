@@ -38,17 +38,35 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       leagueWins?: number;
       leagueLosses?: number;
     };
-  } | null>(null);
+  } | null>(() => tiergService.getCachedPlayerHistory(playerId));
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !tiergService.getCachedPlayerHistory(playerId));
   const [allGames, setAllGames] = useState<GameWithResults[]>([]);
-  const [handicapInput, setHandicapInput] = useState<string>('');
-  const [nicknameInput, setNicknameInput] = useState<string>('');
-  const [tierInput, setTierInput] = useState<Tier>('Iron'); // Newly added tier edit state!
-  const [pointsInput, setPointsInput] = useState<string>(''); // Newly added points edit state!
+  const [handicapInput, setHandicapInput] = useState<string>(() => {
+    const cached = tiergService.getCachedPlayerHistory(playerId);
+    return cached ? cached.player.base_handicap.toString() : '';
+  });
+  const [nicknameInput, setNicknameInput] = useState<string>(() => {
+    const cached = tiergService.getCachedPlayerHistory(playerId);
+    return cached ? (cached.player.nickname || '').trim() : '';
+  });
+  const [tierInput, setTierInput] = useState<Tier>(() => {
+    const cached = tiergService.getCachedPlayerHistory(playerId);
+    return cached ? cached.player.tier : 'Iron';
+  });
+  const [pointsInput, setPointsInput] = useState<string>(() => {
+    const cached = tiergService.getCachedPlayerHistory(playerId);
+    return cached ? cached.player.points.toString() : '';
+  });
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null); // Interactive mobile achievement tap state!
-  const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('Active');
-  const [playerIsAdmin, setPlayerIsAdmin] = useState(false);
+  const [playerStatus, setPlayerStatus] = useState<PlayerStatus>(() => {
+    const cached = tiergService.getCachedPlayerHistory(playerId);
+    return cached ? (cached.player.status || 'Active') : 'Active';
+  });
+  const [playerIsAdmin, setPlayerIsAdmin] = useState(() => {
+    const cached = tiergService.getCachedPlayerHistory(playerId);
+    return cached ? (cached.player.is_admin || false) : false;
+  });
   const [updatingHandicap, setUpdatingHandicap] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [updatingAdminStatus, setUpdatingAdminStatus] = useState(false);
@@ -95,7 +113,9 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
   }, []);
 
   const loadPlayerDetails = async () => {
-    setLoading(true);
+    if (!tiergService.getCachedPlayerHistory(playerId)) {
+      setLoading(true);
+    }
     try {
       const [details, fetchedGames] = await Promise.all([
         tiergService.getPlayerHistory(playerId),
