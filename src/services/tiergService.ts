@@ -387,6 +387,96 @@ class TierGService {
     return players[playerIndex];
   }
 
+  // --- Official Admin Point/Tier Adjustment API ---
+  // Transparently records an official [관리자 직권 조정] entry in the ledger with a specific reason,
+  // preventing point overrides or calculation drift during future game updates/replays!
+  async adjustPlayerPointsByAdmin(
+    playerId: string,
+    newTier: Tier,
+    newPoints: number,
+    reason: string,
+    newHandicap?: number,
+    nickname?: string
+  ): Promise<void> {
+    const players = await this.getPlayers();
+    const player = players.find((p) => p.id === playerId);
+    if (!player) throw new Error('Player not found');
+
+    const oldTierIdx = TIERS_ORDER.indexOf(player.tier);
+    const newTierIdx = TIERS_ORDER.indexOf(newTier);
+    const delta = (newTierIdx * 100 + newPoints) - (oldTierIdx * 100 + player.points);
+
+    // If tier or points actually changed, record an official [관리자 직권 조정] match!
+    if (delta !== 0 || newTier !== player.tier) {
+      const cleanReason = reason.trim() || '관리자 수동 점수 조정';
+      const notes = `[관리자 직권 조정] ${cleanReason}`;
+      const nowIso = new Date().toISOString();
+
+      if (supabase) {
+        // 1. Insert official adjustment game
+        const { data: gameData, error: gameError } = await supabase
+          .from('games')
+          .insert([{ notes, played_at: nowIso }])
+          .select();
+        if (gameError) throw gameError;
+
+        const newGame = gameData[0] as Game;
+
+        // 2. Insert game result with delta
+        const { error: resultError } = await supabase
+          .from('game_results')
+          .insert([{
+            game_id: newGame.id,
+            player_id: playerId,
+            raw_score: newHandicap !== undefined ? newHandicap : player.base_handicap,
+            adjusted_score: 0,
+            rank: 1,
+            points_changed: delta,
+            tier_after: newTier,
+            points_after: newPoints,
+            cost_paid: 0,
+            bet_amount: 0,
+          }]);
+        if (resultError) throw resultError;
+      } else {
+        const localGames = getLocalData<Game[]>('tierg_games', []);
+        const localResults = getLocalData<GameResult[]>('tierg_results', []);
+        const gId = `g_admin_${Date.now()}`;
+        localGames.push({ id: gId, played_at: nowIso, notes });
+        localResults.push({
+          id: `r_admin_${Date.now()}`,
+          game_id: gId,
+          player_id: playerId,
+          raw_score: newHandicap !== undefined ? newHandicap : player.base_handicap,
+          adjusted_score: 0,
+          rank: 1,
+          points_changed: delta,
+          tier_after: newTier,
+          points_after: newPoints,
+          cost_paid: 0,
+          bet_amount: 0,
+        });
+        setLocalData('tierg_games', localGames);
+        setLocalData('tierg_results', localResults);
+      }
+    }
+
+    // Update handicap and nickname if provided
+    if (newHandicap !== undefined || nickname !== undefined) {
+      await this.updatePlayerHandicap(
+        playerId,
+        newHandicap !== undefined ? newHandicap : player.base_handicap,
+        nickname !== undefined ? nickname : player.nickname || '',
+        newTier,
+        newPoints
+      );
+    }
+
+    // Run full chronological replay to update all synchronized tables!
+    await this.recalculateAllPlayerTiersAndPoints();
+    invalidateTierGCache();
+  }
+
   async updatePlayerStatus(id: string, status: PlayerStatus): Promise<Player> {
     invalidateTierGCache();
     if (supabase) {

@@ -362,13 +362,14 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
           const isCurrentlyEditing = editingGameId === game.id;
 
           // Declare match mode variables at the card top-level!
+          const isAdminAdjust = (game.notes || '').includes('[관리자 직권 조정]');
           const isGuillotine = results.some((r) => (r.bet_amount || 0) > 0) || (game.notes || '').includes('[단두대');
           const isScratch = game.notes?.startsWith('[스크래치]');
           const is9Holes = (game.notes || '').includes('9홀') || !(game.notes || '').includes('18홀');
           const guillotineLabel = is9Holes ? '단두대 9홀' : '단두대 18홀';
-          const modeName = isGuillotine ? guillotineLabel : isScratch ? '스크래치' : '핸디';
-          const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
-          const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
+          const modeName = isAdminAdjust ? '👑 직권조정' : isGuillotine ? guillotineLabel : isScratch ? '스크래치' : '핸디';
+          const modeColor = isAdminAdjust ? '#a855f7' : isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
+          const modeBg = isAdminAdjust ? 'rgba(168,85,247,0.1)' : isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
 
           return (
             <div key={game.id} className="game-history-card" style={{ border: isCurrentlyEditing ? '1px solid var(--accent)' : '1px solid var(--border-color)' }}>
@@ -395,6 +396,7 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                     const cleanNotes = (game.notes || '')
                       .replace(/\[단두대(?:\s*(?:9홀|18홀))?\]/g, '')
                       .replace(/\[스크래치\]/g, '')
+                      .replace(/\[관리자 직권 조정\]/g, '')
                       .trim();
                     if (!cleanNotes) return null;
                     return <div className="game-notes" style={{ marginTop: '7px' }}>{cleanNotes}</div>;
@@ -738,7 +740,9 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                     const isPlus = lpDiff > 0;
 
                     const isGuillotineWin = isGuillotine && res.cost_paid === 0;
-                    const rankDisplay = isGuillotine
+                    const rankDisplay = isAdminAdjust
+                      ? '👑'
+                      : isGuillotine
                       ? (isGuillotineWin ? '승' : '패')
                       : `${res.rank}등`;
 
@@ -760,10 +764,12 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                           <span
                             className="history-rank"
                             style={{
-                              color: isGuillotine
+                              color: isAdminAdjust
+                                ? '#a855f7'
+                                : isGuillotine
                                 ? (isGuillotineWin ? '#34d399' : '#f87171')
                                 : (res.rank === 1 ? '#ffd700' : res.rank === 2 ? '#cbd5e1' : 'var(--text-muted)'),
-                              fontWeight: isGuillotine ? '800' : 'normal',
+                              fontWeight: isAdminAdjust || isGuillotine ? '800' : 'normal',
                               fontStyle: isGuillotine ? 'normal' : 'italic',
                               minWidth: '24px',
                               textAlign: 'center',
@@ -784,7 +790,9 @@ export const GameHistory: React.FC<GameHistoryProps> = ({ refreshTrigger, onGame
                               )}
                             </div>
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                              {res.raw_score}타 ({isGuillotine ? `${is9Holes ? '9홀 ' : '18홀 '}` : ''}핸디 {res.adjusted_score}타)
+                              {isAdminAdjust
+                                ? '관리자 직권 점수 조정'
+                                : `${res.raw_score}타 (${isGuillotine ? `${is9Holes ? '9홀 ' : '18홀 '}` : ''}핸디 ${res.adjusted_score}타)`}
                             </span>
                           </div>
                         </div>

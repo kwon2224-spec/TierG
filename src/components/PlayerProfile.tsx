@@ -158,10 +158,41 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
       formattedNickname = `#${formattedNickname}`;
     }
 
+    const isTierOrPointsChanged = (tierInput !== data.player.tier || newPoints !== data.player.points);
+
+    let adjustmentReason = '';
+    if (isTierOrPointsChanged) {
+      const promptResult = window.prompt(
+        `[👑 관리자 직권 조정]\n선수: ${data.player.name}\n점수 변경: ${data.player.tier} ${data.player.points} LP ➡️ ${tierInput} ${newPoints} LP\n\n조정 사유를 입력해주세요 (경기 히스토리에 투명하게 공식 박제됩니다):\n(예: 특별 보너스, 초기 실력 보정, 대회 입상, 룰 위반 페널티 등)`,
+        '관리자 직권 점수 조정'
+      );
+      if (promptResult === null) {
+        // User clicked cancel on prompt
+        return;
+      }
+      adjustmentReason = promptResult.trim() || '관리자 직권 점수 조정';
+    }
+
     setUpdatingHandicap(true);
     try {
-      // Pass tierInput and newPoints directly to update service!
-      await tiergService.updatePlayerHandicap(data.player.id, newHandicap, formattedNickname, tierInput, newPoints);
+      if (isTierOrPointsChanged) {
+        await tiergService.adjustPlayerPointsByAdmin(
+          data.player.id,
+          tierInput,
+          newPoints,
+          adjustmentReason,
+          newHandicap,
+          formattedNickname
+        );
+      } else {
+        await tiergService.updatePlayerHandicap(
+          data.player.id,
+          newHandicap,
+          formattedNickname,
+          tierInput,
+          newPoints
+        );
+      }
       
       // Optimistically update local player state immediately so top badge and tier reflect changes with ZERO delay!
       setData((prev) => prev ? {
@@ -953,17 +984,22 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                 const isPlus = lpDiff >= 0;
 
                 // Identify MatchMode parameters
+                const isAdminAdjust = (res.notes || '').includes('[관리자 직권 조정]');
                 const isGuillotine = (res.bet_amount || 0) > 0;
-                const isScratch = res.notes?.startsWith('[스크래치]');
-                const modeName = isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
-                const modeColor = isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
-                const modeBg = isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
+                const isScratch = (res.notes || '').startsWith('[스크래치]');
+                const modeName = isAdminAdjust ? '👑 직권조정' : isGuillotine ? '단두대' : isScratch ? '스크래치' : '핸디';
+                const modeColor = isAdminAdjust ? '#a855f7' : isGuillotine ? '#fbbf24' : isScratch ? '#60a5fa' : '#10b981';
+                const modeBg = isAdminAdjust ? 'rgba(168,85,247,0.1)' : isGuillotine ? 'rgba(245,158,11,0.06)' : isScratch ? 'rgba(96,165,250,0.06)' : 'rgba(16,185,129,0.06)';
 
                 // Binary Win/Loss for Guillotine matches, otherwise normal Rank placing
                 const isGuillotineWin = isGuillotine && res.cost_paid === 0;
-                const rankDisplay = isGuillotine
+                const rankDisplay = isAdminAdjust
+                  ? '👑'
+                  : isGuillotine
                   ? (isGuillotineWin ? '승' : '패')
                   : `${res.rank}등`;
+
+                const adjustReason = (res.notes || '').replace(/\[관리자 직권 조정\]/g, '').trim();
 
                 return (
                   <div key={res.id} className="profile-history-item">
@@ -971,7 +1007,9 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                       <span
                         style={{
                           fontWeight: '800',
-                          color: isGuillotine 
+                          color: isAdminAdjust
+                            ? '#a855f7'
+                            : isGuillotine 
                             ? (isGuillotineWin ? '#34d399' : '#f87171') 
                             : (res.rank === 1 ? '#ffd700' : 'var(--text-secondary)'),
                           fontSize: '14px',
@@ -982,7 +1020,11 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({
                         {rankDisplay}
                       </span>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontWeight: '600', fontSize: '13px' }}>{res.raw_score}타 (핸디 {res.adjusted_score}타)</span>
+                        <span style={{ fontWeight: '600', fontSize: '13px' }}>
+                          {isAdminAdjust
+                            ? (adjustReason || '관리자 수동 점수 조정')
+                            : `${res.raw_score}타 (핸디 ${res.adjusted_score}타)`}
+                        </span>
                         <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <span style={{ fontSize: '9px', color: modeColor, backgroundColor: modeBg, padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold' }}>
                             {modeName}
