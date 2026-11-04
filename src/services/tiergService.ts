@@ -1065,111 +1065,165 @@ class TierGService {
     return resultPayload;
   }
 
+  // --- Bulletproof Chronological Integrity Engine ---
+  // Re-evaluates every single game from the very beginning in played_at order,
+  // fixing any tier promotions, demotions, point thresholds, and synchronizing game_results & players tables!
+  async recalculateAllPlayerTiersAndPoints(): Promise<void> {
+    if (supabase) {
+      const { data: players } = await supabase.from('players').select('*');
+      const { data: games } = await supabase.from('games').select('*').order('played_at', { ascending: true });
+      const { data: results } = await supabase.from('game_results').select('*');
+
+      if (!players || !games || !results) return;
+
+      const initialMap: Record<string, { tier: Tier; points: number }> = {
+        '최문규': { tier: 'Master', points: 50 },
+        '이평화': { tier: 'Challenger', points: 50 },
+        '이창훈': { tier: 'Bronze', points: 50 },
+        '나용성': { tier: 'Gold', points: 50 },
+        '김창범': { tier: 'Emerald', points: 50 },
+        '안재민': { tier: 'Platinum', points: 50 },
+        '이승무': { tier: 'Platinum', points: 50 },
+        '박진범': { tier: 'Silver', points: 50 },
+        '황지운': { tier: 'Gold', points: 50 },
+        '권기원': { tier: 'Emerald', points: 50 },
+        '부성훈': { tier: 'Challenger', points: 50 },
+        '김형열': { tier: 'Challenger', points: 50 },
+      };
+
+      const playerSim: Record<string, { tier: Tier; points: number }> = {};
+      for (const p of players) {
+        playerSim[p.id] = {
+          tier: initialMap[p.name]?.tier || p.tier,
+          points: initialMap[p.name]?.points || 50,
+        };
+      }
+
+      const resultsToUpdate: { id: string; tier_after: Tier; points_after: number }[] = [];
+
+      for (const g of games) {
+        const gResults = results
+          .filter((r) => r.game_id === g.id)
+          .sort((a, b) => a.rank - b.rank);
+
+        for (const r of gResults) {
+          const p = playerSim[r.player_id];
+          if (!p) continue;
+
+          const { newTier, newPoints } = calculateNewTierAndPoints(p.tier, p.points, r.points_changed);
+          p.tier = newTier;
+          p.points = newPoints;
+
+          if (r.tier_after !== newTier || r.points_after !== newPoints) {
+            resultsToUpdate.push({ id: r.id, tier_after: newTier, points_after: newPoints });
+          }
+        }
+      }
+
+      // Update mismatched game_results concurrently
+      if (resultsToUpdate.length > 0) {
+        await Promise.all(
+          resultsToUpdate.map((u) =>
+            supabase!.from('game_results').update({ tier_after: u.tier_after, points_after: u.points_after }).eq('id', u.id)
+          )
+        );
+      }
+
+      // Update players table with true latest points, tiers, and base_handicap
+      await Promise.all(
+        players.map(async (p) => {
+          const sim = playerSim[p.id];
+          if (!sim) return;
+          const trueHandicap = TIER_HANDICAPS[sim.tier];
+          if (p.tier !== sim.tier || p.points !== sim.points || p.base_handicap !== trueHandicap) {
+            await supabase!.from('players').update({
+              tier: sim.tier,
+              points: sim.points,
+              base_handicap: trueHandicap,
+            }).eq('id', p.id);
+          }
+        })
+      );
+    } else {
+      // Local Storage Replay Implementation
+      const localGames = getLocalData<Game[]>('tierg_games', []).sort(
+        (a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime()
+      );
+      const localResults = getLocalData<GameResult[]>('tierg_results', []);
+      const localPlayers = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
+
+      const playerSim: Record<string, { tier: Tier; points: number }> = {};
+      for (const p of localPlayers) {
+        playerSim[p.id] = { tier: p.tier, points: 50 };
+      }
+
+      for (const g of localGames) {
+        const gResults = localResults
+          .filter((r) => r.game_id === g.id)
+          .sort((a, b) => a.rank - b.rank);
+
+        for (const r of gResults) {
+          const p = playerSim[r.player_id];
+          if (!p) continue;
+          const { newTier, newPoints } = calculateNewTierAndPoints(p.tier, p.points, r.points_changed);
+          p.tier = newTier;
+          p.points = newPoints;
+          r.tier_after = newTier;
+          r.points_after = newPoints;
+        }
+      }
+
+      localPlayers.forEach((p) => {
+        const sim = playerSim[p.id];
+        if (sim) {
+          p.tier = sim.tier;
+          p.points = sim.points;
+          p.base_handicap = TIER_HANDICAPS[sim.tier];
+        }
+      });
+
+      setLocalData('tierg_results', localResults);
+      setLocalData('tierg_players', localPlayers);
+    }
+  }
+
   // --- Delete Game & Rollback LP/Tier API ---
   async deleteGame(gameId: string): Promise<void> {
-    // 1. Fetch all games to locate the target game
-    const games = await this.getGames();
-    if (games.length === 0) throw new Error('삭제할 게임이 없습니다.');
-    
-    const targetGame = games.find(g => g.game.id === gameId);
-    if (!targetGame) {
-      throw new Error('삭제 및 롤백할 경기를 찾을 수 없습니다.');
-    }
-
-    // 2. Fetch results for this specific game to revert players
-    const resultsToRevert = targetGame.results;
-
-    // Load current live players state so we can apply the delta directly to their CURRENT scores!
-    const livePlayers = await this.getPlayers();
-
     if (supabase) {
       try {
-        // Revert each player's tier and points in Supabase concurrently using Promise.all!
-        await Promise.all(
-          resultsToRevert.map(async (res) => {
-            const livePlayer = livePlayers.find((p) => p.id === res.player_id);
-            if (!livePlayer) return;
-
-            // Run mathematical delta inverse against CURRENT points, preserving subsequent game results!
-            const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-              livePlayer.tier,
-              livePlayer.points,
-              -res.points_changed
-            );
-
-            const updatePayload: any = {
-              tier: tierBefore,
-              points: pointsBefore,
-            };
-            
-            // Only rollback base_handicap if the player's tier actually rolls back to a different one!
-            if (tierBefore !== livePlayer.tier) {
-              updatePayload.base_handicap = TIER_HANDICAPS[tierBefore];
-            }
-
-            const { error: playerUpdateError } = await supabase
-              .from('players')
-              .update(updatePayload)
-              .eq('id', res.player_id);
-
-            if (playerUpdateError) {
-              throw new Error(`플레이어(${res.player_name}) 전적 롤백 실패: ${playerUpdateError.message}`);
-            }
-          })
-        );
-
-        // Delete the game results first explicitly (to bypass any DB foreign key constraints)
+        // 1. Delete game_results first
         const { error: resultsDeleteError } = await supabase
           .from('game_results')
           .delete()
           .eq('game_id', gameId);
 
-        if (resultsDeleteError) {
-          throw new Error(`상세 전적 데이터 삭제 실패: ${resultsDeleteError.message}`);
-        }
+        if (resultsDeleteError) throw resultsDeleteError;
 
-        // Delete the game from games table
+        // 2. Delete game from games table
         const { error: gameDeleteError } = await supabase
           .from('games')
           .delete()
           .eq('id', gameId);
 
-        if (gameDeleteError) {
-          throw new Error(`경기 메인 데이터 삭제 실패: ${gameDeleteError.message}`);
-        }
+        if (gameDeleteError) throw gameDeleteError;
+
+        // 3. Fully re-evaluate chronological integrity for all players!
+        await this.recalculateAllPlayerTiersAndPoints();
       } catch (err: any) {
         console.error('Verbose deleteGame error:', err);
         throw err;
       }
     } else {
-      // Local Storage fallback
       const localGames = getLocalData<Game[]>('tierg_games', []);
       const localResults = getLocalData<GameResult[]>('tierg_results', []);
-      const localPlayers = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
 
-      // Revert each player using delta inverse on live local states
-      resultsToRevert.forEach((res) => {
-        const playerIndex = localPlayers.findIndex((p) => p.id === res.player_id);
-        if (playerIndex !== -1) {
-          const livePlayer = localPlayers[playerIndex];
-          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-            livePlayer.tier,
-            livePlayer.points,
-            -res.points_changed
-          );
-          localPlayers[playerIndex].tier = tierBefore;
-          localPlayers[playerIndex].points = pointsBefore;
-        }
-      });
+      setLocalData('tierg_games', localGames.filter((g) => g.id !== gameId));
+      setLocalData('tierg_results', localResults.filter((r) => r.game_id !== gameId));
 
-      // Filter out the deleted game and its results
-      const updatedGames = localGames.filter((g) => g.id !== gameId);
-      const updatedResults = localResults.filter((r) => r.game_id !== gameId);
-
-      setLocalData('tierg_games', updatedGames);
-      setLocalData('tierg_results', updatedResults);
-      setLocalData('tierg_players', localPlayers);
+      await this.recalculateAllPlayerTiersAndPoints();
     }
+
+    invalidateTierGCache();
   }
 
   // --- Update Game & Re-evaluate LP/Tier API ---
@@ -1193,51 +1247,108 @@ class TierGService {
       finalNotes = finalNotes ? `[단두대 ${holes}] ${finalNotes}` : `[단두대 ${holes}]`;
     }
 
-    // 1. Fetch current games to locate the target original game
-    const games = await this.getGames();
-    const targetGame = games.find(g => g.game.id === gameId);
-    if (!targetGame) throw new Error('수정할 경기를 찾을 수 없습니다.');
-
-    const resultsToRevert = targetGame.results;
-
-    // Load current live players state so we can apply rollback and recalculation dynamically!
     const livePlayers = await this.getPlayers();
+
+    // Recalculate adjusted score, ranks, and cost for the edited game
+    const processedResults = resultsInput.map((input) => {
+      const player = livePlayers.find((p) => p.id === input.player_id);
+      if (!player) throw new Error(`Player ${input.player_id} not found`);
+
+      const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : player.base_handicap;
+      const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - finalHandicap;
+      return {
+        ...input,
+        player,
+        adjustedScore,
+      };
+    });
+
+    processedResults.sort((a, b) => a.adjustedScore - b.adjustedScore);
+
+    let currentRank = 1;
+    const rankedResults = processedResults.map((item, index) => {
+      if (index > 0 && item.adjustedScore > processedResults[index - 1].adjustedScore) {
+        currentRank = index + 1;
+      }
+      return {
+        ...item,
+        rank: currentRank,
+      };
+    });
+
+    const lpChangeByRank: Record<number, number> = {
+      1: 20,
+      2: 10,
+      3: -10,
+      4: -20,
+    };
+
+    const maxAdjustedScore = Math.max(...rankedResults.map(r => r.adjustedScore));
+    const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
+    const isAllTied = minAdjustedScore === maxAdjustedScore;
+    const hasAnyCost = rankedResults.some(r => r.cost_paid > 0);
+
+    const finalResults = rankedResults.map((item) => {
+      let pointsChanged = 0;
+      
+      if (matchMode === 'scratch' || matchMode === 'guillotine') {
+        pointsChanged = 0;
+      } else if (isAllTied) {
+        pointsChanged = 0;
+      } else if (hasAnyCost) {
+        const paidMoney = item.cost_paid > 0;
+        const isFirst = item.rank === 1;
+        const isLast = item.adjustedScore === maxAdjustedScore;
+
+        if (paidMoney) {
+          pointsChanged = isLast ? -20 : -10;
+        } else {
+          pointsChanged = isFirst ? 20 : 10;
+        }
+      } else if (item.adjustedScore === maxAdjustedScore) {
+        pointsChanged = -20;
+      } else {
+        if (rankedResults.length === 4) {
+          pointsChanged = lpChangeByRank[item.rank] || 0;
+        } else {
+          const median = (rankedResults.length + 1) / 2;
+          if (item.rank < median) {
+            pointsChanged = item.rank === 1 ? 20 : 10;
+          } else if (item.rank > median) {
+            pointsChanged = item.rank === rankedResults.length ? -20 : -10;
+          } else {
+            pointsChanged = 0;
+          }
+        }
+      }
+
+      return {
+        ...item,
+        pointsChanged,
+      };
+    });
+
+    // Recalculate Guillotine cost shares if necessary
+    let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
+    if (matchMode === 'guillotine' && finalResults.length > 0) {
+      const maxRank = Math.max(...finalResults.map(r => r.rank));
+      const winners = finalResults.filter(r => r.rank < maxRank);
+      const losers = finalResults.filter(r => r.rank === maxRank);
+
+      const winnersTotalBet = winners.reduce((sum, item) => sum + item.cost_paid, 0);
+      const loserCostShare = losers.length > 0 ? Math.round(winnersTotalBet / losers.length) : 0;
+
+      finalCosts = finalResults.map(r => {
+        if (r.rank === maxRank) {
+          return { player_id: r.player.id, cost: loserCostShare };
+        }
+        return { player_id: r.player.id, cost: 0 };
+      });
+    }
 
     if (supabase) {
       try {
-        // STEP A: Revert old LP and points in Supabase concurrently with Promise.all!
-        await Promise.all(
-          resultsToRevert.map(async (res) => {
-            const livePlayer = livePlayers.find((p) => p.id === res.player_id);
-            if (!livePlayer) return;
-
-            // Inverse LP delta math
-            const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-              livePlayer.tier,
-              livePlayer.points,
-              -res.points_changed
-            );
-
-            const updatePayload: any = { tier: tierBefore, points: pointsBefore };
-            if (tierBefore !== livePlayer.tier) {
-              updatePayload.base_handicap = TIER_HANDICAPS[tierBefore];
-              livePlayer.base_handicap = TIER_HANDICAPS[tierBefore];
-            }
-
-            const { error: playerRollbackError } = await supabase
-              .from('players')
-              .update(updatePayload)
-              .eq('id', res.player_id);
-
-            if (playerRollbackError) throw playerRollbackError;
-
-            // Update our in-memory livePlayers array to utilize reverted base for subsequent calculation!
-            livePlayer.tier = tierBefore;
-            livePlayer.points = pointsBefore;
-          })
-        );
-
-        // STEP B: Update Game Metadata with prefixed finalNotes!
+        // 1. Update Game Metadata
         const { error: gameUpdateError } = await supabase
           .from('games')
           .update({ notes: finalNotes, played_at: playedAt })
@@ -1245,142 +1356,7 @@ class TierGService {
 
         if (gameUpdateError) throw gameUpdateError;
 
-        // STEP C: Recalculate ranks, points, and tiers based on edited inputs!
-        const processedResults = resultsInput.map((input) => {
-          const player = livePlayers.find((p) => p.id === input.player_id);
-          if (!player) throw new Error(`Player ${input.player_id} not found`);
-
-          // Strictly preserve historical game handicap so promoted/demoted handicaps never corrupt edits!
-          const originalResult = resultsToRevert.find((r) => r.player_id === input.player_id);
-          const originalGameHandicap = originalResult ? (originalResult.raw_score - originalResult.adjusted_score) : player.base_handicap;
-          const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : originalGameHandicap;
-
-          const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - finalHandicap;
-          return {
-            ...input,
-            player,
-            adjustedScore,
-          };
-        });
-
-        processedResults.sort((a, b) => a.adjustedScore - b.adjustedScore);
-
-        let currentRank = 1;
-        const rankedResults = processedResults.map((item, index) => {
-          if (index > 0 && item.adjustedScore > processedResults[index - 1].adjustedScore) {
-            currentRank = index + 1;
-          }
-          return {
-            ...item,
-            rank: currentRank,
-          };
-        });
-
-        const lpChangeByRank: Record<number, number> = {
-          1: 20,
-          2: 10,
-          3: -10,
-          4: -20,
-        };
-
-        const maxAdjustedScore = Math.max(...rankedResults.map(r => r.adjustedScore));
-        const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
-        const isAllTied = minAdjustedScore === maxAdjustedScore;
-
-        const hasAnyCost = rankedResults.some(r => r.cost_paid > 0);
-
-        const finalResults = rankedResults.map((item) => {
-          let pointsChanged = 0;
-          
-          if (matchMode === 'scratch' || matchMode === 'guillotine') {
-            pointsChanged = 0;
-          } else if (isAllTied) {
-            pointsChanged = 0;
-          } else if (hasAnyCost) {
-            // 룰 적용: 돈 내면 무조건 마이너스 (-), 안 내면 무조건 플러스 (+)
-            // (공동) 1등은 +20, (공동) 꼴찌는 -20 유지!
-            const paidMoney = item.cost_paid > 0;
-            const isFirst = item.rank === 1;
-            const isLast = item.adjustedScore === maxAdjustedScore;
-
-            if (paidMoney) {
-              pointsChanged = isLast ? -20 : -10;
-            } else {
-              pointsChanged = isFirst ? 20 : 10;
-            }
-          } else if (item.adjustedScore === maxAdjustedScore) {
-            pointsChanged = -20;
-          } else {
-            if (rankedResults.length === 4) {
-              pointsChanged = lpChangeByRank[item.rank] || 0;
-            } else {
-              const median = (rankedResults.length + 1) / 2;
-              if (item.rank < median) {
-                pointsChanged = item.rank === 1 ? 20 : 10;
-              } else if (item.rank > median) {
-                pointsChanged = item.rank === rankedResults.length ? -20 : -10;
-              } else {
-                pointsChanged = 0;
-              }
-            }
-          }
-
-          const { newTier, newPoints } = calculateNewTierAndPoints(
-            item.player.tier,
-            item.player.points,
-            pointsChanged
-          );
-
-          return {
-            ...item,
-            pointsChanged,
-            newTier,
-            newPoints,
-          };
-        });
-
-        // Recalculate Guillotine cost shares if necessary
-        // Rule: Losers only pay the WINNERS' bet shares (상대방 금액만 추가 대납!)
-        let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
-        if (matchMode === 'guillotine' && finalResults.length > 0) {
-          const maxRank = Math.max(...finalResults.map(r => r.rank));
-          const winners = finalResults.filter(r => r.rank < maxRank);
-          const losers = finalResults.filter(r => r.rank === maxRank);
-
-          const winnersTotalBet = winners.reduce((sum, item) => sum + item.cost_paid, 0);
-          const loserCostShare = losers.length > 0 ? Math.round(winnersTotalBet / losers.length) : 0;
-
-          finalCosts = finalResults.map(r => {
-            if (r.rank === maxRank) {
-              return { player_id: r.player.id, cost: loserCostShare };
-            }
-            return { player_id: r.player.id, cost: 0 };
-          });
-        }
-
-        // STEP D: Save newly calculated points and tiers to Supabase in parallel with Promise.all!
-        await Promise.all(
-          finalResults.map(async (res) => {
-            const updatePayload: any = {
-              tier: res.newTier,
-              points: res.newPoints,
-            };
-            
-            // Only force handicap sync if the player actually promoted or demoted to a different tier!
-            if (res.newTier !== res.player.tier) {
-              updatePayload.base_handicap = TIER_HANDICAPS[res.newTier];
-            }
-
-            const { error: playerUpdateError } = await supabase
-              .from('players')
-              .update(updatePayload)
-              .eq('id', res.player.id);
-
-            if (playerUpdateError) throw playerUpdateError;
-          })
-        );
-
-        // Delete old results rows from game_results
+        // 2. Delete old results rows from game_results
         const { error: resultsDeleteError } = await supabase
           .from('game_results')
           .delete()
@@ -1388,7 +1364,7 @@ class TierGService {
 
         if (resultsDeleteError) throw resultsDeleteError;
 
-        // Build new results rows to insert
+        // 3. Build new results rows to insert (tier_after & points_after placeholder, will be accurately recomputed by recalculateAllPlayerTiersAndPoints)
         const resultsToInsert = finalResults.map((res) => {
           const computedCost = finalCosts.find(c => c.player_id === res.player.id)?.cost ?? res.cost_paid;
           return {
@@ -1398,198 +1374,60 @@ class TierGService {
             adjusted_score: res.adjustedScore,
             rank: res.rank,
             points_changed: res.pointsChanged,
-            tier_after: res.newTier,
-            points_after: res.newPoints,
+            tier_after: res.player.tier, // placeholder, overwritten by recalculateAllPlayerTiersAndPoints
+            points_after: res.player.points,
             cost_paid: computedCost,
             bet_amount: matchMode === 'guillotine' ? res.cost_paid : 0,
           };
         });
 
-        // Insert new results rows
+        // 4. Insert new results rows
         const { error: resultsInsertError } = await supabase
           .from('game_results')
           .insert(resultsToInsert);
 
         if (resultsInsertError) throw resultsInsertError;
 
+        // 5. Run full chronological integrity replay to ensure every single game and player score is 100% synchronized!
+        await this.recalculateAllPlayerTiersAndPoints();
       } catch (err: any) {
         console.error('Verbose updateGame Supabase failed:', err);
         throw err;
       }
     } else {
-      // Local Storage fallback
+      // Local Storage implementation
       const localGames = getLocalData<Game[]>('tierg_games', []);
       const localResults = getLocalData<GameResult[]>('tierg_results', []);
-      const localPlayers = getLocalData<Player[]>('tierg_players', INITIAL_MOCK_PLAYERS);
 
-      // 1. Rollback locally
-      resultsToRevert.forEach((res) => {
-        const playerIndex = localPlayers.findIndex((p) => p.id === res.player_id);
-        if (playerIndex !== -1) {
-          const livePlayer = localPlayers[playerIndex];
-          const { newTier: tierBefore, newPoints: pointsBefore } = calculateNewTierAndPoints(
-            livePlayer.tier,
-            livePlayer.points,
-            -res.points_changed
-          );
-          localPlayers[playerIndex].tier = tierBefore;
-          localPlayers[playerIndex].points = pointsBefore;
-          if (tierBefore !== livePlayer.tier) {
-            localPlayers[playerIndex].base_handicap = TIER_HANDICAPS[tierBefore];
-          }
-        }
-      });
-
-      // 2. Update metadata with prefixed finalNotes!
       const gameIdx = localGames.findIndex(g => g.id === gameId);
       if (gameIdx !== -1) {
         localGames[gameIdx].notes = finalNotes;
         localGames[gameIdx].played_at = playedAt;
       }
 
-      // 3. Recalculate locally
-      const processedResults = resultsInput.map((input) => {
-        const player = localPlayers.find((p) => p.id === input.player_id)!;
-        const originalResult = resultsToRevert.find((r) => r.player_id === input.player_id);
-        const originalGameHandicap = originalResult ? (originalResult.raw_score - originalResult.adjusted_score) : player.base_handicap;
-        const finalHandicap = input.custom_handicap !== undefined ? input.custom_handicap : originalGameHandicap;
-
-        const adjustedScore = matchMode === 'scratch' ? input.raw_score : input.raw_score - finalHandicap;
-        return {
-          ...input,
-          player,
-          adjustedScore,
-        };
-      });
-
-      processedResults.sort((a, b) => a.adjustedScore - b.adjustedScore);
-
-      let currentRank = 1;
-      const rankedResults = processedResults.map((item, index) => {
-        if (index > 0 && item.adjustedScore > processedResults[index - 1].adjustedScore) {
-          currentRank = index + 1;
-        }
-        return {
-          ...item,
-          rank: currentRank,
-        };
-      });
-
-      const lpChangeByRank: Record<number, number> = {
-        1: 20,
-        2: 10,
-        3: -10,
-        4: -20,
-      };
-
-      const maxAdjustedScore = Math.max(...rankedResults.map(r => r.adjustedScore));
-      const minAdjustedScore = Math.min(...rankedResults.map(r => r.adjustedScore));
-      const isAllTied = minAdjustedScore === maxAdjustedScore;
-
-      const hasAnyCost = rankedResults.some(r => r.cost_paid > 0);
-
-      const finalResults = rankedResults.map((item) => {
-        let pointsChanged = 0;
-        
-        if (matchMode === 'scratch' || matchMode === 'guillotine') {
-          pointsChanged = 0;
-        } else if (isAllTied) {
-          pointsChanged = 0;
-        } else if (hasAnyCost) {
-          // 룰 적용: 돈 내면 무조건 마이너스 (-), 안 내면 무조건 플러스 (+)
-          // (공동) 1등은 +20, (공동) 꼴찌는 -20 유지!
-          const paidMoney = item.cost_paid > 0;
-          const isFirst = item.rank === 1;
-          const isLast = item.adjustedScore === maxAdjustedScore;
-
-          if (paidMoney) {
-            pointsChanged = isLast ? -20 : -10;
-          } else {
-            pointsChanged = isFirst ? 20 : 10;
-          }
-        } else if (item.adjustedScore === maxAdjustedScore) {
-          pointsChanged = -20;
-        } else {
-          if (rankedResults.length === 4) {
-            pointsChanged = lpChangeByRank[item.rank] || 0;
-          } else {
-            const median = (rankedResults.length + 1) / 2;
-            if (item.rank < median) {
-              pointsChanged = item.rank === 1 ? 20 : 10;
-            } else if (item.rank > median) {
-              pointsChanged = item.rank === rankedResults.length ? -20 : -10;
-            } else {
-              pointsChanged = 0;
-            }
-          }
-        }
-
-        const { newTier, newPoints } = calculateNewTierAndPoints(
-          item.player.tier,
-          item.player.points,
-          pointsChanged
-        );
-
-        return {
-          ...item,
-          pointsChanged,
-          newTier,
-          newPoints,
-        };
-      });
-
-      // Cost shares
-      // Rule: Losers only pay the WINNERS' bet shares (상대방 금액만 추가 대납!)
-      let finalCosts = finalResults.map(r => ({ player_id: r.player.id, cost: r.cost_paid }));
-      if (matchMode === 'guillotine' && finalResults.length > 0) {
-        const maxRank = Math.max(...finalResults.map(r => r.rank));
-        const winners = finalResults.filter(r => r.rank < maxRank);
-        const losers = finalResults.filter(r => r.rank === maxRank);
-
-        const winnersTotalBet = winners.reduce((sum, item) => sum + item.cost_paid, 0);
-        const loserCostShare = losers.length > 0 ? Math.round(winnersTotalBet / losers.length) : 0;
-
-        finalCosts = finalResults.map(r => {
-          if (r.rank === maxRank) {
-            return { player_id: r.player.id, cost: loserCostShare };
-          }
-          return { player_id: r.player.id, cost: 0 };
-        });
-      }
-
-      // Update local players and write new localResults rows
-      finalResults.forEach((res) => {
-        const pIdx = localPlayers.findIndex(p => p.id === res.player_id);
-        if (pIdx !== -1) {
-          localPlayers[pIdx].tier = res.newTier;
-          localPlayers[pIdx].points = res.newPoints;
-        }
-      });
-
-      // Filter out old results rows
       const filteredResults = localResults.filter(r => r.game_id !== gameId);
 
-      // Insert new results rows
       finalResults.forEach((res) => {
-        const computedCost = finalCosts.find(c => c.player_id === res.player_id)?.cost ?? res.cost_paid;
+        const computedCost = finalCosts.find(c => c.player_id === res.player.id)?.cost ?? res.cost_paid;
         filteredResults.push({
-          id: `r_${Date.now()}_${res.player_id}`,
+          id: `r_${Date.now()}_${res.player.id}`,
           game_id: gameId,
-          player_id: res.player_id,
+          player_id: res.player.id,
           raw_score: res.raw_score,
           adjusted_score: res.adjustedScore,
           rank: res.rank,
           points_changed: res.pointsChanged,
-          tier_after: res.newTier,
-          points_after: res.newPoints,
+          tier_after: res.player.tier,
+          points_after: res.player.points,
           cost_paid: computedCost,
           bet_amount: matchMode === 'guillotine' ? res.cost_paid : 0,
         });
       });
 
-      setLocalData('tierg_players', localPlayers);
       setLocalData('tierg_games', localGames);
       setLocalData('tierg_results', filteredResults);
+
+      await this.recalculateAllPlayerTiersAndPoints();
     }
   }
 
