@@ -764,6 +764,10 @@ class TierGService {
 
         if (resultsInsertError) throw resultsInsertError;
 
+        // Fully guarantee chronological consistency across all games and player stats!
+        await this.recalculateAllPlayerTiersAndPoints();
+        invalidateTierGCache();
+
         // Re-fetch populated object to return
         const formattedResults = insertedResults.map((r: any) => {
           const originalRes = finalResults.find((fr) => fr.player.id === r.player_id)!;
@@ -1093,10 +1097,33 @@ class TierGService {
 
       const playerSim: Record<string, { tier: Tier; points: number }> = {};
       for (const p of players) {
-        playerSim[p.id] = {
-          tier: initialMap[p.name]?.tier || p.tier,
-          points: initialMap[p.name]?.points || 50,
-        };
+        if (initialMap[p.name]) {
+          playerSim[p.id] = {
+            tier: initialMap[p.name].tier,
+            points: initialMap[p.name].points,
+          };
+        } else {
+          // If a new player joined in the future, find their earliest game to derive their exact starting seed!
+          const pResults = results
+            .filter((r) => r.player_id === p.id)
+            .map((r) => {
+              const g = games.find((gm) => gm.id === r.game_id);
+              return { ...r, played_at: g ? g.played_at : '' };
+            })
+            .sort((a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime());
+
+          if (pResults.length > 0) {
+            const firstR = pResults[0];
+            const { newTier: initialTier, newPoints: initialPoints } = calculateNewTierAndPoints(
+              firstR.tier_after as Tier,
+              firstR.points_after,
+              -firstR.points_changed
+            );
+            playerSim[p.id] = { tier: initialTier, points: initialPoints };
+          } else {
+            playerSim[p.id] = { tier: p.tier, points: p.points };
+          }
+        }
       }
 
       const resultsToUpdate: { id: string; tier_after: Tier; points_after: number }[] = [];
